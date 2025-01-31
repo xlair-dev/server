@@ -1,4 +1,3 @@
-use chrono::NaiveDate;
 use getset::{Getters, Setters};
 
 use super::{difficulty::Difficulty, level::Level};
@@ -13,24 +12,15 @@ pub struct Sheet {
     difficulty: Difficulty,
     #[getset(get = "pub")]
     level: Level,
-    #[getset(get = "pub")]
-    registration_date: NaiveDate,
 }
 
 impl Sheet {
-    pub fn new(
-        id: String,
-        music_id: String,
-        difficulty: Difficulty,
-        level: Level,
-        registration_date: NaiveDate,
-    ) -> Self {
+    pub fn new(id: String, music_id: String, difficulty: Difficulty, level: Level) -> Self {
         Self {
             id,
             music_id,
             difficulty,
             level,
-            registration_date,
         }
     }
 }

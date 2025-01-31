@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use getset::{Getters, Setters};
 
 use super::genre::Genre;
@@ -19,6 +20,8 @@ pub struct Music {
     #[getset(get = "pub")]
     jacket_image_url: String,
     #[getset(get = "pub")]
+    registration_date: NaiveDate, // TODO: consider using Date
+    #[getset(get = "pub")]
     is_test: bool,
 }
 
@@ -32,6 +35,7 @@ impl Music {
         bpm: u32,
         genre: Genre,
         jacket_image_url: String,
+        registration_date: NaiveDate,
         is_test: bool,
     ) -> Self {
         Self {
@@ -42,6 +46,7 @@ impl Music {
             bpm,
             genre,
             jacket_image_url,
+            registration_date,
             is_test,
         }
     }
