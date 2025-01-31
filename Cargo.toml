@@ -1,0 +1,8 @@
+[workspace]
+members = ["crates/domain"]
+
+[workspace.dependencies]
+getset = "0.1.4"
+chrono = "0.4.39"
+anyhow = "1.0.95"
+thiserror = "2.0.11"

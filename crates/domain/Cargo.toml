@@ -1,0 +1,10 @@
+[package]
+name = "domain"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+getset.workspace = true
+chrono.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
