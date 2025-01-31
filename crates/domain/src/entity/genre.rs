@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Error};
+use thiserror::Error;
 
 const GENRE_NAMES: [&str; 1] = [
     "ORIGINAL",
@@ -8,12 +8,18 @@ const GENRE_NAMES: [&str; 1] = [
 #[derive(Debug)]
 pub struct Genre(u32);
 
+#[derive(Debug, Error)]
+pub enum GenreError {
+    #[error("Invalid genre value")]
+    InvalidValue,
+}
+
 impl TryFrom<u32> for Genre {
-    type Error = Error;
+    type Error = GenreError;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         if !(0..GENRE_NAMES.len() as u32).contains(&value) {
-            return Err(anyhow!("Invalid genre value"));
+            return Err(GenreError::InvalidValue);
         }
 
         Ok(Genre(value))
