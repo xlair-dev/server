@@ -4,17 +4,17 @@ use thiserror::Error;
 pub struct Level(u32, u32);
 
 #[derive(Debug, Error)]
-pub enum Error {
+pub enum LevelError {
     #[error("Invalid level value")]
     InvalidValue,
 }
 
 impl TryFrom<(u32, u32)> for Level {
-    type Error = Error;
+    type Error = LevelError;
 
     fn try_from(value: (u32, u32)) -> Result<Self, Self::Error> {
         if value.0 == 0 || !(0..10).contains(&value.1) {
-            return Err(Error::InvalidValue);
+            return Err(LevelError::InvalidValue);
         }
 
         Ok(Level(value.0, value.1))
