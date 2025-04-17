@@ -22,7 +22,7 @@ pub struct User {
     #[getset(get = "pub")]
     is_admin: bool,
     #[getset(get = "pub")]
-    created_at: NaiveDateTime, // TODO: consider using DateTime<Utc>
+    created_at: NaiveDateTime,
 }
 
 #[allow(clippy::too_many_arguments)]

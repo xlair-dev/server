@@ -18,5 +18,5 @@ pub struct Record {
     #[getset(get = "pub", set = "pub")]
     play_count: u32,
     #[getset(get = "pub", set = "pub")]
-    updated_at: NaiveDateTime, // TODO: consider using DateTime<Utc>
+    updated_at: NaiveDateTime,
 }

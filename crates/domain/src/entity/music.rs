@@ -20,7 +20,7 @@ pub struct Music {
     #[getset(get = "pub")]
     jacket_image_url: String,
     #[getset(get = "pub")]
-    registration_date: NaiveDate, // TODO: consider using Date
+    registration_date: NaiveDate,
     #[getset(get = "pub")]
     is_test: bool,
 }
