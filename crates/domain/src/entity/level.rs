@@ -22,22 +22,12 @@ impl TryFrom<(u32, u32)> for Level {
     }
 }
 
-impl Level {
-    pub fn value_raw(&self) -> (u32, u32) {
-        (self.0, self.1)
-    }
-
-    pub fn value(&self) -> String {
-        if self.1 < 5 {
-            format!("{}", self.0)
-        } else {
-            format!("{}+", self.0)
-        }
-    }
-}
-
 impl Display for Level {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value())
+        if self.1 < 5 {
+            write!(f, "{}", self.0)
+        } else {
+            write!(f, "{}+", self.0)
+        }
     }
 }
