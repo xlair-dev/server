@@ -18,7 +18,7 @@ pub struct User {
     #[getset(get = "pub", set = "pub")]
     xp: u32,
     #[getset(get = "pub", set = "pub")]
-    credit: u32,
+    credits: u32,
     #[getset(get = "pub")]
     is_admin: bool,
     #[getset(get = "pub")]
@@ -35,7 +35,7 @@ impl User {
         user_name: Option<String>,
         display_name: String,
         xp: u32,
-        credit: u32,
+        credits: u32,
         is_admin: bool,
         created_at: NaiveDateTime,
     ) -> Self {
@@ -47,7 +47,7 @@ impl User {
             user_name,
             display_name,
             xp,
-            credit,
+            credits,
             is_admin,
             created_at,
         }
