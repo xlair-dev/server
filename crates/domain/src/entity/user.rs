@@ -9,10 +9,10 @@ pub struct User {
     access_code: String,
     #[getset(get = "pub")]
     card: String,
-    #[getset(get = "pub")]
-    firebase_uid: String,
     #[getset(get = "pub", set = "pub")]
-    user_name: String,
+    firebase_uid: Option<String>,
+    #[getset(get = "pub", set = "pub")]
+    user_name: Option<String>,
     #[getset(get = "pub", set = "pub")]
     display_name: String,
     #[getset(get = "pub", set = "pub")]
@@ -31,8 +31,8 @@ impl User {
         id: String,
         access_code: String,
         card: String,
-        firebase_uid: String,
-        user_name: String,
+        firebase_uid: Option<String>,
+        user_name: Option<String>,
         display_name: String,
         xp: u32,
         credit: u32,
