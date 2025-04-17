@@ -10,7 +10,7 @@ pub struct User {
     #[getset(get = "pub")]
     card: String,
     #[getset(get = "pub", set = "pub")]
-    firebase_uid: Option<String>,
+    auth_id: Option<String>,
     #[getset(get = "pub", set = "pub")]
     user_name: Option<String>,
     #[getset(get = "pub", set = "pub")]
@@ -31,7 +31,7 @@ impl User {
         id: String,
         access_code: String,
         card: String,
-        firebase_uid: Option<String>,
+        auth_id: Option<String>,
         user_name: Option<String>,
         display_name: String,
         xp: u32,
@@ -43,7 +43,7 @@ impl User {
             id,
             access_code,
             card,
-            firebase_uid,
+            auth_id,
             user_name,
             display_name,
             xp,
