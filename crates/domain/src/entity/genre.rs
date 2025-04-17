@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Result};
 
-// TODO: Add tests for the Genre struct
+// TODO: Add the rest of the genres
 #[derive(Debug)]
 pub enum Genre {
     ORIGINAL,
