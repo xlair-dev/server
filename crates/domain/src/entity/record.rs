@@ -1,7 +1,6 @@
+use super::clear_type::ClearType;
 use chrono::NaiveDateTime;
 use getset::{Getters, Setters};
-
-use super::clear_type::ClearType;
 
 #[derive(Debug, Getters, Setters)]
 pub struct Record {

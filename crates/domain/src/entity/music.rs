@@ -1,7 +1,6 @@
+use super::genre::Genre;
 use chrono::NaiveDate;
 use getset::{Getters, Setters};
-
-use super::genre::Genre;
 
 #[derive(Debug, Getters, Setters)]
 pub struct Music {
