@@ -1,5 +1,6 @@
-use super::{difficulty::Difficulty, level::Level};
 use getset::{Getters, Setters};
+
+use super::{difficulty::Difficulty, level::Level};
 
 #[derive(Debug, Getters, Setters)]
 pub struct Sheet {
