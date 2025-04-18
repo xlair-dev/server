@@ -1,4 +1,5 @@
-use std::fmt::Display;
+use anyhow::Result;
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -23,7 +24,7 @@ impl TryFrom<(u32, u32)> for Level {
 }
 
 impl Display for Level {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         if self.1 < 5 {
             write!(f, "{}", self.0)
         } else {
