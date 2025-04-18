@@ -1,6 +1,8 @@
 use chrono::NaiveDateTime;
 use getset::{Getters, Setters};
 
+use super::rating::Rating;
+
 #[derive(Debug, Getters, Setters)]
 pub struct User {
     #[getset(get = "pub")]
@@ -15,6 +17,8 @@ pub struct User {
     user_name: Option<String>,
     #[getset(get = "pub", set = "pub")]
     display_name: String,
+    #[getset(get = "pub", set = "pub")]
+    rating: Rating,
     #[getset(get = "pub", set = "pub")]
     xp: u32,
     #[getset(get = "pub", set = "pub")]
@@ -34,6 +38,7 @@ impl User {
         auth_id: Option<String>,
         user_name: Option<String>,
         display_name: String,
+        rating: Rating,
         xp: u32,
         credits: u32,
         is_admin: bool,
@@ -46,6 +51,7 @@ impl User {
             auth_id,
             user_name,
             display_name,
+            rating,
             xp,
             credits,
             is_admin,

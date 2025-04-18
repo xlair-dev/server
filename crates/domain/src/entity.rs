@@ -3,6 +3,7 @@ pub mod difficulty;
 pub mod genre;
 pub mod level;
 pub mod music;
+pub mod rating;
 pub mod record;
 pub mod sheet;
 pub mod user;
