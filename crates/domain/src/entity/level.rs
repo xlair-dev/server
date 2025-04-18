@@ -11,6 +11,20 @@ pub enum LevelError {
     InvalidValue,
 }
 
+impl Level {
+    pub fn new(integer: u32, decimal: u32) -> Result<Self, LevelError> {
+        if integer == 0 || !(0..10).contains(&decimal) {
+            return Err(LevelError::InvalidValue);
+        }
+
+        Ok(Level(integer, decimal))
+    }
+
+    pub fn value(&self) -> f64 {
+        self.0 as f64 + self.1 as f64 / 10.0
+    }
+}
+
 impl TryFrom<(u32, u32)> for Level {
     type Error = LevelError;
 
