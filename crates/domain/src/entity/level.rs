@@ -29,11 +29,7 @@ impl TryFrom<(u32, u32)> for Level {
     type Error = LevelError;
 
     fn try_from(value: (u32, u32)) -> Result<Self, Self::Error> {
-        if value.0 == 0 || !(0..10).contains(&value.1) {
-            return Err(LevelError::InvalidValue);
-        }
-
-        Ok(Level(value.0, value.1))
+        Level::new(value.0, value.1)
     }
 }
 
