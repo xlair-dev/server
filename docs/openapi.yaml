@@ -108,8 +108,8 @@ paths:
     post:
       tags:
         - app
-      summary: ユーザーのプレイデータを更新
-      description: ゲーム終了時にユーザーのプレイデータを更新する
+      summary: ユーザーのプレイデータを送信
+      description: スコアの更新の有無に関わらず、ゲーム終了時にユーザーのプレイデータを送信する
       security:
         - appApiKey: []
       parameters:
@@ -125,7 +125,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: "#/components/schemas/record"
+                $ref: "#/components/schemas/recordRequest"
       responses:
         "200":
           description: success
@@ -219,6 +219,26 @@ components:
           type: string
           format: date-time
           description: ユーザーの登録日時
+    recordRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: ユーザーのID
+        sheetId:
+          type: string
+          description: 譜面のID
+        score:
+          type: integer
+          description: ハイスコア
+        clearType:
+          type: string
+          enum:
+            - failed
+            - clear
+            - fullcombo
+            - perfect
+          description: クリアタイプ
     record:
       type: object
       properties:
