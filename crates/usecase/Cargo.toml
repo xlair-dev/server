@@ -1,11 +1,9 @@
 [package]
-name = "domain"
+name = "usecase"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-getset.workspace = true
-chrono.workspace = true
+domain = { path = "../domain" }
 anyhow.workspace = true
 thiserror.workspace = true
-xid.workspace = true
