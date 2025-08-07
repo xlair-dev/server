@@ -35,6 +35,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/userData"
+        "400":
+          description: Bad request - Invalid input data
+        "401":
+          description: Unauthorized - Invalid API key
+        "409":
+          description: Conflict - User with this card ID already exists
+        "500":
+          description: Internal server error
     get:
       tags:
         - app
@@ -56,6 +64,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/userData"
+        "400":
+          description: Bad request - Missing or invalid card ID
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User with specified card ID not found
+        "500":
+          description: Internal server error
   /users/{userId}/credits/increment:
     post:
       tags:
@@ -82,6 +98,12 @@ paths:
                   credits:
                     type: integer
                     description: 更新後のクレジット数
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User not found
+        "500":
+          description: Internal server error
   /users/{userId}/records:
     get:
       tags:
@@ -106,6 +128,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/record"
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User not found
+        "500":
+          description: Internal server error
     post:
       tags:
         - app
@@ -136,6 +164,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/record"
+        "400":
+          description: Bad request - Invalid input data
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User or sheet not found
+        "500":
+          description: Internal server error
   /sync:
     get:
       tags:
@@ -153,6 +189,10 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/musicWithSheets"
+        "401":
+          description: Unauthorized - Invalid API key
+        "500":
+          description: Internal server error
 components:
   securitySchemes:
     userAuth:
