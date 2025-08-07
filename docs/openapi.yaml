@@ -29,8 +29,8 @@ paths:
             schema:
               $ref: "#/components/schemas/userRegister"
       responses:
-        "200":
-          description: success
+        "201":
+          description: User created successfully
           content:
             application/json:
               schema:
@@ -128,8 +128,8 @@ paths:
               items:
                 $ref: "#/components/schemas/recordRequest"
       responses:
-        "200":
-          description: success
+        "201":
+          description: Records created/updated successfully
           content:
             application/json:
               schema:
