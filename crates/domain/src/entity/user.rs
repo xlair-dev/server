@@ -58,4 +58,20 @@ impl User {
             created_at,
         }
     }
+
+    pub fn new_temporary(card: String, display_name: String) -> Self {
+        Self {
+            id: xid::new().to_string(),
+            access_code: String::new(),
+            card,
+            auth_id: None,
+            user_name: None,
+            display_name,
+            rating: Rating::default(),
+            xp: 0,
+            credits: 0,
+            is_admin: false,
+            created_at: chrono::Utc::now().naive_utc(),
+        }
+    }
 }

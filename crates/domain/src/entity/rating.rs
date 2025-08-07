@@ -10,3 +10,9 @@ impl Rating {
         self.0
     }
 }
+
+impl Default for Rating {
+    fn default() -> Self {
+        Self(0.0)
+    }
+}
