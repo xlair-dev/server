@@ -1,0 +1,415 @@
+openapi: "3.0.3"
+info:
+  title: XLAIR API
+  description: ""
+  license:
+    name: ""
+  version: "1.0.0"
+tags:
+  - name: app
+    description: XLAIR の筐体
+  - name: web
+    description: xlair.dev
+  - name: admin
+    description: 管理用/デバッグ用
+servers:
+  - url: https://api.xlair.dev/v1
+paths:
+  /users:
+    post:
+      tags:
+        - app
+      summary: ユーザー登録
+      description: カードIDで筐体に新規ログインした時に呼ぶ
+      security:
+        - appApiKey: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/userRegister"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userData"
+        "400":
+          description: Bad request - Invalid input data
+        "401":
+          description: Unauthorized - Invalid API key
+        "409":
+          description: Conflict - User with this card ID already exists
+        "500":
+          description: Internal server error
+    get:
+      tags:
+        - app
+      summary: カードIDからユーザー情報を取得
+      description: カードIDで筐体に通常ログインした時に呼ぶ
+      security:
+        - appApiKey: []
+      parameters:
+        - name: card
+          in: query
+          description: カードID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userData"
+        "400":
+          description: Bad request - Missing or invalid card ID
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User with specified card ID not found
+        "500":
+          description: Internal server error
+  /users/{userId}/credits/increment:
+    post:
+      tags:
+        - app
+      summary: ユーザーのクレジット数を更新
+      description: ユーザーのクレジット数を1増やす。ゲーム開始時に呼ぶ
+      security:
+        - appApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          description: ユーザーのID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  credits:
+                    type: integer
+                    description: 更新後のクレジット数
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User not found
+        "500":
+          description: Internal server error
+  /users/{userId}/records:
+    get:
+      tags:
+        - app
+      summary: ユーザーのプレイデータを取得
+      description: ゲーム開始時にユーザーのプレイデータを一括取得する
+      security:
+        - appApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          description: ユーザーのID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/record"
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User not found
+        "500":
+          description: Internal server error
+    post:
+      tags:
+        - app
+      summary: ユーザーのプレイデータを送信
+      description: スコアの更新の有無に関わらず、ゲーム終了時にユーザーのプレイデータを送信する
+      security:
+        - appApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          description: ユーザーのID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/recordRequest"
+      responses:
+        "201":
+          description: Records created/updated successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/record"
+        "400":
+          description: Bad request - Invalid input data
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User or sheet not found
+        "500":
+          description: Internal server error
+  /sync:
+    get:
+      tags:
+        - app
+      summary: 全曲・全譜面のメタデータを取得
+      description: 同期用。筐体が起動した最初の一回しか実行しない
+      security:
+        - appApiKey: []
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/musicWithSheets"
+        "401":
+          description: Unauthorized - Invalid API key
+        "500":
+          description: Internal server error
+components:
+  securitySchemes:
+    userAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: xlair.dev で利用する、基本的に read-only の認証トークン
+    appApiKey:
+      type: apiKey
+      name: XLAIR-API-Key
+      in: header
+      description: XLAIR の筐体が利用する API キー。userId とペアで利用する
+    adminApiKey:
+      type: apiKey
+      name: XLAIR-Admin-Key
+      in: header
+      description: 管理者用の API キー。デバッグ用。基本的には利用しない
+  schemas:
+    userRegister:
+      type: object
+      properties:
+        card:
+          type: string
+          description: カードID
+        displayName:
+          type: string
+          description: ユーザーの表示名
+      required:
+        - card
+        - displayName
+    userData:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ユーザーのID
+        accessCode:
+          type: string
+          description: ユーザーのアクセスコード
+        card:
+          type: string
+          description: Felica の IDm
+        authId:
+          type: string
+          nullable: true
+          description: ユーザーの 認証 ID
+        userName:
+          type: string
+          nullable: true
+          description: xlair.dev のユーザー名
+        displayName:
+          type: string
+          description: ユーザーの表示名
+        rating:
+          type: number
+          format: float
+          description: ユーザーのレーティング
+        xp:
+          type: integer
+          description: ユーザーの経験値
+        credits:
+          type: integer
+          description: ユーザーの総クレジット数
+        isAdmin:
+          type: boolean
+          description: ユーザーが管理者かどうかを表すフラグ
+        createdAt:
+          type: string
+          format: date-time
+          description: ユーザーの登録日時
+      required:
+        - id
+        - accessCode
+        - card
+        - displayName
+        - rating
+        - xp
+        - credits
+        - createdAt
+    recordRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: ユーザーのID
+        sheetId:
+          type: string
+          description: 譜面のID
+        score:
+          type: integer
+          description: ハイスコア
+        clearType:
+          type: string
+          enum:
+            - failed
+            - clear
+            - fullcombo
+            - perfect
+          description: クリアタイプ
+      required:
+        - userId
+        - sheetId
+        - score
+        - clearType
+    record:
+      type: object
+      properties:
+        id:
+          type: string
+          description: レコードのID
+        userId:
+          type: string
+          description: ユーザーのID
+        sheetId:
+          type: string
+          description: 譜面のID
+        score:
+          type: integer
+          description: ハイスコア
+        clearType:
+          type: string
+          enum:
+            - failed
+            - clear
+            - fullcombo
+            - perfect
+          description: クリアタイプ
+        playCount:
+          type: integer
+          description: プレイ回数
+        updatedAt:
+          type: string
+          format: date-time
+          description: レコードの更新日時
+      required:
+        - id
+        - userId
+        - sheetId
+        - score
+        - clearType
+        - playCount
+        - updatedAt
+    music:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 楽曲のID
+        title:
+          type: string
+          description: タイトル
+        artist:
+          type: string
+          description: アーティスト名
+        bpm:
+          type: number
+          format: float
+          description: BPM
+        genre:
+          type: string
+          description: ジャンル
+        jacket:
+          type: string
+          description: ジャケット画像。プロジェクトのルートからの相対パス、または xlair.dev/public/ からの絶対パス
+        registrationDate:
+          type: string
+          format: date-time
+          description: 楽曲追加日
+        isTest:
+          type: boolean
+          description: テスト楽曲かどうか
+      required:
+        - id
+        - title
+        - artist
+        - bpm
+        - genre
+        - jacket
+        - registrationDate
+        - isTest
+    sheet:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 譜面のID
+        musicId:
+          type: string
+          description: 楽曲のID
+        difficulty:
+          type: string
+          enum:
+            - easy
+            - normal
+            - hard
+          description: 難易度の分類
+        level:
+          type: number
+          description: レベル
+        notesDesigner:
+          type: string
+          description: 譜面のノーツデザイナー
+      required:
+        - id
+        - musicId
+        - difficulty
+        - level
+        - notesDesigner
+    musicWithSheets:
+      type: object
+      properties:
+        music:
+          $ref: "#/components/schemas/music"
+        sheets:
+          type: array
+          items:
+            $ref: "#/components/schemas/sheet"
+      required:
+        - music
+        - sheets
