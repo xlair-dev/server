@@ -1,0 +1,11 @@
+[package]
+name = "presentation"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+domain = { path = "../domain" }
+usecase = { path = "../usecase" }
+anyhow.workspace = true
+thiserror.workspace = true
+axum.workspace = true
