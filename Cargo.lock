@@ -537,6 +537,8 @@ dependencies = [
  "anyhow",
  "axum",
  "domain",
+ "serde",
+ "serde_json",
  "thiserror 2.0.11",
  "usecase",
 ]
@@ -877,6 +879,7 @@ name = "usecase"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "domain",
  "thiserror 2.0.11",
 ]
