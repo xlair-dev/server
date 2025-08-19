@@ -12,12 +12,12 @@ pub enum UserUsecaseError {
     InternalError(#[from] anyhow::Error),
 }
 
-pub struct UserUsecase<R: Repositories> {
-    repositories: R,
+pub struct UserUsecase {
+    repositories: Box<dyn Repositories>,
 }
 
-impl<R: Repositories> UserUsecase<R> {
-    pub fn new(repositories: R) -> Self {
+impl UserUsecase {
+    pub fn new(repositories: Box<dyn Repositories>) -> Self {
         Self { repositories }
     }
 }
