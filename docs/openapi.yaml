@@ -12,6 +12,8 @@ tags:
     description: xlair.dev
   - name: admin
     description: 管理用/デバッグ用
+  - name: common
+    description: 共通の API
 servers:
   - url: https://api.xlair.dev/v1
 paths:
@@ -191,6 +193,21 @@ paths:
                   $ref: "#/components/schemas/musicWithSheets"
         "401":
           description: Unauthorized - Invalid API key
+        "500":
+          description: Internal server error
+  /health:
+    get:
+      tags:
+        - common
+      summary: ヘルスチェック
+      description: API サーバーの稼働状況を確認する
+      responses:
+        "200":
+          description: API サーバーが正常に稼働中
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/healthCheck"
         "500":
           description: Internal server error
 components:
@@ -413,3 +430,17 @@ components:
       required:
         - music
         - sheets
+    healthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+          description: API サーバーの稼働状況
+        timestamp:
+          type: string
+          format: date-time
+          description: レスポンス生成時刻
+      required:
+        - status
+        - timestamp
