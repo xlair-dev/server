@@ -1,3 +1,5 @@
+pub mod convert;
+
 pub struct AppError {
     pub status_code: axum::http::StatusCode,
     pub message: String,
