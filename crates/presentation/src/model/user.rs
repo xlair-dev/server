@@ -34,6 +34,7 @@ pub struct UserDataResponse {
     pub created_at: String,
 }
 
+#[allow(clippy::too_many_arguments)]
 impl UserDataResponse {
     pub fn new(
         id: String,
