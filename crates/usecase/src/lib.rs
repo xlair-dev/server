@@ -1,5 +1,16 @@
+use std::sync::Arc;
+
 pub mod user;
 
-pub struct Usecases<R: domain::repository::Repositories> {
-    pub user: user::UserUsecase<R>,
+#[derive(Clone)]
+pub struct Usecases {
+    pub user: user::UserUsecase,
+}
+
+impl Usecases {
+    pub fn new(repositories: Arc<dyn domain::repository::Repositories>) -> Self {
+        Self {
+            user: user::UserUsecase::new(repositories),
+        }
+    }
 }
