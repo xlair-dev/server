@@ -1,4 +1,4 @@
-use axum::{routing::post, Router};
+use axum::{routing::get, routing::post, Router};
 
 use crate::state::State;
 
@@ -6,7 +6,7 @@ pub mod user;
 
 pub fn create_app(state: State) -> Router {
     let users = Router::new().route("/", post(user::handle_post));
-    let health = Router::new().route("/", post(|| async { "OK" }));
+    let health = Router::new().route("/", get(|| async { "OK" }));
 
     // TODO: Add auth middleware
     let private_routes = Router::new().nest("/users", users);
