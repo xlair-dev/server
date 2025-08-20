@@ -1,3 +1,4 @@
+use mockall::automock;
 use thiserror::Error;
 
 use crate::entity::user::User;
@@ -10,6 +11,7 @@ pub enum UserRepositoryError {
     InternalError(#[from] anyhow::Error),
 }
 
-pub trait UserRepository {
+#[automock]
+pub trait UserRepository: Send + Sync {
     fn create(&self, user: User) -> Result<User, UserRepositoryError>;
 }
