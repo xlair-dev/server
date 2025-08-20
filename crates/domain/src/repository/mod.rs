@@ -14,8 +14,11 @@ impl Repositories {
     }
 
     pub fn new_mock() -> Self {
+        // TODO: 以下のような mock は、テスト用に分離する
+        let mut mock = MockUserRepository::default();
+        mock.expect_create().returning(Ok);
         Self {
-            user: Box::new(MockUserRepository::default()),
+            user: Box::new(mock),
         }
     }
 }
