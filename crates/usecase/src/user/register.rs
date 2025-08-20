@@ -8,7 +8,7 @@ use crate::user::{
 impl UserUsecase {
     pub fn register(&self, raw_user: UserRegisterDto) -> Result<UserDataDto, UserUsecaseError> {
         let user = User::new_temporary(raw_user.card, raw_user.display_name);
-        let user = self.repositories.user().create(user)?;
+        let user = self.repositories.user.create(user)?;
         Ok(user.into())
     }
 }

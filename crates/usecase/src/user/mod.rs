@@ -16,11 +16,11 @@ pub enum UserUsecaseError {
 
 #[derive(Clone)]
 pub struct UserUsecase {
-    repositories: Arc<dyn Repositories>,
+    repositories: Arc<Repositories>,
 }
 
 impl UserUsecase {
-    pub fn new(repositories: Arc<dyn Repositories>) -> Self {
+    pub fn new(repositories: Arc<Repositories>) -> Self {
         Self { repositories }
     }
 }
