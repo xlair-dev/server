@@ -1,18 +1,26 @@
-use chrono::NaiveDateTime;
-use domain::entity::user::User;
+use serde::{Deserialize, Serialize};
+use usecase::user::dto::{UserDataDto, UserRegisterDto};
 
-pub struct UserRegisterDto {
+#[derive(Deserialize)]
+pub struct RegisterUserRequest {
     pub card: String,
     pub display_name: String,
 }
 
-impl UserRegisterDto {
+impl RegisterUserRequest {
     pub fn new(card: String, display_name: String) -> Self {
         Self { card, display_name }
     }
 }
 
-pub struct UserDataDto {
+impl From<RegisterUserRequest> for UserRegisterDto {
+    fn from(request: RegisterUserRequest) -> Self {
+        UserRegisterDto::new(request.card, request.display_name)
+    }
+}
+
+#[derive(Serialize)]
+pub struct UserDataResponse {
     pub id: String,
     pub access_code: String,
     pub card: String,
@@ -23,11 +31,11 @@ pub struct UserDataDto {
     pub xp: u32,
     pub credits: u32,
     pub is_admin: bool,
-    pub created_at: NaiveDateTime,
+    pub created_at: String,
 }
 
 #[allow(clippy::too_many_arguments)]
-impl UserDataDto {
+impl UserDataResponse {
     pub fn new(
         id: String,
         access_code: String,
@@ -39,7 +47,7 @@ impl UserDataDto {
         xp: u32,
         credits: u32,
         is_admin: bool,
-        created_at: NaiveDateTime,
+        created_at: String,
     ) -> Self {
         Self {
             id,
@@ -57,20 +65,20 @@ impl UserDataDto {
     }
 }
 
-impl From<User> for UserDataDto {
-    fn from(user: User) -> Self {
+impl From<UserDataDto> for UserDataResponse {
+    fn from(user_data: UserDataDto) -> Self {
         Self::new(
-            user.id().to_owned(),
-            user.access_code().to_owned(),
-            user.card().to_owned(),
-            user.auth_id().clone(),
-            user.user_name().clone(),
-            user.display_name().clone(),
-            user.rating().value() as f32,
-            user.xp().to_owned(),
-            user.credits().to_owned(),
-            user.is_admin().to_owned(),
-            user.created_at().to_owned(),
+            user_data.id,
+            user_data.access_code,
+            user_data.card,
+            user_data.auth_id,
+            user_data.user_name,
+            user_data.display_name,
+            user_data.rating,
+            user_data.xp,
+            user_data.credits,
+            user_data.is_admin,
+            user_data.created_at.to_string(),
         )
     }
 }

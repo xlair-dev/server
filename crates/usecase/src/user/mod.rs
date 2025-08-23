@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use domain::repository::{user::UserRepositoryError, Repositories};
 use thiserror::Error;
 
@@ -12,12 +14,13 @@ pub enum UserUsecaseError {
     InternalError(#[from] anyhow::Error),
 }
 
-pub struct UserUsecase<R: Repositories> {
-    repositories: R,
+#[derive(Clone)]
+pub struct UserUsecase {
+    repositories: Arc<Repositories>,
 }
 
-impl<R: Repositories> UserUsecase<R> {
-    pub fn new(repositories: R) -> Self {
+impl UserUsecase {
+    pub fn new(repositories: Arc<Repositories>) -> Self {
         Self { repositories }
     }
 }
