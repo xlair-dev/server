@@ -1,5 +1,10 @@
 [workspace]
-members = ["crates/domain", "crates/usecase", "crates/presentation"]
+members = [
+    "crates/domain",
+    "crates/usecase",
+    "crates/presentation",
+    "crates/infrastructure",
+]
 
 [workspace.dependencies]
 getset = "0.1.4"
