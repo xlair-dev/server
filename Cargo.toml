@@ -4,6 +4,7 @@ members = [
     "crates/usecase",
     "crates/presentation",
     "crates/infrastructure",
+    "crates/migration",
 ]
 
 [workspace.dependencies]
@@ -28,12 +29,11 @@ sea-orm = { version = "1.1.16", features = [
     "with-chrono",
     "with-uuid",
 ] }
+async-std = "1.13"
 sea-orm-migration = { version = "1.1.0", features = [
     # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
     "sqlx-postgres",
-    "runtime-tokio-rustls",
-    "macros",
-    "mock",
+    "runtime-async-std-rustls",
     "with-chrono",
     "with-uuid",
 ] }
