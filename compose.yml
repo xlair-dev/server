@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres:16
+    container_name: xlair-dev-db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT}:5432"
