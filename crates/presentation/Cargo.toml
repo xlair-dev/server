@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-domain = { path = "../domain" }
-usecase = { path = "../usecase" }
+domain.workspace = true
+usecase.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
