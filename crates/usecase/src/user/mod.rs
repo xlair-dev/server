@@ -14,13 +14,20 @@ pub enum UserUsecaseError {
     InternalError(#[from] anyhow::Error),
 }
 
-#[derive(Clone)]
-pub struct UserUsecase {
-    repositories: Arc<Repositories>,
+pub struct UserUsecase<R: Repositories> {
+    repositories: Arc<R>,
 }
 
-impl UserUsecase {
-    pub fn new(repositories: Arc<Repositories>) -> Self {
+impl<R: Repositories> UserUsecase<R> {
+    pub fn new(repositories: Arc<R>) -> Self {
         Self { repositories }
+    }
+}
+
+impl<R: Repositories> Clone for UserUsecase<R> {
+    fn clone(&self) -> Self {
+        Self {
+            repositories: Arc::clone(&self.repositories),
+        }
     }
 }

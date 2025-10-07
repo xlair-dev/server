@@ -1,16 +1,15 @@
-use std::sync::Arc;
 use tokio::net::TcpListener;
 
-use domain::repository::Repositories;
+use domain::repository::MockRepositories;
 use presentation::{config::Config, env, route::create_app, state::State};
-use usecase::Usecases;
 
 #[tokio::main]
 async fn main() {
-    let repositories = Repositories::new_mock();
-    let usecases = Usecases::new(Arc::new(repositories));
+    let repositories = MockRepositories {
+        user: domain::repository::user::MockUserRepository::new(),
+    };
     let config = Config::default();
-    let state = State::new(usecases, config);
+    let state = State::new(config, repositories);
 
     let app = create_app(state);
 
