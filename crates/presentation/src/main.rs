@@ -1,13 +1,14 @@
 use tokio::net::TcpListener;
 
-use domain::repository::MockRepositories;
 use presentation::{config::Config, env, route::create_app, state::State};
 
 #[tokio::main]
 async fn main() {
-    let repositories = MockRepositories {
-        user: domain::repository::user::MockUserRepository::new(),
-    };
+    dotenvy::dotenv_override().expect("Failed to load .env file");
+
+    let postgres_url = env::postgres_url();
+    let repositories = infrastructure::RepositoriesImpl::new_default(&postgres_url).await;
+
     let config = Config::default();
     let state = State::new(config, repositories);
 

@@ -4,7 +4,7 @@ use crate::config::Config;
 
 // TODO: Use real implementations when available
 #[cfg(not(test))]
-pub type RepositoriesImpl = domain::repository::MockRepositories;
+pub type RepositoriesImpl = infrastructure::RepositoriesImpl;
 
 #[cfg(test)]
 pub type RepositoriesImpl = domain::repository::MockRepositories;
