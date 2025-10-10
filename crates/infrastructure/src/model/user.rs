@@ -11,8 +11,6 @@ use sea_orm::ActiveValue;
 impl From<User> for UserModel {
     fn from(domain_user: User) -> Self {
         let id = Uuid::parse_str(domain_user.id()).unwrap_or_else(|_| Uuid::nil());
-        let created_at = DateTime::<Utc>::from_utc(*domain_user.created_at(), Utc).into();
-
         Self {
             id,
             access_code: domain_user.access_code().to_owned(),
@@ -24,7 +22,7 @@ impl From<User> for UserModel {
             xp: domain_user.xp().to_owned() as i64,
             credits: domain_user.credits().to_owned() as i64,
             is_admin: *domain_user.is_admin(),
-            created_at,
+            created_at: DateTime::<Utc>::from_utc(*domain_user.created_at(), Utc).into(),
             updated_at: DateTime::<Utc>::from_utc(Utc::now().naive_utc(), Utc).into(),
         }
     }
@@ -60,8 +58,11 @@ impl From<User> for UserActiveModel {
             ActiveValue::Set(Uuid::parse_str(domain_user.id()).unwrap_or_else(|_| Uuid::nil()))
         };
 
-        let created_at_av =
-            ActiveValue::Set(DateTime::<Utc>::from_utc(*domain_user.created_at(), Utc).into());
+        let db_user_created_at = if domain_user.id().is_empty() {
+            ActiveValue::NotSet
+        } else {
+            ActiveValue::Set(DateTime::<Utc>::from_utc(*domain_user.created_at(), Utc).into())
+        };
 
         UserActiveModel {
             id: db_user_id,
@@ -74,7 +75,7 @@ impl From<User> for UserActiveModel {
             xp: ActiveValue::Set(domain_user.xp().to_owned() as i64),
             credits: ActiveValue::Set(domain_user.credits().to_owned() as i64),
             is_admin: ActiveValue::Set(*domain_user.is_admin()),
-            created_at: created_at_av,
+            created_at: db_user_created_at,
             updated_at: ActiveValue::NotSet,
         }
     }

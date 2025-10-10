@@ -19,6 +19,9 @@ impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         let db = manager.get_connection();
 
+        db.execute_unprepared("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";")
+            .await?;
+
         db.execute_unprepared(UPDATED_AT_FUNCTION).await?;
 
         manager
@@ -26,7 +29,13 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Users::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(Users::Id).uuid().not_null().primary_key())
+                    .col(
+                        ColumnDef::new(Users::Id)
+                            .uuid()
+                            .not_null()
+                            .primary_key()
+                            .default(Expr::cust("gen_random_uuid()")),
+                    )
                     .col(
                         ColumnDef::new(Users::AccessCode)
                             .string()
@@ -110,6 +119,9 @@ impl MigrationTrait for Migration {
             "#,
         )
         .await?;
+
+        db.execute_unprepared("DROP EXTENSION IF EXISTS \"pgcrypto\";")
+            .await?;
 
         Ok(())
     }
