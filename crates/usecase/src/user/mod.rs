@@ -3,7 +3,6 @@ use std::sync::Arc;
 use domain::repository::{user::UserRepositoryError, Repositories};
 use thiserror::Error;
 
-pub mod dto;
 pub mod register;
 
 #[derive(Debug, Error)]

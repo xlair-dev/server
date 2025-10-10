@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use domain::repository::Repositories;
 
+pub mod model;
 pub mod user;
 
 pub struct Usecases<R: Repositories> {
