@@ -11,6 +11,7 @@ members = [
 domain = { path = "crates/domain" }
 usecase = { path = "crates/usecase" }
 presentation = { path = "crates/presentation" }
+infrastructure = { path = "crates/infrastructure" }
 getset = "0.1.4"
 chrono = { version = "0.4.39", features = ["serde", "clock"] }
 anyhow = "1.0.95"
@@ -20,6 +21,7 @@ axum = "0.8.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 mockall = "0.13.1"
+dotenvy = "0.15.7"
 sea-orm = { version = "1.1.16", features = [
     # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
     "sqlx-postgres",

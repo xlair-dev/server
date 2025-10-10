@@ -1966,6 +1966,8 @@ dependencies = [
  "anyhow",
  "axum",
  "domain",
+ "dotenvy",
+ "infrastructure",
  "serde",
  "serde_json",
  "thiserror",
