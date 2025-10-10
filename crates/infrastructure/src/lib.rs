@@ -1,6 +1,7 @@
 use domain::repository::Repositories;
 
 pub mod entities;
+pub mod model;
 pub mod user;
 
 pub struct RepositoriesImpl {

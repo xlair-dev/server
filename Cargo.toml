@@ -12,7 +12,7 @@ domain = { path = "crates/domain" }
 usecase = { path = "crates/usecase" }
 presentation = { path = "crates/presentation" }
 getset = "0.1.4"
-chrono = "0.4.39"
+chrono = { version = "0.4.39", features = ["serde", "clock"] }
 anyhow = "1.0.95"
 thiserror = "2.0.11"
 tokio = { version = "1.47.1", features = ["full"] }

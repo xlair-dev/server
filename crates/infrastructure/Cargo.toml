@@ -6,3 +6,5 @@ edition = "2021"
 [dependencies]
 domain.workspace = true
 sea-orm.workspace = true
+anyhow.workspace = true
+chrono.workspace = true

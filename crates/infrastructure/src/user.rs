@@ -2,7 +2,9 @@ use domain::{
     entity::user::User,
     repository::user::{UserRepository, UserRepositoryError},
 };
-use sea_orm::DbConn;
+use sea_orm::{ActiveModelTrait, DbConn};
+
+use crate::entities;
 
 pub struct UserRepositoryImpl {
     db: DbConn,
@@ -15,8 +17,14 @@ impl UserRepositoryImpl {
 }
 
 impl UserRepository for UserRepositoryImpl {
-    fn create(&self, user: User) -> Result<User, UserRepositoryError> {
-        // TODO: implement
-        unimplemented!()
+    async fn create(&self, user: User) -> Result<User, UserRepositoryError> {
+        let db_user: entities::users::ActiveModel = user.into();
+
+        let user = db_user
+            .insert(&self.db)
+            .await
+            .map_err(anyhow::Error::from)?;
+
+        Ok(user.into())
     }
 }
