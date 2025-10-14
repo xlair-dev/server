@@ -17,3 +17,7 @@ target/
 #.idea/
 
 .env
+
+# Coding agents
+
+AGENTS.md
