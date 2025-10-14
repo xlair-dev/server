@@ -8,5 +8,4 @@ getset.workspace = true
 chrono.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
-xid.workspace = true
 mockall.workspace = true

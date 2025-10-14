@@ -2,17 +2,25 @@ use std::sync::Arc;
 
 use domain::repository::Repositories;
 
+pub mod model;
 pub mod user;
 
-#[derive(Clone)]
-pub struct Usecases {
-    pub user: user::UserUsecase,
+pub struct Usecases<R: Repositories> {
+    pub user: user::UserUsecase<R>,
 }
 
-impl Usecases {
-    pub fn new(repositories: Arc<Repositories>) -> Self {
+impl<R: Repositories> Usecases<R> {
+    pub fn new(repositories: Arc<R>) -> Self {
         Self {
             user: user::UserUsecase::new(repositories),
+        }
+    }
+}
+
+impl<R: Repositories> Clone for Usecases<R> {
+    fn clone(&self) -> Self {
+        Self {
+            user: self.user.clone(),
         }
     }
 }

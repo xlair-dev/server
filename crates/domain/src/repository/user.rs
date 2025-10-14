@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use mockall::automock;
 use thiserror::Error;
 
@@ -13,5 +15,5 @@ pub enum UserRepositoryError {
 
 #[automock]
 pub trait UserRepository: Send + Sync {
-    fn create(&self, user: User) -> Result<User, UserRepositoryError>;
+    fn create(&self, user: User) -> impl Future<Output = Result<User, UserRepositoryError>> + Send;
 }

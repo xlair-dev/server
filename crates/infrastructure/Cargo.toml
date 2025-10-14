@@ -1,10 +1,10 @@
 [package]
-name = "usecase"
+name = "infrastructure"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 domain.workspace = true
+sea-orm.workspace = true
 anyhow.workspace = true
-thiserror.workspace = true
 chrono.workspace = true

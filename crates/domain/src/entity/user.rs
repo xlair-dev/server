@@ -61,7 +61,7 @@ impl User {
 
     pub fn new_temporary(card: String, display_name: String) -> Self {
         Self {
-            id: xid::new().to_string(),
+            id: "".to_string(),
             access_code: String::new(), // TODO: アクセスコードを生成するロジックを追加
             card,
             auth_id: None,

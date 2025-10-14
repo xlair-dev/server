@@ -1,16 +1,16 @@
-use std::sync::Arc;
 use tokio::net::TcpListener;
 
-use domain::repository::Repositories;
 use presentation::{config::Config, env, route::create_app, state::State};
-use usecase::Usecases;
 
 #[tokio::main]
 async fn main() {
-    let repositories = Repositories::new_mock();
-    let usecases = Usecases::new(Arc::new(repositories));
+    dotenvy::dotenv_override().expect("Failed to load .env file");
+
+    let postgres_url = env::postgres_url();
+    let repositories = infrastructure::RepositoriesImpl::new_default(&postgres_url).await;
+
     let config = Config::default();
-    let state = State::new(usecases, config);
+    let state = State::new(config, repositories);
 
     let app = create_app(state);
 

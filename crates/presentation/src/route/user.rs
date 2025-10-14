@@ -11,6 +11,6 @@ pub async fn handle_post(
     State(state): State<crate::state::State>,
     Json(req): Json<RegisterUserRequest>,
 ) -> AppResult<(StatusCode, Json<UserDataResponse>)> {
-    let user_data = state.usecases.user.register(req.into())?;
+    let user_data = state.usecases.user.register(req.into()).await?;
     Ok((StatusCode::CREATED, Json(user_data.into())))
 }

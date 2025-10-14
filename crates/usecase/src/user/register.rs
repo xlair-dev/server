@@ -1,14 +1,20 @@
-use domain::entity::user::User;
-
-use crate::user::{
-    dto::{UserDataDto, UserRegisterDto},
-    UserUsecase, UserUsecaseError,
+use domain::{
+    entity::user::User,
+    repository::{user::UserRepository, Repositories},
 };
 
-impl UserUsecase {
-    pub fn register(&self, raw_user: UserRegisterDto) -> Result<UserDataDto, UserUsecaseError> {
+use crate::{
+    model::user::{UserDataDto, UserRegisterDto},
+    user::{UserUsecase, UserUsecaseError},
+};
+
+impl<R: Repositories> UserUsecase<R> {
+    pub async fn register(
+        &self,
+        raw_user: UserRegisterDto,
+    ) -> Result<UserDataDto, UserUsecaseError> {
         let user = User::new_temporary(raw_user.card, raw_user.display_name);
-        let user = self.repositories.user.create(user)?;
+        let user = self.repositories.user().create(user).await?;
         Ok(user.into())
     }
 }

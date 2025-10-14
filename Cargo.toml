@@ -1,14 +1,41 @@
 [workspace]
-members = ["crates/domain", "crates/usecase", "crates/presentation"]
+members = [
+    "crates/domain",
+    "crates/usecase",
+    "crates/presentation",
+    "crates/infrastructure",
+    "crates/migration",
+]
 
 [workspace.dependencies]
+domain = { path = "crates/domain" }
+usecase = { path = "crates/usecase" }
+presentation = { path = "crates/presentation" }
+infrastructure = { path = "crates/infrastructure" }
 getset = "0.1.4"
-chrono = "0.4.39"
+chrono = { version = "0.4.39", features = ["serde", "clock"] }
 anyhow = "1.0.95"
 thiserror = "2.0.11"
-xid = "1.1.1"
 tokio = { version = "1.47.1", features = ["full"] }
 axum = "0.8.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 mockall = "0.13.1"
+dotenvy = "0.15.7"
+sea-orm = { version = "1.1.16", features = [
+    # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "macros",
+    "mock",
+    "with-chrono",
+    "with-uuid",
+] }
+async-std = "1.13"
+sea-orm-migration = { version = "1.1.0", features = [
+    # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
+    "sqlx-postgres",
+    "runtime-async-std-rustls",
+    "with-chrono",
+    "with-uuid",
+] }

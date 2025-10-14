@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use usecase::user::dto::{UserDataDto, UserRegisterDto};
+use usecase::model::user::{UserDataDto, UserRegisterDto};
 
 #[derive(Deserialize)]
 pub struct RegisterUserRequest {
