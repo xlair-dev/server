@@ -13,10 +13,7 @@ impl From<User> for UserModel {
         let id = Uuid::parse_str(domain_user.id()).unwrap_or_else(|_| Uuid::nil());
         Self {
             id,
-            access_code: domain_user.access_code().to_owned(),
             card: domain_user.card().to_owned(),
-            auth_id: domain_user.auth_id().clone(),
-            user_name: domain_user.user_name().clone(),
             display_name: domain_user.display_name().to_owned(),
             rating: domain_user.rating().value() as i32,
             xp: domain_user.xp().to_owned() as i64,
@@ -35,10 +32,7 @@ impl From<UserModel> for User {
 
         Self::new(
             id,
-            db_user.access_code,
             db_user.card,
-            db_user.auth_id,
-            db_user.user_name,
             db_user.display_name,
             Rating::new(db_user.rating as f64),
             db_user.xp as u32,
@@ -66,10 +60,7 @@ impl From<User> for UserActiveModel {
 
         UserActiveModel {
             id: db_user_id,
-            access_code: ActiveValue::Set(domain_user.access_code().to_owned()),
             card: ActiveValue::Set(domain_user.card().to_owned()),
-            auth_id: ActiveValue::Set(domain_user.auth_id().clone()),
-            user_name: ActiveValue::Set(domain_user.user_name().clone()),
             display_name: ActiveValue::Set(domain_user.display_name().to_owned()),
             rating: ActiveValue::Set(domain_user.rating().value() as i32),
             xp: ActiveValue::Set(domain_user.xp().to_owned() as i64),

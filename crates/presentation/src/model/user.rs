@@ -22,10 +22,7 @@ impl From<RegisterUserRequest> for UserRegisterDto {
 #[derive(Serialize)]
 pub struct UserDataResponse {
     pub id: String,
-    pub access_code: String,
     pub card: String,
-    pub auth_id: Option<String>,
-    pub user_name: Option<String>,
     pub display_name: String,
     pub rating: f32,
     pub xp: u32,
@@ -38,10 +35,7 @@ pub struct UserDataResponse {
 impl UserDataResponse {
     pub fn new(
         id: String,
-        access_code: String,
         card: String,
-        auth_id: Option<String>,
-        user_name: Option<String>,
         display_name: String,
         rating: f32,
         xp: u32,
@@ -51,10 +45,7 @@ impl UserDataResponse {
     ) -> Self {
         Self {
             id,
-            access_code,
             card,
-            auth_id,
-            user_name,
             display_name,
             rating,
             xp,
@@ -69,10 +60,7 @@ impl From<UserDataDto> for UserDataResponse {
     fn from(user_data: UserDataDto) -> Self {
         Self::new(
             user_data.id,
-            user_data.access_code,
             user_data.card,
-            user_data.auth_id,
-            user_data.user_name,
             user_data.display_name,
             user_data.rating,
             user_data.xp,

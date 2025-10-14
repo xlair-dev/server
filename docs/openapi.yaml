@@ -246,20 +246,9 @@ components:
         id:
           type: string
           description: ユーザーのID
-        accessCode:
-          type: string
-          description: ユーザーのアクセスコード
         card:
           type: string
           description: Felica の IDm
-        authId:
-          type: string
-          nullable: true
-          description: ユーザーの 認証 ID
-        userName:
-          type: string
-          nullable: true
-          description: xlair.dev のユーザー名
         displayName:
           type: string
           description: ユーザーの表示名
@@ -282,7 +271,6 @@ components:
           description: ユーザーの登録日時
       required:
         - id
-        - accessCode
         - card
         - displayName
         - rating

@@ -8,13 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     #[sea_orm(unique)]
-    pub access_code: String,
-    #[sea_orm(unique)]
     pub card: String,
-    #[sea_orm(unique)]
-    pub auth_id: Option<String>,
-    #[sea_orm(unique)]
-    pub user_name: Option<String>,
     pub display_name: String,
     pub rating: i32,
     pub xp: i64,

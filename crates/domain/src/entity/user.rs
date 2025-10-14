@@ -8,13 +8,7 @@ pub struct User {
     #[getset(get = "pub")]
     id: String,
     #[getset(get = "pub")]
-    access_code: String,
-    #[getset(get = "pub")]
     card: String,
-    #[getset(get = "pub", set = "pub")]
-    auth_id: Option<String>,
-    #[getset(get = "pub", set = "pub")]
-    user_name: Option<String>,
     #[getset(get = "pub", set = "pub")]
     display_name: String,
     #[getset(get = "pub", set = "pub")]
@@ -33,10 +27,7 @@ pub struct User {
 impl User {
     pub fn new(
         id: String,
-        access_code: String,
         card: String,
-        auth_id: Option<String>,
-        user_name: Option<String>,
         display_name: String,
         rating: Rating,
         xp: u32,
@@ -46,10 +37,7 @@ impl User {
     ) -> Self {
         Self {
             id,
-            access_code,
             card,
-            auth_id,
-            user_name,
             display_name,
             rating,
             xp,
@@ -62,10 +50,7 @@ impl User {
     pub fn new_temporary(card: String, display_name: String) -> Self {
         Self {
             id: "".to_string(),
-            access_code: String::new(), // TODO: アクセスコードを生成するロジックを追加
             card,
-            auth_id: None,
-            user_name: None,
             display_name,
             rating: Rating::default(),
             xp: 0,
