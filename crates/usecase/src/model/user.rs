@@ -14,10 +14,7 @@ impl UserRegisterDto {
 
 pub struct UserDataDto {
     pub id: String,
-    pub access_code: String,
     pub card: String,
-    pub auth_id: Option<String>,
-    pub user_name: Option<String>,
     pub display_name: String,
     pub rating: f32,
     pub xp: u32,
@@ -30,10 +27,7 @@ pub struct UserDataDto {
 impl UserDataDto {
     pub fn new(
         id: String,
-        access_code: String,
         card: String,
-        auth_id: Option<String>,
-        user_name: Option<String>,
         display_name: String,
         rating: f32,
         xp: u32,
@@ -43,10 +37,7 @@ impl UserDataDto {
     ) -> Self {
         Self {
             id,
-            access_code,
             card,
-            auth_id,
-            user_name,
             display_name,
             rating,
             xp,
@@ -61,10 +52,7 @@ impl From<User> for UserDataDto {
     fn from(user: User) -> Self {
         Self::new(
             user.id().to_owned(),
-            user.access_code().to_owned(),
             user.card().to_owned(),
-            user.auth_id().clone(),
-            user.user_name().clone(),
             user.display_name().clone(),
             user.rating().value() as f32,
             user.xp().to_owned(),

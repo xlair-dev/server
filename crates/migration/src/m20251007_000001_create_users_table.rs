@@ -36,15 +36,7 @@ impl MigrationTrait for Migration {
                             .primary_key()
                             .default(Expr::cust("gen_random_uuid()")),
                     )
-                    .col(
-                        ColumnDef::new(Users::AccessCode)
-                            .string()
-                            .not_null()
-                            .unique_key(),
-                    )
                     .col(ColumnDef::new(Users::Card).string().not_null().unique_key())
-                    .col(ColumnDef::new(Users::AuthId).string().unique_key())
-                    .col(ColumnDef::new(Users::UserName).string().unique_key())
                     .col(ColumnDef::new(Users::DisplayName).string().not_null())
                     .col(
                         ColumnDef::new(Users::Rating)
@@ -131,10 +123,7 @@ impl MigrationTrait for Migration {
 enum Users {
     Table,
     Id,
-    AccessCode,
     Card,
-    AuthId,
-    UserName,
     DisplayName,
     Rating,
     Xp,
