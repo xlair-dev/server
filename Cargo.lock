@@ -1414,6 +1414,7 @@ dependencies = [
  "chrono",
  "domain",
  "sea-orm",
+ "tracing",
 ]
 
 [[package]]

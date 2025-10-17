@@ -23,7 +23,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-/// tracing 初期化処理。`RUST_LOG` 環境変数でフィルタ設定を上書きできる暗黙的依存があります。
+/// Initializes tracing. Implicitly depends on the `RUST_LOG` environment variable to override the filter configuration when present.
 fn init_tracing() {
     if tracing::dispatcher::has_been_set() {
         return;
