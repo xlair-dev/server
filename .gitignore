@@ -18,6 +18,3 @@ target/
 
 .env
 
-# Coding agents
-
-AGENTS.md
