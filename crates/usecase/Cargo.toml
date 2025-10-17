@@ -8,3 +8,4 @@ domain.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
 chrono.workspace = true
+tracing.workspace = true
