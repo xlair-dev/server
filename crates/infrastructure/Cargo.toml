@@ -8,3 +8,4 @@ domain.workspace = true
 sea-orm.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
+tracing.workspace = true

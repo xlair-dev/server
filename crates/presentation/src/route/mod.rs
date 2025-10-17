@@ -1,4 +1,5 @@
 use axum::{routing::get, routing::post, Router};
+use tower_http::trace::TraceLayer;
 
 use crate::state::State;
 
@@ -17,5 +18,6 @@ pub fn create_app(state: State) -> Router {
     Router::new()
         .merge(private_routes)
         .merge(public_routes)
+        .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
