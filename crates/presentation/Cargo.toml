@@ -21,3 +21,4 @@ tower-http.workspace = true
 [dev-dependencies]
 tower.workspace = true
 chrono.workspace = true
+domain = { workspace = true, features = ["test-support"] }
