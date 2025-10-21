@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use domain::repository::{user::UserRepositoryError, Repositories};
+use domain::repository::{Repositories, user::UserRepositoryError};
 use thiserror::Error;
 
 pub mod register;

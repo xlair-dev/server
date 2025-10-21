@@ -1,5 +1,5 @@
 use sea_orm_migration::prelude::*;
-use sea_query::{extension::postgres::Type, Expr, Index};
+use sea_query::{Expr, Index, extension::postgres::Type};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;

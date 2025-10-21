@@ -3,7 +3,7 @@ use domain::{
     entity::user::User,
     repository::user::{UserRepository, UserRepositoryError},
 };
-use sea_orm::{error::SqlErr, ActiveModelTrait, DbConn, DbErr};
+use sea_orm::{ActiveModelTrait, DbConn, DbErr, error::SqlErr};
 use tracing::{debug, error, info, instrument};
 
 use crate::entities;

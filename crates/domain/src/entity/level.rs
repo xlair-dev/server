@@ -42,3 +42,29 @@ impl Display for Level {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_accepts_valid_values() {
+        let level = Level::new(12, 3).expect("should construct");
+        assert!((level.value() - 12.3).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn new_rejects_invalid_pairs() {
+        assert!(matches!(Level::new(0, 3), Err(LevelError::InvalidValue)));
+        assert!(matches!(Level::new(10, 12), Err(LevelError::InvalidValue)));
+    }
+
+    #[test]
+    fn display_uses_plus_suffix_for_upper_half() {
+        let upper_half = Level::new(14, 7).expect("should construct");
+        assert_eq!(upper_half.to_string(), "14+");
+
+        let lower_half = Level::new(14, 2).expect("should construct");
+        assert_eq!(lower_half.to_string(), "14");
+    }
+}

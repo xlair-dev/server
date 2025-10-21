@@ -1,6 +1,6 @@
 use domain::{
     entity::user::User,
-    repository::{user::UserRepository, Repositories},
+    repository::{Repositories, user::UserRepository},
 };
 use tracing::{debug, info, instrument};
 
@@ -32,7 +32,7 @@ mod tests {
     use chrono::NaiveDateTime;
     use domain::{
         entity::{rating::Rating, user::User},
-        repository::{user::UserRepositoryError, MockRepositories},
+        repository::{MockRepositories, user::UserRepositoryError},
     };
     use std::sync::Arc;
 
