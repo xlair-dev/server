@@ -1,18 +1,12 @@
-#[derive(Debug)]
-pub struct Rating(f64);
+#[derive(Debug, Default)]
+pub struct Rating(u32);
 
 impl Rating {
-    pub fn new(rating: f64) -> Self {
+    pub fn new(rating: u32) -> Self {
         Self(rating)
     }
 
-    pub fn value(&self) -> f64 {
+    pub fn value(&self) -> u32 {
         self.0
-    }
-}
-
-impl Default for Rating {
-    fn default() -> Self {
-        Self(0.0)
     }
 }

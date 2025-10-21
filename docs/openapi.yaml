@@ -253,8 +253,7 @@ components:
           type: string
           description: ユーザーの表示名
         rating:
-          type: number
-          format: float
+          type: integer
           description: ユーザーのレーティング
         xp:
           type: integer
