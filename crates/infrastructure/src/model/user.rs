@@ -81,52 +81,40 @@ mod tests {
     use super::*;
     use crate::entities::users::Model as RawUserModel;
     use chrono::TimeZone;
+    use domain::testing::{
+        datetime::later_timestamp,
+        user::{USER2, USER3, created_at1},
+    };
     use sea_orm::prelude::Uuid;
 
     #[test]
     fn user_model_from_domain_sets_uuid_and_timestamps() {
-        let created_at = chrono::Utc
-            .with_ymd_and_hms(2025, 10, 21, 12, 0, 0)
-            .unwrap()
-            .naive_utc();
-        let user = User::new(
-            "550e8400-e29b-41d4-a716-446655440000".to_owned(),
-            "CARD-100".to_owned(),
-            "Alice".to_owned(),
-            Rating::new(1500),
-            200,
-            300,
-            true,
-            created_at,
-        );
+        let created_at = created_at1();
+        let user = USER2.build(created_at, true);
 
         let model: UserModel = user.into();
 
-        assert_eq!(
-            model.id,
-            Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap()
-        );
-        assert_eq!(model.card, "CARD-100");
-        assert_eq!(model.display_name, "Alice");
-        assert_eq!(model.rating, 1500);
-        assert_eq!(model.xp, 200);
-        assert_eq!(model.credits, 300);
+        assert_eq!(model.id, Uuid::parse_str(USER2.id).unwrap());
+        assert_eq!(model.card, USER2.card);
+        assert_eq!(model.display_name, USER2.display_name);
+        assert_eq!(model.rating, USER2.rating as i32);
+        assert_eq!(model.xp, USER2.xp as i64);
+        assert_eq!(model.credits, USER2.credits as i64);
         assert!(model.is_admin);
         assert_eq!(model.created_at.naive_utc(), created_at);
     }
 
     #[test]
     fn domain_user_from_model_preserves_scalar_fields() {
-        let created_at = chrono::Utc
-            .with_ymd_and_hms(2025, 10, 21, 9, 30, 0)
-            .unwrap();
+        let created_at_naive = later_timestamp();
+        let created_at = chrono::Utc.from_utc_datetime(&created_at_naive);
         let model = RawUserModel {
-            id: Uuid::parse_str("550e8400-e29b-41d4-a716-446655449999").unwrap(),
-            card: "CARD-200".to_owned(),
-            display_name: "Bob".to_owned(),
-            rating: 1800,
-            xp: 123,
-            credits: 456,
+            id: Uuid::parse_str(USER3.id).unwrap(),
+            card: USER3.card.to_owned(),
+            display_name: USER3.display_name.to_owned(),
+            rating: USER3.rating as i32,
+            xp: USER3.xp as i64,
+            credits: USER3.credits as i64,
             is_admin: false,
             created_at: created_at.into(),
             updated_at: created_at.into(),
@@ -136,18 +124,18 @@ mod tests {
 
         let model_id = model.id.to_string();
         assert_eq!(user.id(), &model_id);
-        assert_eq!(user.card(), "CARD-200");
-        assert_eq!(user.display_name(), "Bob");
-        assert_eq!(user.rating().value(), 1800);
-        assert_eq!(*user.xp(), 123);
-        assert_eq!(*user.credits(), 456);
+        assert_eq!(user.card(), USER3.card);
+        assert_eq!(user.display_name(), USER3.display_name);
+        assert_eq!(user.rating().value(), USER3.rating);
+        assert_eq!(*user.xp(), USER3.xp);
+        assert_eq!(*user.credits(), USER3.credits);
         assert!(!user.is_admin());
-        assert_eq!(*user.created_at(), created_at.naive_utc());
+        assert_eq!(*user.created_at(), created_at_naive);
     }
 
     #[test]
     fn active_model_from_temporary_user_leaves_identity_unset() {
-        let user = User::new_temporary("CARD-300".to_owned(), "Carol".to_owned());
+        let user = User::new_temporary(USER2.card.to_owned(), USER2.display_name.to_owned());
 
         let active: UserActiveModel = user.into();
 
@@ -155,13 +143,13 @@ mod tests {
         assert!(matches!(active.created_at, ActiveValue::NotSet));
 
         if let ActiveValue::Set(card) = &active.card {
-            assert_eq!(card, "CARD-300");
+            assert_eq!(card, USER2.card);
         } else {
             panic!("expected card to be set");
         }
 
         if let ActiveValue::Set(name) = &active.display_name {
-            assert_eq!(name, "Carol");
+            assert_eq!(name, USER2.display_name);
         } else {
             panic!("expected display_name to be set");
         }

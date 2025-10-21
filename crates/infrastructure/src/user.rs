@@ -58,16 +58,16 @@ fn convert_user_insert_error(err: DbErr, card: &str) -> UserRepositoryError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use domain::repository::user::UserRepositoryError;
+    use domain::{repository::user::UserRepositoryError, testing::user::USER1};
     use sea_orm::RuntimeErr;
 
     #[test]
     fn convert_user_insert_error_returns_conflict_for_record_not_inserted() {
         let error = DbErr::RecordNotInserted;
-        let result = convert_user_insert_error(error, "CARD-001");
+        let result = convert_user_insert_error(error, USER1.card);
 
         match result {
-            UserRepositoryError::CardIdAlreadyExists(card) => assert_eq!(card, "CARD-001"),
+            UserRepositoryError::CardIdAlreadyExists(card) => assert_eq!(card, USER1.card),
             _ => panic!("expected CardIdAlreadyExists"),
         }
     }
@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn convert_user_insert_error_wraps_other_errors() {
         let error = DbErr::Conn(RuntimeErr::Internal("boom".to_owned()));
-        let result = convert_user_insert_error(error, "CARD-001");
+        let result = convert_user_insert_error(error, USER1.card);
 
         match result {
             UserRepositoryError::InternalError(inner) => {

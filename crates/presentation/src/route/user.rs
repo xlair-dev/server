@@ -27,10 +27,14 @@ mod tests {
         body::{self, Body},
         http::Request,
     };
-    use chrono::NaiveDate;
+    use domain::entity::rating::Rating;
     use domain::{
-        entity::{rating::Rating, user::User},
+        entity::user::User,
         repository::{MockRepositories, user::UserRepositoryError},
+        testing::{
+            datetime::timestamp,
+            user::{USER1, USER2},
+        },
     };
     use serde_json::json;
     use tower::ServiceExt;
@@ -47,22 +51,18 @@ mod tests {
         let mut user_repo = domain::repository::user::MockUserRepository::new();
         user_repo
             .expect_create()
-            .withf(|user| user.card() == "CARD-500" && user.display_name() == "Dave")
+            .withf(|user| user.card() == USER2.card && user.display_name() == USER2.display_name)
             .returning(|_| {
                 Box::pin(async {
-                    let created_at = NaiveDate::from_ymd_opt(2025, 10, 21)
-                        .unwrap()
-                        .and_hms_opt(15, 0, 0)
-                        .unwrap();
                     Ok(User::new(
-                        "550e8400-e29b-41d4-a716-446655440000".to_owned(),
-                        "CARD-500".to_owned(),
-                        "Dave".to_owned(),
-                        Rating::new(2500),
-                        999,
-                        123,
+                        USER2.id.to_owned(),
+                        USER2.card.to_owned(),
+                        USER2.display_name.to_owned(),
+                        Rating::new(USER2.rating),
+                        USER2.xp,
+                        USER2.credits,
                         false,
-                        created_at,
+                        timestamp(2025, 10, 21, 15, 0, 0),
                     ))
                 })
             });
@@ -70,8 +70,8 @@ mod tests {
         let router = test_router(user_repo);
 
         let payload = json!({
-            "card": "CARD-500",
-            "display_name": "Dave"
+            "card": USER2.card,
+            "display_name": USER2.display_name
         });
 
         let response = router
@@ -88,12 +88,12 @@ mod tests {
 
         let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(json["id"], "550e8400-e29b-41d4-a716-446655440000");
-        assert_eq!(json["card"], "CARD-500");
-        assert_eq!(json["display_name"], "Dave");
-        assert_eq!(json["rating"], 2500);
-        assert_eq!(json["xp"], 999);
-        assert_eq!(json["credits"], 123);
+        assert_eq!(json["id"], USER2.id);
+        assert_eq!(json["card"], USER2.card);
+        assert_eq!(json["display_name"], USER2.display_name);
+        assert_eq!(json["rating"], USER2.rating);
+        assert_eq!(json["xp"], USER2.xp);
+        assert_eq!(json["credits"], USER2.credits);
         assert_eq!(json["is_admin"], false);
         assert_eq!(json["created_at"], "2025-10-21 15:00:00");
     }
@@ -104,7 +104,7 @@ mod tests {
         user_repo.expect_create().returning(|_| {
             Box::pin(async {
                 Err(UserRepositoryError::CardIdAlreadyExists(
-                    "CARD-500".to_owned(),
+                    USER2.card.to_owned(),
                 ))
             })
         });
@@ -112,8 +112,8 @@ mod tests {
         let router = test_router(user_repo);
 
         let payload = json!({
-            "card": "CARD-500",
-            "display_name": "Eve"
+            "card": USER2.card,
+            "display_name": USER1.display_name
         });
 
         let response = router
