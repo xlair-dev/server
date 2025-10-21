@@ -1,8 +1,9 @@
-use domain::entity::rating::Rating;
-use domain::entity::user::User;
-
 use chrono::{DateTime, NaiveDateTime, Utc};
 use sea_orm::prelude::Uuid;
+use std::convert::TryFrom;
+
+use domain::entity::rating::Rating;
+use domain::entity::user::User;
 
 use crate::entities::users::ActiveModel as UserActiveModel;
 use crate::entities::users::Model as UserModel;
@@ -15,7 +16,8 @@ impl From<User> for UserModel {
             id,
             card: domain_user.card().to_owned(),
             display_name: domain_user.display_name().to_owned(),
-            rating: domain_user.rating().value() as i32,
+            rating: i32::try_from(domain_user.rating().value())
+                .expect("rating exceeds database range"),
             xp: domain_user.xp().to_owned() as i64,
             credits: domain_user.credits().to_owned() as i64,
             is_admin: *domain_user.is_admin(),
@@ -34,7 +36,7 @@ impl From<UserModel> for User {
             id,
             db_user.card,
             db_user.display_name,
-            Rating::new(db_user.rating as f64),
+            Rating::new(u32::try_from(db_user.rating).expect("rating must be non-negative")),
             db_user.xp as u32,
             db_user.credits as u32,
             db_user.is_admin,
@@ -62,7 +64,10 @@ impl From<User> for UserActiveModel {
             id: db_user_id,
             card: ActiveValue::Set(domain_user.card().to_owned()),
             display_name: ActiveValue::Set(domain_user.display_name().to_owned()),
-            rating: ActiveValue::Set(domain_user.rating().value() as i32),
+            rating: ActiveValue::Set(
+                i32::try_from(domain_user.rating().value())
+                    .expect("rating exceeds database range"),
+            ),
             xp: ActiveValue::Set(domain_user.xp().to_owned() as i64),
             credits: ActiveValue::Set(domain_user.credits().to_owned() as i64),
             is_admin: ActiveValue::Set(*domain_user.is_admin()),
