@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{NaiveDateTime, TimeZone, Utc};
 use sea_orm::prelude::Uuid;
 use std::convert::TryFrom;
 
@@ -21,8 +21,8 @@ impl From<User> for UserModel {
             xp: domain_user.xp().to_owned() as i64,
             credits: domain_user.credits().to_owned() as i64,
             is_admin: *domain_user.is_admin(),
-            created_at: DateTime::<Utc>::from_utc(*domain_user.created_at(), Utc).into(),
-            updated_at: DateTime::<Utc>::from_utc(Utc::now().naive_utc(), Utc).into(),
+            created_at: Utc.from_utc_datetime(domain_user.created_at()).into(),
+            updated_at: Utc::now().into(),
         }
     }
 }
@@ -57,7 +57,7 @@ impl From<User> for UserActiveModel {
         let db_user_created_at = if domain_user.id().is_empty() {
             ActiveValue::NotSet
         } else {
-            ActiveValue::Set(DateTime::<Utc>::from_utc(*domain_user.created_at(), Utc).into())
+            ActiveValue::Set(Utc.from_utc_datetime(domain_user.created_at()).into())
         };
 
         UserActiveModel {

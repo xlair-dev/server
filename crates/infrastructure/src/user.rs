@@ -46,10 +46,10 @@ fn convert_user_insert_error(err: DbErr, card: &str) -> UserRepositoryError {
         return UserRepositoryError::CardIdAlreadyExists(card.to_owned());
     }
 
-    if let Some(sql_err) = err.sql_err() {
-        if matches!(sql_err, SqlErr::UniqueConstraintViolation(_)) {
-            return UserRepositoryError::CardIdAlreadyExists(card.to_owned());
-        }
+    if let Some(sql_err) = err.sql_err()
+        && matches!(sql_err, SqlErr::UniqueConstraintViolation(_))
+    {
+        return UserRepositoryError::CardIdAlreadyExists(card.to_owned());
     }
 
     UserRepositoryError::InternalError(AnyError::from(err))
