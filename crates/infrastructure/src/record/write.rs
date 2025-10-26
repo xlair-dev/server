@@ -1,9 +1,10 @@
-use anyhow::Error as AnyError;
 use domain::{entity::record::Record, repository::record::RecordRepositoryError};
-use sea_orm::{ActiveModelTrait, DbConn, DbErr};
-use tracing::{debug, error};
+use sea_orm::{ActiveModelTrait, DbConn};
+use tracing::error;
 
-use crate::record::adapter::{active_model_for_insert, active_model_for_update};
+use crate::record::adapter::{
+    active_model_for_insert, active_model_for_update, convert_insert_error, convert_update_error,
+};
 
 pub async fn insert_record(db: &DbConn, record: Record) -> Result<Record, RecordRepositoryError> {
     let user_id = record.user_id().to_owned();
@@ -30,25 +31,4 @@ pub async fn update_record(db: &DbConn, record: Record) -> Result<Record, Record
             Err(convert_update_error(err, &record_id))
         }
     }
-}
-
-pub fn convert_insert_error(err: DbErr, user_id: &str, sheet_id: &str) -> RecordRepositoryError {
-    let message = err.to_string();
-    if message.contains("fk_records_user") {
-        return RecordRepositoryError::UserNotFound(user_id.to_owned());
-    }
-
-    if message.contains("fk_records_sheet") {
-        return RecordRepositoryError::SheetNotFound(sheet_id.to_owned());
-    }
-
-    RecordRepositoryError::InternalError(AnyError::from(err))
-}
-
-pub fn convert_update_error(err: DbErr, record_id: &str) -> RecordRepositoryError {
-    if matches!(err, DbErr::RecordNotUpdated) {
-        debug!(record_id = %record_id, "Record not updated; underlying row may be missing");
-    }
-
-    RecordRepositoryError::InternalError(AnyError::from(err))
 }

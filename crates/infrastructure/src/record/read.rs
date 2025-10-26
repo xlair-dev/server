@@ -113,33 +113,10 @@ async fn records_with_metadata(
             RecordRepositoryError::SheetNotFound(sheet.id.to_string())
         })?;
 
-        let level = convert_level(sheet.level)?;
+        let level = crate::record::adapter::convert_level(sheet.level)?;
         let record = domain::entity::record::Record::from(record_model);
         result.push(RecordWithMetadata::new(record, level, is_test));
     }
 
     Ok(result)
-}
-
-fn convert_level(raw_level: i32) -> Result<domain::entity::level::Level, RecordRepositoryError> {
-    if raw_level < 0 {
-        error!(value = raw_level, "Level must be non-negative");
-        return Err(RecordRepositoryError::InternalError(AnyError::msg(
-            "negative level encountered",
-        )));
-    }
-
-    let integer = u32::try_from(raw_level / 10).map_err(|err| {
-        error!(error = %err, value = raw_level, "Failed to convert level integer part");
-        RecordRepositoryError::InternalError(AnyError::from(err))
-    })?;
-    let decimal = u32::try_from(raw_level % 10).map_err(|err| {
-        error!(error = %err, value = raw_level, "Failed to convert level decimal part");
-        RecordRepositoryError::InternalError(AnyError::from(err))
-    })?;
-
-    domain::entity::level::Level::new(integer, decimal).map_err(|err| {
-        error!(error = ?err, value = raw_level, "Invalid level value returned from database");
-        RecordRepositoryError::InternalError(AnyError::from(err))
-    })
 }
