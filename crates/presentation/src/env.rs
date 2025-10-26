@@ -8,16 +8,26 @@ pub fn port() -> String {
     env::var("PORT").expect("PORT must be set")
 }
 
+pub fn postgres_host() -> String {
+    env::var("POSTGRES_HOST").expect("POSTGRES_HOST must be set")
+}
+
+pub fn postgres_port() -> String {
+    env::var("POSTGRES_PORT").expect("POSTGRES_PORT must be set")
+}
+
+/// Builds a PostgreSQL connection URL. Implicitly depends on `POSTGRES_HOST` and `POSTGRES_PORT` being configured alongside the credential variables.
 pub fn postgres_url() -> String {
     let user = env::var("POSTGRES_USER").expect("POSTGRES_USER must be set");
     let password = env::var("POSTGRES_PASSWORD").expect("POSTGRES_PASSWORD must be set");
     let db = env::var("POSTGRES_DB").expect("POSTGRES_DB must be set");
-    let port = env::var("POSTGRES_PORT").expect("POSTGRES_PORT must be set");
+    let host = postgres_host();
+    let port = postgres_port();
     format!(
         "postgres://{}:{}@{}:{}/{}",
         user,
         password,
-        host(),
+        host,
         port,
         db
     )
