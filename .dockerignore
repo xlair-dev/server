@@ -1,0 +1,11 @@
+/target
+**/target
+/.git
+/.github
+/.env
+/.env.*
+/docs
+/memo
+README.md
+AGENTS.md
+compose.yml

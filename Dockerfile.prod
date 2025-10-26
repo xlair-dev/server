@@ -1,0 +1,25 @@
+FROM rust:1.90 as builder
+WORKDIR /workspace
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends pkg-config libssl-dev ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . .
+
+RUN cargo build --release --bin presentation --bin migration
+RUN strip target/release/presentation target/release/migration || true
+
+FROM debian:bookworm-slim AS runtime
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /workspace/target/release/presentation /app/presentation
+COPY --from=builder /workspace/target/release/migration /app/migrate
+
+EXPOSE 8080
+ENV RUST_LOG="presentation=info,tower_http=warn"
+ENTRYPOINT ["/app/presentation"]

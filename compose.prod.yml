@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - xlair-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/xlair-dev/xlair-api:${APP_IMAGE_TAG}
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT}:${APP_PORT:-8080}" # APP_PORT defaults to 8080 if not set
+    restart: unless-stopped
+
+  migrator:
+    image: ghcr.io/xlair-dev/xlair-api:${APP_IMAGE_TAG}
+    entrypoint: ["/app/migrate"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - migration
+    restart: "no"
+
+volumes:
+  xlair-db:
