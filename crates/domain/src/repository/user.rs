@@ -31,4 +31,11 @@ pub trait UserRepository: Send + Sync {
         &self,
         user_id: &str,
     ) -> impl Future<Output = Result<u32, UserRepositoryError>> + Send;
+
+    fn find_by_id(
+        &self,
+        user_id: &str,
+    ) -> impl Future<Output = Result<Option<User>, UserRepositoryError>> + Send;
+
+    fn save(&self, user: User) -> impl Future<Output = Result<User, UserRepositoryError>> + Send;
 }
