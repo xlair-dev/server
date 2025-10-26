@@ -3,7 +3,7 @@ use getset::{Getters, Setters};
 
 use super::clear_type::ClearType;
 
-#[derive(Debug, Getters, Setters)]
+#[derive(Debug, Clone, Getters, Setters)]
 pub struct Record {
     #[getset(get = "pub")]
     id: String,

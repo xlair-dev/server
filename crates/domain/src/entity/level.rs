@@ -23,6 +23,10 @@ impl Level {
     pub fn value(&self) -> f64 {
         self.0 as f64 + self.1 as f64 / 10.0
     }
+
+    pub fn components(&self) -> (u32, u32) {
+        (self.0, self.1)
+    }
 }
 
 impl TryFrom<(u32, u32)> for Level {
