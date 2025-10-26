@@ -9,9 +9,10 @@ use crate::{
     error::AppError,
     model::user::{
         CreditsIncrementResponse, FindUserQuery, RegisterUserRequest, UserDataResponse,
-        UserRecordResponse,
+        UserRecordRequest, UserRecordResponse,
     },
 };
+use usecase::model::user::UserRecordSubmissionDto;
 
 type AppResult<T> = Result<T, AppError>;
 
@@ -56,8 +57,50 @@ pub async fn handle_get_records(
     info!("Get user records request received");
     let records = state.usecases.user.list_records(user_id.clone()).await?;
     info!(count = records.len(), "User records retrieved successfully");
-    let response = records.into_iter().map(UserRecordResponse::from).collect();
+    let response: Vec<UserRecordResponse> =
+        records.into_iter().map(UserRecordResponse::from).collect();
     Ok(Json(response))
+}
+
+#[instrument(skip(state, payload), fields(user_id = %user_id))]
+pub async fn handle_post_records(
+    State(state): State<crate::state::State>,
+    Path(user_id): Path<String>,
+    Json(payload): Json<Vec<UserRecordRequest>>,
+) -> AppResult<(StatusCode, Json<Vec<UserRecordResponse>>)> {
+    info!(
+        count = payload.len(),
+        "Submit user records request received"
+    );
+
+    for request in &payload {
+        if request.user_id != user_id {
+            return Err(AppError::new(
+                StatusCode::BAD_REQUEST,
+                "userId in payload must match path parameter".to_owned(),
+            ));
+        }
+    }
+
+    let mut submissions = Vec::with_capacity(payload.len());
+    for request in payload {
+        let dto = UserRecordSubmissionDto::try_from(request)
+            .map_err(|err| AppError::new(StatusCode::BAD_REQUEST, err))?;
+        submissions.push(dto);
+    }
+
+    let records = state
+        .usecases
+        .user
+        .submit_records(user_id.clone(), submissions)
+        .await?;
+    let response: Vec<UserRecordResponse> =
+        records.into_iter().map(UserRecordResponse::from).collect();
+    info!(
+        count = response.len(),
+        "User records persisted successfully"
+    );
+    Ok((StatusCode::CREATED, Json(response)))
 }
 
 #[cfg(test)]
@@ -71,8 +114,12 @@ mod tests {
     use chrono::NaiveDate;
     use domain::entity::rating::Rating;
     use domain::{
-        entity::{clear_type::ClearType, record::Record, user::User},
-        repository::{MockRepositories, record::MockRecordRepository, user::UserRepositoryError},
+        entity::{clear_type::ClearType, level::Level, record::Record, user::User},
+        repository::{
+            MockRepositories,
+            record::{MockRecordRepository, RecordWithMetadata},
+            user::UserRepositoryError,
+        },
         testing::{
             datetime::timestamp,
             user::{USER1, USER2},
@@ -92,6 +139,13 @@ mod tests {
         };
         let state = crate::state::State::new(config, repositories);
         super::super::create_app(state)
+    }
+
+    fn sample_timestamp() -> chrono::NaiveDateTime {
+        NaiveDate::from_ymd_opt(2025, 10, 26)
+            .unwrap()
+            .and_hms_opt(12, 0, 0)
+            .unwrap()
     }
 
     #[tokio::test]
@@ -372,5 +426,150 @@ mod tests {
         let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert!(json["error"].as_str().unwrap().contains("User not found"));
+    }
+
+    #[tokio::test]
+    async fn handle_post_records_returns_created() {
+        let mut record_repo = MockRecordRepository::new();
+        record_repo
+            .expect_find_by_user_id()
+            .withf(|user_id| user_id == USER1.id)
+            .returning(|_| Box::pin(async { Ok(Vec::new()) }));
+        record_repo
+            .expect_insert()
+            .withf(|record| record.user_id() == USER1.id && record.sheet_id() == "sheet-1")
+            .returning(|record| {
+                Box::pin(async move {
+                    Ok(Record::new(
+                        record.id().to_owned(),
+                        record.user_id().to_owned(),
+                        record.sheet_id().to_owned(),
+                        *record.score(),
+                        *record.clear_type(),
+                        *record.play_count(),
+                        sample_timestamp(),
+                    ))
+                })
+            });
+        record_repo
+            .expect_find_with_metadata_by_user_id()
+            .withf(|user_id| user_id == USER1.id)
+            .returning(|_| {
+                Box::pin(async move {
+                    let level = Level::new(13, 7).expect("valid level");
+                    let record = Record::new(
+                        "record-1".to_owned(),
+                        USER1.id.to_owned(),
+                        "sheet-1".to_owned(),
+                        1_000_000,
+                        ClearType::FullCombo,
+                        1,
+                        sample_timestamp(),
+                    );
+                    Ok(vec![RecordWithMetadata::new(record, level, false)])
+                })
+            });
+
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo
+            .expect_apply_progress()
+            .withf(|user_id, xp_delta, rating| {
+                user_id == USER1.id && *xp_delta == 100 && *rating == 1470
+            })
+            .returning(|_, _, _| Box::pin(async { Ok(()) }));
+
+        let router = test_router(user_repo, record_repo);
+
+        let payload = json!([{
+            "userId": USER1.id,
+            "sheetId": "sheet-1",
+            "score": 1_000_000,
+            "clearType": "fullcombo"
+        }]);
+
+        let response = router
+            .oneshot(
+                Request::post(format!("/users/{}/records", USER1.id))
+                    .header(axum::http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(payload.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::CREATED);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(json.is_array());
+        assert_eq!(json[0]["sheetId"], "sheet-1");
+        assert_eq!(json[0]["score"], 1_000_000);
+    }
+
+    #[tokio::test]
+    async fn handle_post_records_validates_user_id() {
+        let router = test_router(
+            domain::repository::user::MockUserRepository::new(),
+            MockRecordRepository::new(),
+        );
+
+        let payload = json!([{
+            "userId": "someone-else",
+            "sheetId": "sheet-1",
+            "score": 1_000_000,
+            "clearType": "fullcombo"
+        }]);
+
+        let response = router
+            .oneshot(
+                Request::post(format!("/users/{}/records", USER1.id))
+                    .header(axum::http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(payload.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(json["error"].as_str().unwrap().contains("must match"));
+    }
+
+    #[tokio::test]
+    async fn handle_post_records_rejects_invalid_clear_type() {
+        let router = test_router(
+            domain::repository::user::MockUserRepository::new(),
+            MockRecordRepository::new(),
+        );
+
+        let payload = json!([{
+            "userId": USER1.id,
+            "sheetId": "sheet-1",
+            "score": 900_000,
+            "clearType": "unknown"
+        }]);
+
+        let response = router
+            .oneshot(
+                Request::post(format!("/users/{}/records", USER1.id))
+                    .header(axum::http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(payload.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(
+            json["error"]
+                .as_str()
+                .unwrap()
+                .contains("Unsupported clear type")
+        );
     }
 }

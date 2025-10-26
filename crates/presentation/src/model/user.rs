@@ -1,5 +1,8 @@
+use domain::entity::clear_type::ClearType;
 use serde::{Deserialize, Serialize};
-use usecase::model::user::{UserCreditsDto, UserDataDto, UserRecordDto, UserRegisterDto};
+use usecase::model::user::{
+    UserCreditsDto, UserDataDto, UserRecordDto, UserRecordSubmissionDto, UserRegisterDto,
+};
 
 #[derive(Deserialize)]
 pub struct RegisterUserRequest {
@@ -121,5 +124,36 @@ impl From<UserRecordDto> for UserRecordResponse {
             play_count: dto.play_count,
             updated_at: dto.updated_at.to_string(),
         }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct UserRecordRequest {
+    #[serde(rename = "userId")]
+    pub user_id: String,
+    #[serde(rename = "sheetId")]
+    pub sheet_id: String,
+    pub score: u32,
+    #[serde(rename = "clearType")]
+    pub clear_type: String,
+}
+
+impl TryFrom<UserRecordRequest> for UserRecordSubmissionDto {
+    type Error = String;
+
+    fn try_from(request: UserRecordRequest) -> Result<Self, Self::Error> {
+        let clear_type = match request.clear_type.as_str() {
+            "failed" => ClearType::Fail,
+            "clear" => ClearType::Clear,
+            "fullcombo" => ClearType::FullCombo,
+            "perfect" => ClearType::AllPerfect,
+            other => return Err(format!("Unsupported clear type: {other}")),
+        };
+
+        Ok(UserRecordSubmissionDto::new(
+            request.sheet_id,
+            request.score,
+            clear_type,
+        ))
     }
 }

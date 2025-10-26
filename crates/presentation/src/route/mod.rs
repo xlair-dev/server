@@ -9,7 +9,10 @@ pub fn create_app(state: State) -> Router {
     let users = Router::new()
         .route("/", post(user::handle_post))
         .route("/", get(user::handle_get))
-        .route("/{userId}/records", get(user::handle_get_records))
+        .route(
+            "/{userId}/records",
+            get(user::handle_get_records).post(user::handle_post_records),
+        )
         .route(
             "/{userId}/credits/increment",
             post(user::handle_increment_credits),

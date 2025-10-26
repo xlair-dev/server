@@ -29,6 +29,10 @@ impl From<RecordRepositoryError> for AppError {
                 status_code: axum::http::StatusCode::NOT_FOUND,
                 message: format!("User not found: {id}"),
             },
+            RecordRepositoryError::SheetNotFound(id) => AppError {
+                status_code: axum::http::StatusCode::NOT_FOUND,
+                message: format!("Sheet not found: {id}"),
+            },
             RecordRepositoryError::InternalError(err) => AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 message: err.to_string(),
