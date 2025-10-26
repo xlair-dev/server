@@ -86,6 +86,23 @@ pub struct UserRecordDto {
     pub updated_at: NaiveDateTime,
 }
 
+#[derive(Debug, Clone)]
+pub struct UserRecordSubmissionDto {
+    pub sheet_id: String,
+    pub score: u32,
+    pub clear_type: ClearType,
+}
+
+impl UserRecordSubmissionDto {
+    pub fn new(sheet_id: String, score: u32, clear_type: ClearType) -> Self {
+        Self {
+            sheet_id,
+            score,
+            clear_type,
+        }
+    }
+}
+
 impl UserRecordDto {
     pub fn new(
         id: String,
