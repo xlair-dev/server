@@ -1,6 +1,6 @@
 use domain::{
     entity::user::User,
-    repository::{user::UserRepository, Repositories},
+    repository::{Repositories, user::UserRepository},
 };
 use tracing::{debug, info, instrument};
 
@@ -29,10 +29,10 @@ impl<R: Repositories> UserUsecase<R> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::NaiveDateTime;
+    use domain::entity::rating::Rating;
     use domain::{
-        entity::{rating::Rating, user::User},
-        repository::{user::UserRepositoryError, MockRepositories},
+        repository::{MockRepositories, user::UserRepositoryError},
+        testing::user::{USER1, USER2},
     };
     use std::sync::Arc;
 
@@ -41,11 +41,11 @@ mod tests {
         let mut user_repo = domain::repository::user::MockUserRepository::new();
         user_repo
             .expect_create()
-            .withf(|user| user.card() == "CARD-001")
+            .withf(|user| user.card() == USER1.card)
             .returning(|_| {
                 Box::pin(async {
                     Err(UserRepositoryError::CardIdAlreadyExists(
-                        "CARD-001".to_owned(),
+                        USER1.card.to_owned(),
                     ))
                 })
             });
@@ -53,13 +53,13 @@ mod tests {
         let repositories = MockRepositories { user: user_repo };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
-        let input = UserRegisterDto::new("CARD-001".to_owned(), "Alice".to_owned());
+        let input = UserRegisterDto::new(USER1.card.to_owned(), USER1.display_name.to_owned());
         let result = usecase.register(input).await;
 
         match result {
             Err(UserUsecaseError::UserRepositoryError(
                 UserRepositoryError::CardIdAlreadyExists(card),
-            )) => assert_eq!(card, "CARD-001"),
+            )) => assert_eq!(card, USER1.card),
             _ => panic!("unexpected result"),
         }
     }
@@ -69,32 +69,30 @@ mod tests {
         let mut user_repo = domain::repository::user::MockUserRepository::new();
         user_repo
             .expect_create()
-            .withf(|user| user.card() == "CARD-002" && user.display_name() == "Bob")
+            .withf(|user| user.card() == USER2.card && user.display_name() == USER2.display_name)
             .returning(|user| {
                 Box::pin(async move {
-                    let now: NaiveDateTime = *user.created_at();
-                    let persisted = User::new(
-                        "550e8400-e29b-41d4-a716-446655440000".to_owned(),
+                    Ok(User::new(
+                        USER1.id.to_owned(),
                         user.card().to_owned(),
                         user.display_name().clone(),
                         Rating::new(user.rating().value()),
                         *user.xp(),
                         *user.credits(),
                         *user.is_admin(),
-                        now,
-                    );
-                    Ok(persisted)
+                        *user.created_at(),
+                    ))
                 })
             });
 
         let repositories = MockRepositories { user: user_repo };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
-        let input = UserRegisterDto::new("CARD-002".to_owned(), "Bob".to_owned());
+        let input = UserRegisterDto::new(USER2.card.to_owned(), USER2.display_name.to_owned());
         let result = usecase.register(input).await.expect("should succeed");
 
-        assert_eq!(result.card, "CARD-002");
-        assert_eq!(result.display_name, "Bob");
-        assert_eq!(result.id, "550e8400-e29b-41d4-a716-446655440000");
+        assert_eq!(result.card, USER2.card);
+        assert_eq!(result.display_name, USER2.display_name);
+        assert_eq!(result.id, USER1.id);
     }
 }

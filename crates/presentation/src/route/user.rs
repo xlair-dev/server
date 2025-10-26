@@ -1,4 +1,4 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use tracing::{info, instrument};
 
 use crate::{
@@ -17,4 +17,124 @@ pub async fn handle_post(
     let user_data = state.usecases.user.register(request.into()).await?;
     info!(user_id = %user_data.id, "User registered successfully");
     Ok((StatusCode::CREATED, Json(user_data.into())))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{
+        Router,
+        body::{self, Body},
+        http::Request,
+    };
+    use domain::entity::rating::Rating;
+    use domain::{
+        entity::user::User,
+        repository::{MockRepositories, user::UserRepositoryError},
+        testing::{
+            datetime::timestamp,
+            user::{USER1, USER2},
+        },
+    };
+    use serde_json::json;
+    use tower::ServiceExt;
+
+    fn test_router(user_repo: domain::repository::user::MockUserRepository) -> Router {
+        let config = crate::config::Config::default();
+        let repositories = MockRepositories { user: user_repo };
+        let state = crate::state::State::new(config, repositories);
+        super::super::create_app(state)
+    }
+
+    #[tokio::test]
+    async fn handle_post_returns_created_on_success() {
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo
+            .expect_create()
+            .withf(|user| user.card() == USER2.card && user.display_name() == USER2.display_name)
+            .returning(|_| {
+                Box::pin(async {
+                    Ok(User::new(
+                        USER2.id.to_owned(),
+                        USER2.card.to_owned(),
+                        USER2.display_name.to_owned(),
+                        Rating::new(USER2.rating),
+                        USER2.xp,
+                        USER2.credits,
+                        false,
+                        timestamp(2025, 10, 21, 15, 0, 0),
+                    ))
+                })
+            });
+
+        let router = test_router(user_repo);
+
+        let payload = json!({
+            "card": USER2.card,
+            "display_name": USER2.display_name
+        });
+
+        let response = router
+            .oneshot(
+                Request::post("/users")
+                    .header(axum::http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(payload.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::CREATED);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["id"], USER2.id);
+        assert_eq!(json["card"], USER2.card);
+        assert_eq!(json["display_name"], USER2.display_name);
+        assert_eq!(json["rating"], USER2.rating);
+        assert_eq!(json["xp"], USER2.xp);
+        assert_eq!(json["credits"], USER2.credits);
+        assert_eq!(json["is_admin"], false);
+        assert_eq!(json["created_at"], "2025-10-21 15:00:00");
+    }
+
+    #[tokio::test]
+    async fn handle_post_maps_repository_conflicts() {
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo.expect_create().returning(|_| {
+            Box::pin(async {
+                Err(UserRepositoryError::CardIdAlreadyExists(
+                    USER2.card.to_owned(),
+                ))
+            })
+        });
+
+        let router = test_router(user_repo);
+
+        let payload = json!({
+            "card": USER2.card,
+            "display_name": USER1.display_name
+        });
+
+        let response = router
+            .oneshot(
+                Request::post("/users")
+                    .header(axum::http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(payload.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::CONFLICT);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(
+            json["error"]
+                .as_str()
+                .unwrap()
+                .contains("Card ID already exists")
+        );
+    }
 }

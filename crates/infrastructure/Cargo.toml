@@ -9,3 +9,6 @@ sea-orm.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 tracing.workspace = true
+
+[dev-dependencies]
+domain = { workspace = true, features = ["test-support"] }

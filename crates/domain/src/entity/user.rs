@@ -60,3 +60,49 @@ impl User {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_temporary_initializes_with_defaults() {
+        let user = User::new_temporary("CARD-123".to_owned(), "Alice".to_owned());
+
+        assert!(user.id().is_empty());
+        assert_eq!(user.card(), "CARD-123");
+        assert_eq!(user.display_name(), "Alice");
+        assert_eq!(user.rating().value(), 0);
+        assert_eq!(*user.xp(), 0);
+        assert_eq!(*user.credits(), 0);
+        assert!(!user.is_admin());
+    }
+
+    #[test]
+    fn new_preserves_provided_fields() {
+        let timestamp = chrono::NaiveDate::from_ymd_opt(2025, 10, 21)
+            .unwrap()
+            .and_hms_opt(8, 30, 0)
+            .unwrap();
+
+        let user = User::new(
+            "user-id".to_owned(),
+            "CARD-456".to_owned(),
+            "Bob".to_owned(),
+            Rating::new(1234),
+            100,
+            50,
+            true,
+            timestamp,
+        );
+
+        assert_eq!(user.id(), "user-id");
+        assert_eq!(user.card(), "CARD-456");
+        assert_eq!(user.display_name(), "Bob");
+        assert_eq!(user.rating().value(), 1234);
+        assert_eq!(*user.xp(), 100);
+        assert_eq!(*user.credits(), 50);
+        assert!(user.is_admin());
+        assert_eq!(*user.created_at(), timestamp);
+    }
+}

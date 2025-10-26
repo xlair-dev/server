@@ -3,6 +3,9 @@ name = "domain"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+test-support = []
+
 [dependencies]
 getset.workspace = true
 chrono.workspace = true
