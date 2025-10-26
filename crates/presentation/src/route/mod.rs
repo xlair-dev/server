@@ -8,7 +8,11 @@ pub mod user;
 pub fn create_app(state: State) -> Router {
     let users = Router::new()
         .route("/", post(user::handle_post))
-        .route("/", get(user::handle_get));
+        .route("/", get(user::handle_get))
+        .route(
+            "/{userId}/credits/increment",
+            post(user::handle_increment_credits),
+        );
     let health = Router::new().route("/", get(|| async { "OK" }));
 
     // TODO: Add auth middleware

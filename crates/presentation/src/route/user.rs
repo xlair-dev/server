@@ -1,13 +1,13 @@
 use axum::{
     Json,
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
 };
 use tracing::{info, instrument};
 
 use crate::{
     error::AppError,
-    model::user::{FindUserQuery, RegisterUserRequest, UserDataResponse},
+    model::user::{CreditsIncrementResponse, FindUserQuery, RegisterUserRequest, UserDataResponse},
 };
 
 type AppResult<T> = Result<T, AppError>;
@@ -32,6 +32,17 @@ pub async fn handle_get(
     let user_data = state.usecases.user.find_by_card(query.card.clone()).await?;
     info!(user_id = %user_data.id, "User retrieved successfully");
     Ok(Json(user_data.into()))
+}
+
+#[instrument(skip(state), fields(user_id = %user_id))]
+pub async fn handle_increment_credits(
+    State(state): State<crate::state::State>,
+    Path(user_id): Path<String>,
+) -> AppResult<Json<CreditsIncrementResponse>> {
+    info!("Increment credits request received");
+    let result = state.usecases.user.increment_credits(user_id).await?;
+    info!(credits = result.credits, "Credits incremented successfully");
+    Ok(Json(result.into()))
 }
 
 #[cfg(test)]
@@ -197,6 +208,57 @@ mod tests {
         let response = router
             .oneshot(
                 Request::get("/users?card=CARD-002")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(json["error"].as_str().unwrap().contains("User not found"));
+    }
+
+    #[tokio::test]
+    async fn handle_increment_credits_returns_current_value() {
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo
+            .expect_increment_credits()
+            .withf(|user_id| user_id == USER1.id)
+            .returning(|_| Box::pin(async { Ok(USER1.credits + 1) }));
+
+        let router = test_router(user_repo);
+
+        let response = router
+            .oneshot(
+                Request::post(format!("/users/{}/credits/increment", USER1.id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["credits"], USER1.credits + 1);
+    }
+
+    #[tokio::test]
+    async fn handle_increment_credits_returns_not_found() {
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo.expect_increment_credits().returning(|_| {
+            Box::pin(async { Err(UserRepositoryError::NotFound("missing".to_owned())) })
+        });
+
+        let router = test_router(user_repo);
+
+        let response = router
+            .oneshot(
+                Request::post("/users/missing/credits/increment")
                     .body(Body::empty())
                     .unwrap(),
             )

@@ -64,3 +64,14 @@ impl From<User> for UserDataDto {
         )
     }
 }
+
+#[derive(Debug)]
+pub struct UserCreditsDto {
+    pub credits: u32,
+}
+
+impl UserCreditsDto {
+    pub fn new(credits: u32) -> Self {
+        Self { credits }
+    }
+}

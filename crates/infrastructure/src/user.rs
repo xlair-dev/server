@@ -3,8 +3,10 @@ use domain::{
     entity::user::User,
     repository::user::{UserRepository, UserRepositoryError},
 };
+use sea_orm::sea_query::Expr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter, error::SqlErr,
+    prelude::Uuid,
 };
 use tracing::{debug, error, info, instrument};
 
@@ -55,6 +57,50 @@ impl UserRepository for UserRepositoryImpl {
             debug!("User not found for supplied card");
             Ok(None)
         }
+    }
+
+    #[instrument(skip(self), fields(user_id = %user_id))]
+    async fn increment_credits(&self, user_id: &str) -> Result<u32, UserRepositoryError> {
+        debug!("Incrementing user credits via SeaORM");
+
+        let uuid = Uuid::parse_str(user_id).map_err(|err| {
+            debug!(error = %err, "Failed to parse user id");
+            UserRepositoryError::NotFound(user_id.to_owned())
+        })?;
+
+        let update = Users::update_many()
+            .col_expr(
+                entities::users::Column::Credits,
+                Expr::col(entities::users::Column::Credits).add(1),
+            )
+            .filter(entities::users::Column::Id.eq(uuid))
+            .exec(&self.db)
+            .await
+            .map_err(|err| {
+                error!(error = %err, "Failed to increment user credits");
+                UserRepositoryError::InternalError(AnyError::from(err))
+            })?;
+
+        if update.rows_affected == 0 {
+            debug!("User not found for supplied id");
+            return Err(UserRepositoryError::NotFound(user_id.to_owned()));
+        }
+
+        let model = Users::find_by_id(uuid)
+            .one(&self.db)
+            .await
+            .map_err(|err| {
+                error!(error = %err, "Failed to fetch user after increment");
+                UserRepositoryError::InternalError(AnyError::from(err))
+            })?
+            .ok_or_else(|| {
+                debug!("User disappeared after increment");
+                UserRepositoryError::NotFound(user_id.to_owned())
+            })?;
+
+        info!(user_id = %model.id, credits = model.credits, "User credits incremented successfully");
+
+        Ok(model.credits as u32)
     }
 }
 

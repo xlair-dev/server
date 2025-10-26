@@ -11,7 +11,8 @@ impl<R: Repositories> UserUsecase<R> {
     pub async fn find_by_card(&self, card: String) -> Result<UserDataDto, UserUsecaseError> {
         debug!(%card, "Resolving user aggregate by card");
         let maybe_user = self.repositories.user().find_by_card(&card).await?;
-        let user = maybe_user.ok_or_else(|| UserUsecaseError::NotFound(card.clone()))?;
+        let user =
+            maybe_user.ok_or_else(|| UserUsecaseError::NotFoundByCard { card: card.clone() })?;
         debug!(user_id = %user.id(), "User aggregate resolved");
         Ok(user.into())
     }
@@ -67,7 +68,7 @@ mod tests {
             .expect_err("should return not found error");
 
         match err {
-            UserUsecaseError::NotFound(card) => assert_eq!(card, USER2.card),
+            UserUsecaseError::NotFoundByCard { card } => assert_eq!(card, USER2.card),
             _ => panic!("unexpected error variant"),
         }
     }
