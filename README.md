@@ -4,7 +4,7 @@ API server for XLAIR
 
 ## デプロイ手順 (オンプレ)
 
-1. `.env.prod.example` を参考に本番用 `.env` を作成します。`APP_IMAGE` と `IMAGE_TAG` を必要に応じて指定してください。
+1. `.env.prod.example` を参考に本番用 `.env` を作成します。
 2. GHCR 上の公開イメージを利用するホストで次を実行します。
    ```sh
    docker compose --env-file ./.env -f compose.prod.yml pull
