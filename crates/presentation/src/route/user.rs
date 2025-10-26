@@ -472,11 +472,29 @@ mod tests {
 
         let mut user_repo = domain::repository::user::MockUserRepository::new();
         user_repo
-            .expect_apply_progress()
-            .withf(|user_id, xp_delta, rating| {
-                user_id == USER1.id && *xp_delta == 100 && *rating == 1470
+            .expect_find_by_id()
+            .withf(|user_id| user_id == USER1.id)
+            .returning(|_| {
+                let user = User::new(
+                    USER1.id.to_owned(),
+                    USER1.card.to_owned(),
+                    USER1.display_name.to_owned(),
+                    Rating::new(USER1.rating),
+                    USER1.xp,
+                    USER1.credits,
+                    false,
+                    timestamp(2025, 10, 21, 15, 0, 0),
+                );
+                Box::pin(async move { Ok(Some(user)) })
+            });
+        user_repo
+            .expect_save()
+            .withf(|user| {
+                user.id() == USER1.id
+                    && user.rating().value() == 1470
+                    && *user.xp() == USER1.xp + 100
             })
-            .returning(|_, _, _| Box::pin(async { Ok(()) }));
+            .returning(|user| Box::pin(async move { Ok(user) }));
 
         let router = test_router(user_repo, record_repo);
 

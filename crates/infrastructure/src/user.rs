@@ -5,10 +5,10 @@ use domain::{
 };
 use sea_orm::sea_query::Expr;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter, error::SqlErr,
-    prelude::Uuid,
+    ActiveModelTrait, ActiveValue, ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter,
+    error::SqlErr, prelude::Uuid,
 };
-use std::{convert::TryFrom, sync::Arc};
+use std::sync::Arc;
 use tracing::{debug, error, info, instrument};
 
 use crate::{entities, entities::prelude::Users};
@@ -104,46 +104,44 @@ impl UserRepository for UserRepositoryImpl {
         Ok(model.credits as u32)
     }
 
-    #[instrument(skip(self), fields(user_id = %user_id, xp_delta = xp_delta, new_rating = new_rating))]
-    async fn apply_progress(
-        &self,
-        user_id: &str,
-        xp_delta: u32,
-        new_rating: u32,
-    ) -> Result<(), UserRepositoryError> {
-        debug!("Applying user progress via SeaORM");
-
+    #[instrument(skip(self), fields(user_id = %user_id))]
+    async fn find_by_id(&self, user_id: &str) -> Result<Option<User>, UserRepositoryError> {
+        debug!("Querying user by id via SeaORM");
         let uuid = Uuid::parse_str(user_id).map_err(|err| {
             debug!(error = %err, "Failed to parse user id");
             UserRepositoryError::NotFound(user_id.to_owned())
         })?;
 
-        let rating_value = i32::try_from(new_rating).map_err(|err| {
-            error!(error = %err, "Rating exceeds database range");
-            UserRepositoryError::InternalError(AnyError::from(err))
-        })?;
-
-        let update = Users::update_many()
-            .col_expr(
-                entities::users::Column::Xp,
-                Expr::col(entities::users::Column::Xp).add(i64::from(xp_delta)),
-            )
-            .col_expr(entities::users::Column::Rating, Expr::value(rating_value))
-            .filter(entities::users::Column::Id.eq(uuid))
-            .exec(self.db.as_ref())
+        let model = Users::find_by_id(uuid)
+            .one(self.db.as_ref())
             .await
             .map_err(|err| {
-                error!(error = %err, "Failed to apply user progress");
+                error!(error = %err, "Failed to query user by id");
                 UserRepositoryError::InternalError(AnyError::from(err))
             })?;
 
-        if update.rows_affected == 0 {
-            debug!("User not found while applying progress");
-            return Err(UserRepositoryError::NotFound(user_id.to_owned()));
-        }
+        Ok(model.map(Into::into))
+    }
 
-        info!("User progress updated successfully");
-        Ok(())
+    #[instrument(skip(self, user), fields(user_id = %user.id()))]
+    async fn save(&self, user: User) -> Result<User, UserRepositoryError> {
+        debug!("Persisting user update via SeaORM");
+
+        let uuid = Uuid::parse_str(user.id()).map_err(|err| {
+            debug!(error = %err, "Failed to parse user id before save");
+            UserRepositoryError::NotFound(user.id().to_owned())
+        })?;
+
+        let mut active: entities::users::ActiveModel = user.into();
+        active.id = ActiveValue::Set(uuid);
+
+        let model = active.update(self.db.as_ref()).await.map_err(|err| {
+            error!(error = %err, "Failed to update user");
+            UserRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+        info!(user_id = %model.id, "User updated successfully");
+        Ok(model.into())
     }
 }
 

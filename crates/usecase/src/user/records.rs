@@ -2,12 +2,13 @@ use std::collections::HashMap;
 
 use chrono::Utc;
 use domain::{
-    entity::{clear_type::ClearType, level::Level, record::Record},
+    entity::record::Record,
     repository::{
         Repositories,
-        record::{RecordRepository, RecordRepositoryError, RecordWithMetadata},
+        record::{RecordRepository, RecordRepositoryError},
         user::UserRepository,
     },
+    service::{experience, rating},
 };
 use tracing::{debug, instrument};
 
@@ -56,6 +57,15 @@ impl<R: Repositories> UserUsecase<R> {
             Err(err) => return Err(UserUsecaseError::RecordRepositoryError(err)),
         };
 
+        let mut user = self
+            .repositories
+            .user()
+            .find_by_id(&user_id)
+            .await?
+            .ok_or_else(|| UserUsecaseError::NotFoundById {
+                user_id: user_id.clone(),
+            })?;
+
         let mut record_map: HashMap<String, Record> = existing_records
             .into_iter()
             .map(|record| (record.sheet_id().to_owned(), record))
@@ -66,19 +76,12 @@ impl<R: Repositories> UserUsecase<R> {
 
         for submission in submissions {
             let sheet_id = submission.sheet_id.clone();
-            xp_delta = xp_delta.saturating_add(calculate_xp(submission.score));
+            xp_delta = xp_delta.saturating_add(experience::xp_for_score(submission.score));
+            let submitted_at = Utc::now().naive_utc();
 
             match record_map.remove(&sheet_id) {
                 Some(mut record) => {
-                    record.set_play_count(record.play_count() + 1);
-
-                    if submission.score > *record.score() {
-                        record.set_score(submission.score);
-                    }
-
-                    if is_better_clear(submission.clear_type, *record.clear_type()) {
-                        record.set_clear_type(submission.clear_type);
-                    }
+                    record.apply_submission(submission.score, submission.clear_type, submitted_at);
 
                     let updated = match self.repositories.record().update(record).await {
                         Ok(value) => value,
@@ -94,14 +97,12 @@ impl<R: Repositories> UserUsecase<R> {
                     responses.push(UserRecordDto::from(updated));
                 }
                 None => {
-                    let record = Record::new(
-                        String::new(),
+                    let record = Record::new_from_submission(
                         user_id.clone(),
                         sheet_id.clone(),
                         submission.score,
                         submission.clear_type,
-                        1,
-                        Utc::now().naive_utc(),
+                        submitted_at,
                     );
 
                     let inserted = match self.repositories.record().insert(record).await {
@@ -133,109 +134,15 @@ impl<R: Repositories> UserUsecase<R> {
             Err(err) => return Err(UserUsecaseError::RecordRepositoryError(err)),
         };
 
-        let new_rating = calculate_rating(&metadata);
+        let new_rating = rating::calculate_user_rating(&metadata);
 
-        if let Err(err) = self
-            .repositories
-            .user()
-            .apply_progress(&user_id, xp_delta, new_rating)
-            .await
-        {
-            return Err(match err {
-                domain::repository::user::UserRepositoryError::NotFound(_) => {
-                    UserUsecaseError::NotFoundById { user_id }
-                }
-                other => UserUsecaseError::UserRepositoryError(other),
-            });
-        }
+        user.add_xp(xp_delta);
+        user.update_rating(new_rating);
+
+        self.repositories.user().save(user).await?;
 
         Ok(responses)
     }
-}
-
-fn calculate_xp(score: u32) -> u32 {
-    let diff = score as i64 - 900_000;
-    let bonus = diff / 1_000;
-    if bonus < 1 { 1 } else { bonus as u32 }
-}
-
-fn is_better_clear(new: ClearType, current: ClearType) -> bool {
-    clear_type_rank(new) > clear_type_rank(current)
-}
-
-fn clear_type_rank(clear_type: ClearType) -> u8 {
-    match clear_type {
-        ClearType::Fail => 0,
-        ClearType::Clear => 1,
-        ClearType::FullCombo => 2,
-        ClearType::AllPerfect => 3,
-    }
-}
-
-fn calculate_rating(records: &[RecordWithMetadata]) -> u32 {
-    let mut ratings: Vec<u32> = records
-        .iter()
-        .filter(|entry| !entry.is_test)
-        .map(|entry| calculate_single_track_rating(&entry.level, *entry.record.score()))
-        .collect();
-
-    if ratings.is_empty() {
-        return 0;
-    }
-
-    ratings.sort_unstable_by(|a, b| b.cmp(a));
-    let count = ratings.len().min(3);
-    let total: u32 = ratings.into_iter().take(count).sum();
-    total / (count as u32)
-}
-
-fn calculate_single_track_rating(level: &Level, score: u32) -> u32 {
-    let (integer, decimal) = level_components(level);
-    let base = integer * 100 + decimal * 10;
-    let bonus = compute_score_bonus(score);
-    let total = base as i64 + bonus as i64;
-    if total < 0 { 0 } else { total as u32 }
-}
-
-fn level_components(level: &Level) -> (u32, u32) {
-    level.components()
-}
-
-fn compute_score_bonus(score: u32) -> i32 {
-    const ANCHORS: [(u32, i32); 9] = [
-        (700_000, -200),
-        (750_000, -150),
-        (800_000, -100),
-        (850_000, -50),
-        (900_000, 0),
-        (950_000, 50),
-        (1_000_000, 100),
-        (1_050_000, 150),
-        (1_090_000, 200),
-    ];
-
-    if score <= ANCHORS[0].0 {
-        return ANCHORS[0].1;
-    }
-
-    if score >= ANCHORS[ANCHORS.len() - 1].0 {
-        return ANCHORS[ANCHORS.len() - 1].1;
-    }
-
-    for window in ANCHORS.windows(2) {
-        let lower = window[0];
-        let upper = window[1];
-
-        if (lower.0..=upper.0).contains(&score) {
-            let range = (upper.0 - lower.0) as i64;
-            let position = (score - lower.0) as i64;
-            let diff = (upper.1 - lower.1) as i64;
-            let bonus = lower.1 as i64 + diff * position / range;
-            return bonus as i32;
-        }
-    }
-
-    ANCHORS[0].1
 }
 
 #[cfg(test)]
@@ -243,7 +150,8 @@ mod tests {
     use super::*;
     use chrono::NaiveDate;
     use domain::{
-        entity::{clear_type::ClearType, level::Level, record::Record},
+        entity::rating::Rating,
+        entity::{clear_type::ClearType, level::Level, record::Record, user::User},
         repository::{
             MockRepositories,
             record::{MockRecordRepository, RecordRepositoryError, RecordWithMetadata},
@@ -396,11 +304,27 @@ mod tests {
 
         let mut user_repo = MockUserRepository::new();
         user_repo
-            .expect_apply_progress()
-            .withf(|user_id, xp_delta, rating| {
-                user_id == "user-123" && *xp_delta == 100 && *rating == 1470
+            .expect_find_by_id()
+            .withf(|user_id| user_id == "user-123")
+            .returning(|_| {
+                let user = User::new(
+                    "user-123".to_owned(),
+                    "CARD-123".to_owned(),
+                    "Alice".to_owned(),
+                    Rating::new(1200),
+                    0,
+                    0,
+                    false,
+                    sample_timestamp(),
+                );
+                Box::pin(async move { Ok(Some(user)) })
+            });
+        user_repo
+            .expect_save()
+            .withf(|user| {
+                user.id() == "user-123" && *user.xp() == 100 && user.rating().value() == 1470
             })
-            .returning(|_, _, _| Box::pin(async { Ok(()) }));
+            .returning(|user| Box::pin(async move { Ok(user) }));
 
         let repositories = MockRepositories {
             user: user_repo,
@@ -481,11 +405,27 @@ mod tests {
 
         let mut user_repo = MockUserRepository::new();
         user_repo
-            .expect_apply_progress()
-            .withf(|user_id, xp_delta, rating| {
-                user_id == "user-456" && *xp_delta == 80 && *rating == 1330
+            .expect_find_by_id()
+            .withf(|user_id| user_id == "user-456")
+            .returning(|_| {
+                let user = User::new(
+                    "user-456".to_owned(),
+                    "CARD-456".to_owned(),
+                    "Bob".to_owned(),
+                    Rating::new(1200),
+                    100,
+                    0,
+                    false,
+                    sample_timestamp(),
+                );
+                Box::pin(async move { Ok(Some(user)) })
+            });
+        user_repo
+            .expect_save()
+            .withf(|user| {
+                user.id() == "user-456" && *user.xp() == 180 && user.rating().value() == 1330
             })
-            .returning(|_, _, _| Box::pin(async { Ok(()) }));
+            .returning(|user| Box::pin(async move { Ok(user) }));
 
         let repositories = MockRepositories {
             user: user_repo,
@@ -570,7 +510,23 @@ mod tests {
             });
 
         let mut user_repo = MockUserRepository::new();
-        user_repo.expect_apply_progress().returning(|_, _, _| {
+        user_repo
+            .expect_find_by_id()
+            .withf(|user_id| user_id == "user-789")
+            .returning(|_| {
+                let user = User::new(
+                    "user-789".to_owned(),
+                    "CARD-789".to_owned(),
+                    "Charlie".to_owned(),
+                    Rating::new(1100),
+                    50,
+                    0,
+                    false,
+                    sample_timestamp(),
+                );
+                Box::pin(async move { Ok(Some(user)) })
+            });
+        user_repo.expect_save().returning(|_| {
             Box::pin(async { Err(UserRepositoryError::InternalError(anyhow::anyhow!("boom"))) })
         });
 
