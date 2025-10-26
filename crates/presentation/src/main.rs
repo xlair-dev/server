@@ -17,7 +17,7 @@ async fn main() {
 
     let app = create_app(state);
 
-    let addr = format!("{}:{}", env::host(), env::port());
+    let addr = format!("{}:{}", env::host(), env::app_port());
     let listener = TcpListener::bind(&addr).await.unwrap();
     info!(%addr, "Starting HTTP server");
     axum::serve(listener, app).await.unwrap();

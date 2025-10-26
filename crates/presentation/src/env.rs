@@ -4,8 +4,9 @@ pub fn host() -> String {
     env::var("HOST").expect("HOST must be set")
 }
 
-pub fn port() -> String {
-    env::var("PORT").expect("PORT must be set")
+/// Returns the HTTP port. Defaults to 8080 when `APP_PORT` is not provided.
+pub fn app_port() -> String {
+    env::var("APP_PORT").unwrap_or_else(|_| "8080".into())
 }
 
 pub fn postgres_host() -> String {
@@ -23,12 +24,5 @@ pub fn postgres_url() -> String {
     let db = env::var("POSTGRES_DB").expect("POSTGRES_DB must be set");
     let host = postgres_host();
     let port = postgres_port();
-    format!(
-        "postgres://{}:{}@{}:{}/{}",
-        user,
-        password,
-        host,
-        port,
-        db
-    )
+    format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, db)
 }
