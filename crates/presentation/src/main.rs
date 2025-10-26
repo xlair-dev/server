@@ -6,7 +6,7 @@ use presentation::{config::Config, env, route::create_app, state::State};
 
 #[tokio::main]
 async fn main() {
-    dotenvy::dotenv_override().expect("Failed to load .env file");
+    load_env();
     init_tracing();
 
     let postgres_url = env::postgres_url();
@@ -21,6 +21,16 @@ async fn main() {
     let listener = TcpListener::bind(&addr).await.unwrap();
     info!(%addr, "Starting HTTP server");
     axum::serve(listener, app).await.unwrap();
+}
+
+/// Loads environment variables from the `.env` file if present. Implicitly depends on environment
+/// variables provided by the surrounding process environment when `.env` is absent.
+fn load_env() {
+    match dotenvy::dotenv_override() {
+        Ok(_) => {}
+        Err(dotenvy::Error::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("Failed to load .env file: {error}"),
+    }
 }
 
 /// Initializes tracing. Implicitly depends on the `RUST_LOG` environment variable to override the filter configuration when present.
