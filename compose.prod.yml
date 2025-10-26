@@ -5,7 +5,7 @@ services:
     env_file:
       - .env
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - xlair-db:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h 127.0.0.1"]
       interval: 10s
@@ -36,4 +36,4 @@ services:
     restart: "no"
 
 volumes:
-  db-data:
+  xlair-db:
