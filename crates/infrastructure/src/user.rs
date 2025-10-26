@@ -8,16 +8,17 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter, error::SqlErr,
     prelude::Uuid,
 };
+use std::sync::Arc;
 use tracing::{debug, error, info, instrument};
 
 use crate::{entities, entities::prelude::Users};
 
 pub struct UserRepositoryImpl {
-    db: DbConn,
+    db: Arc<DbConn>,
 }
 
 impl UserRepositoryImpl {
-    pub fn new(db: DbConn) -> Self {
+    pub fn new(db: Arc<DbConn>) -> Self {
         Self { db }
     }
 }
@@ -29,7 +30,7 @@ impl UserRepository for UserRepositoryImpl {
         let card_id = user.card().to_owned();
         let db_user: entities::users::ActiveModel = user.into();
 
-        let db_user_model = db_user.insert(&self.db).await.map_err(|err| {
+        let db_user_model = db_user.insert(self.db.as_ref()).await.map_err(|err| {
             error!(error = %err, "Failed to insert user");
             convert_user_insert_error(err, &card_id)
         })?;
@@ -43,7 +44,7 @@ impl UserRepository for UserRepositoryImpl {
         debug!("Querying user via SeaORM");
         let model = Users::find()
             .filter(entities::users::Column::Card.eq(card))
-            .one(&self.db)
+            .one(self.db.as_ref())
             .await
             .map_err(|err| {
                 error!(error = %err, "Failed to query user");
@@ -74,7 +75,7 @@ impl UserRepository for UserRepositoryImpl {
                 Expr::col(entities::users::Column::Credits).add(1),
             )
             .filter(entities::users::Column::Id.eq(uuid))
-            .exec(&self.db)
+            .exec(self.db.as_ref())
             .await
             .map_err(|err| {
                 error!(error = %err, "Failed to increment user credits");
@@ -87,7 +88,7 @@ impl UserRepository for UserRepositoryImpl {
         }
 
         let model = Users::find_by_id(uuid)
-            .one(&self.db)
+            .one(self.db.as_ref())
             .await
             .map_err(|err| {
                 error!(error = %err, "Failed to fetch user after increment");

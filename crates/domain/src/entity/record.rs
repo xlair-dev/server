@@ -20,3 +20,26 @@ pub struct Record {
     #[getset(get = "pub", set = "pub")]
     updated_at: NaiveDateTime,
 }
+
+#[allow(clippy::too_many_arguments)]
+impl Record {
+    pub fn new(
+        id: String,
+        user_id: String,
+        sheet_id: String,
+        score: u32,
+        clear_type: ClearType,
+        play_count: u32,
+        updated_at: NaiveDateTime,
+    ) -> Self {
+        Self {
+            id,
+            user_id,
+            sheet_id,
+            score,
+            clear_type,
+            play_count,
+            updated_at,
+        }
+    }
+}

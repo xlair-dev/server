@@ -7,7 +7,10 @@ use tracing::{info, instrument};
 
 use crate::{
     error::AppError,
-    model::user::{CreditsIncrementResponse, FindUserQuery, RegisterUserRequest, UserDataResponse},
+    model::user::{
+        CreditsIncrementResponse, FindUserQuery, RegisterUserRequest, UserDataResponse,
+        UserRecordResponse,
+    },
 };
 
 type AppResult<T> = Result<T, AppError>;
@@ -45,6 +48,18 @@ pub async fn handle_increment_credits(
     Ok(Json(result.into()))
 }
 
+#[instrument(skip(state), fields(user_id = %user_id))]
+pub async fn handle_get_records(
+    State(state): State<crate::state::State>,
+    Path(user_id): Path<String>,
+) -> AppResult<Json<Vec<UserRecordResponse>>> {
+    info!("Get user records request received");
+    let records = state.usecases.user.list_records(user_id.clone()).await?;
+    info!(count = records.len(), "User records retrieved successfully");
+    let response = records.into_iter().map(UserRecordResponse::from).collect();
+    Ok(Json(response))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -53,10 +68,11 @@ mod tests {
         body::{self, Body},
         http::Request,
     };
+    use chrono::NaiveDate;
     use domain::entity::rating::Rating;
     use domain::{
-        entity::user::User,
-        repository::{MockRepositories, user::UserRepositoryError},
+        entity::{clear_type::ClearType, record::Record, user::User},
+        repository::{MockRepositories, record::MockRecordRepository, user::UserRepositoryError},
         testing::{
             datetime::timestamp,
             user::{USER1, USER2},
@@ -65,9 +81,15 @@ mod tests {
     use serde_json::json;
     use tower::ServiceExt;
 
-    fn test_router(user_repo: domain::repository::user::MockUserRepository) -> Router {
+    fn test_router(
+        user_repo: domain::repository::user::MockUserRepository,
+        record_repo: MockRecordRepository,
+    ) -> Router {
         let config = crate::config::Config::default();
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: record_repo,
+        };
         let state = crate::state::State::new(config, repositories);
         super::super::create_app(state)
     }
@@ -93,7 +115,7 @@ mod tests {
                 })
             });
 
-        let router = test_router(user_repo);
+        let router = test_router(user_repo, MockRecordRepository::new());
 
         let payload = json!({
             "card": USER2.card,
@@ -135,7 +157,7 @@ mod tests {
             })
         });
 
-        let router = test_router(user_repo);
+        let router = test_router(user_repo, MockRecordRepository::new());
 
         let payload = json!({
             "card": USER2.card,
@@ -175,7 +197,7 @@ mod tests {
                 Box::pin(async move { Ok(Some(user)) })
             });
 
-        let router = test_router(user_repo);
+        let router = test_router(user_repo, MockRecordRepository::new());
 
         let response = router
             .oneshot(
@@ -203,7 +225,7 @@ mod tests {
             .withf(|card| card == USER2.card)
             .returning(|_| Box::pin(async { Ok(None) }));
 
-        let router = test_router(user_repo);
+        let router = test_router(user_repo, MockRecordRepository::new());
 
         let response = router
             .oneshot(
@@ -229,7 +251,7 @@ mod tests {
             .withf(|user_id| user_id == USER1.id)
             .returning(|_| Box::pin(async { Ok(USER1.credits + 1) }));
 
-        let router = test_router(user_repo);
+        let router = test_router(user_repo, MockRecordRepository::new());
 
         let response = router
             .oneshot(
@@ -254,11 +276,91 @@ mod tests {
             Box::pin(async { Err(UserRepositoryError::NotFound("missing".to_owned())) })
         });
 
-        let router = test_router(user_repo);
+        let router = test_router(user_repo, MockRecordRepository::new());
 
         let response = router
             .oneshot(
                 Request::post("/users/missing/credits/increment")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(json["error"].as_str().unwrap().contains("User not found"));
+    }
+
+    #[tokio::test]
+    async fn handle_get_records_returns_data() {
+        let mut record_repo = MockRecordRepository::new();
+        record_repo
+            .expect_find_by_user_id()
+            .withf(|user_id| user_id == USER1.id)
+            .returning(|_| {
+                Box::pin(async move {
+                    Ok(vec![Record::new(
+                        "record-1".to_owned(),
+                        USER1.id.to_owned(),
+                        "sheet-1".to_owned(),
+                        1_000_000,
+                        ClearType::Clear,
+                        5,
+                        NaiveDate::from_ymd_opt(2025, 10, 26)
+                            .unwrap()
+                            .and_hms_opt(12, 0, 0)
+                            .unwrap(),
+                    )])
+                })
+            });
+
+        let router = test_router(
+            domain::repository::user::MockUserRepository::new(),
+            record_repo,
+        );
+
+        let response = router
+            .oneshot(
+                Request::get(format!("/users/{}/records", USER1.id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(json.is_array());
+        assert_eq!(json[0]["id"], "record-1");
+        assert_eq!(json[0]["clearType"], "clear");
+    }
+
+    #[tokio::test]
+    async fn handle_get_records_returns_not_found() {
+        let mut record_repo = MockRecordRepository::new();
+        record_repo.expect_find_by_user_id().returning(|_| {
+            Box::pin(async {
+                Err(
+                    domain::repository::record::RecordRepositoryError::UserNotFound(
+                        "missing".to_owned(),
+                    ),
+                )
+            })
+        });
+
+        let router = test_router(
+            domain::repository::user::MockUserRepository::new(),
+            record_repo,
+        );
+
+        let response = router
+            .oneshot(
+                Request::get("/users/missing/records")
                     .body(Body::empty())
                     .unwrap(),
             )

@@ -29,6 +29,7 @@ mod tests {
     use anyhow::anyhow;
     use domain::repository::{
         MockRepositories,
+        record::MockRecordRepository,
         user::{MockUserRepository, UserRepositoryError},
     };
     use std::sync::Arc;
@@ -41,7 +42,10 @@ mod tests {
             .withf(|user_id| user_id == "user-123")
             .returning(|_| Box::pin(async { Ok(12) }));
 
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: MockRecordRepository::new(),
+        };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
         let response = usecase
@@ -59,7 +63,10 @@ mod tests {
             Box::pin(async { Err(UserRepositoryError::NotFound("user-404".to_owned())) })
         });
 
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: MockRecordRepository::new(),
+        };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
         let err = usecase
@@ -80,7 +87,10 @@ mod tests {
             Box::pin(async { Err(UserRepositoryError::InternalError(anyhow!("boom"))) })
         });
 
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: MockRecordRepository::new(),
+        };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
         let err = usecase

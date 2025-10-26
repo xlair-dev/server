@@ -31,7 +31,7 @@ mod tests {
     use super::*;
     use domain::entity::rating::Rating;
     use domain::{
-        repository::{MockRepositories, user::UserRepositoryError},
+        repository::{MockRepositories, record::MockRecordRepository, user::UserRepositoryError},
         testing::user::{USER1, USER2},
     };
     use std::sync::Arc;
@@ -50,7 +50,10 @@ mod tests {
                 })
             });
 
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: MockRecordRepository::new(),
+        };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
         let input = UserRegisterDto::new(USER1.card.to_owned(), USER1.display_name.to_owned());
@@ -85,7 +88,10 @@ mod tests {
                 })
             });
 
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: MockRecordRepository::new(),
+        };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
         let input = UserRegisterDto::new(USER2.card.to_owned(), USER2.display_name.to_owned());

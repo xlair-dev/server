@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use usecase::model::user::{UserCreditsDto, UserDataDto, UserRegisterDto};
+use usecase::model::user::{UserCreditsDto, UserDataDto, UserRecordDto, UserRegisterDto};
 
 #[derive(Deserialize)]
 pub struct RegisterUserRequest {
@@ -85,6 +85,41 @@ impl From<UserCreditsDto> for CreditsIncrementResponse {
     fn from(dto: UserCreditsDto) -> Self {
         Self {
             credits: dto.credits,
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct UserRecordResponse {
+    pub id: String,
+    #[serde(rename = "sheetId")]
+    pub sheet_id: String,
+    pub score: u32,
+    #[serde(rename = "clearType")]
+    pub clear_type: String,
+    #[serde(rename = "playCount")]
+    pub play_count: u32,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
+}
+
+impl From<UserRecordDto> for UserRecordResponse {
+    fn from(dto: UserRecordDto) -> Self {
+        let clear_type = match dto.clear_type {
+            domain::entity::clear_type::ClearType::Fail => "failed",
+            domain::entity::clear_type::ClearType::Clear => "clear",
+            domain::entity::clear_type::ClearType::FullCombo => "fullcombo",
+            domain::entity::clear_type::ClearType::AllPerfect => "perfect",
+        }
+        .to_string();
+
+        Self {
+            id: dto.id,
+            sheet_id: dto.sheet_id,
+            score: dto.score,
+            clear_type,
+            play_count: dto.play_count,
+            updated_at: dto.updated_at.to_string(),
         }
     }
 }
