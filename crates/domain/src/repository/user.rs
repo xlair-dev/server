@@ -32,13 +32,10 @@ pub trait UserRepository: Send + Sync {
         user_id: &str,
     ) -> impl Future<Output = Result<u32, UserRepositoryError>> + Send;
 
-    /// Applies post-play progression by atomically increasing the accumulated XP and updating the
-    /// cached rating. Depends on transactional guarantees from the backing store so that XP and
-    /// rating stay consistent even if concurrent submissions occur.
-    fn apply_progress(
+    fn find_by_id(
         &self,
         user_id: &str,
-        xp_delta: u32,
-        new_rating: u32,
-    ) -> impl Future<Output = Result<(), UserRepositoryError>> + Send;
+    ) -> impl Future<Output = Result<Option<User>, UserRepositoryError>> + Send;
+
+    fn save(&self, user: User) -> impl Future<Output = Result<User, UserRepositoryError>> + Send;
 }

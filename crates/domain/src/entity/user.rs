@@ -59,6 +59,18 @@ impl User {
             created_at: chrono::Utc::now().naive_utc(),
         }
     }
+
+    /// Adds the provided experience points while guarding against overflow.
+    pub fn add_xp(&mut self, amount: u32) {
+        let current = *self.xp();
+        let updated = current.saturating_add(amount);
+        self.set_xp(updated);
+    }
+
+    /// Updates the cached player rating.
+    pub fn update_rating(&mut self, rating: Rating) {
+        self.set_rating(rating);
+    }
 }
 
 #[cfg(test)]
