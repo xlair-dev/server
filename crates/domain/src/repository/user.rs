@@ -16,4 +16,8 @@ pub enum UserRepositoryError {
 #[automock]
 pub trait UserRepository: Send + Sync {
     fn create(&self, user: User) -> impl Future<Output = Result<User, UserRepositoryError>> + Send;
+    fn find_by_card(
+        &self,
+        card: &str,
+    ) -> impl Future<Output = Result<Option<User>, UserRepositoryError>> + Send;
 }
