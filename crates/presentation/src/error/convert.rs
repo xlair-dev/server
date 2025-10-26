@@ -22,6 +22,10 @@ impl From<UserUsecaseError> for AppError {
     fn from(error: UserUsecaseError) -> Self {
         match error {
             UserUsecaseError::UserRepositoryError(repo_error) => repo_error.into(),
+            UserUsecaseError::NotFound(card) => AppError {
+                status_code: axum::http::StatusCode::NOT_FOUND,
+                message: format!("User not found for card: {card}"),
+            },
             UserUsecaseError::InternalError(err) => AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 message: err.to_string(),

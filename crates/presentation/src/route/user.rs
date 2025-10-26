@@ -1,9 +1,13 @@
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Query, State},
+    http::StatusCode,
+};
 use tracing::{info, instrument};
 
 use crate::{
     error::AppError,
-    model::user::{RegisterUserRequest, UserDataResponse},
+    model::user::{FindUserQuery, RegisterUserRequest, UserDataResponse},
 };
 
 type AppResult<T> = Result<T, AppError>;
@@ -17,6 +21,17 @@ pub async fn handle_post(
     let user_data = state.usecases.user.register(request.into()).await?;
     info!(user_id = %user_data.id, "User registered successfully");
     Ok((StatusCode::CREATED, Json(user_data.into())))
+}
+
+#[instrument(skip(state, query), fields(card = %query.card))]
+pub async fn handle_get(
+    State(state): State<crate::state::State>,
+    Query(query): Query<FindUserQuery>,
+) -> AppResult<Json<UserDataResponse>> {
+    info!(card = %query.card, "Get user request received");
+    let user_data = state.usecases.user.find_by_card(query.card.clone()).await?;
+    info!(user_id = %user_data.id, "User retrieved successfully");
+    Ok(Json(user_data.into()))
 }
 
 #[cfg(test)]
@@ -136,5 +151,62 @@ mod tests {
                 .unwrap()
                 .contains("Card ID already exists")
         );
+    }
+
+    #[tokio::test]
+    async fn handle_get_returns_user_on_success() {
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo
+            .expect_find_by_card()
+            .withf(|card| card == USER1.card)
+            .returning(|_| {
+                let user = USER1.build(timestamp(2025, 10, 21, 15, 0, 0), false);
+                Box::pin(async move { Ok(Some(user)) })
+            });
+
+        let router = test_router(user_repo);
+
+        let response = router
+            .oneshot(
+                Request::get("/users?card=CARD-001")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["id"], USER1.id);
+        assert_eq!(json["card"], USER1.card);
+        assert_eq!(json["display_name"], USER1.display_name);
+    }
+
+    #[tokio::test]
+    async fn handle_get_returns_not_found_when_missing() {
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo
+            .expect_find_by_card()
+            .withf(|card| card == USER2.card)
+            .returning(|_| Box::pin(async { Ok(None) }));
+
+        let router = test_router(user_repo);
+
+        let response = router
+            .oneshot(
+                Request::get("/users?card=CARD-002")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(json["error"].as_str().unwrap().contains("User not found"));
     }
 }

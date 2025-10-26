@@ -13,6 +13,11 @@ impl RegisterUserRequest {
     }
 }
 
+#[derive(Deserialize)]
+pub struct FindUserQuery {
+    pub card: String,
+}
+
 impl From<RegisterUserRequest> for UserRegisterDto {
     fn from(request: RegisterUserRequest) -> Self {
         UserRegisterDto::new(request.card, request.display_name)

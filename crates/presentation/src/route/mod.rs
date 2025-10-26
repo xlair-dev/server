@@ -6,7 +6,9 @@ use crate::state::State;
 pub mod user;
 
 pub fn create_app(state: State) -> Router {
-    let users = Router::new().route("/", post(user::handle_post));
+    let users = Router::new()
+        .route("/", post(user::handle_post))
+        .route("/", get(user::handle_get));
     let health = Router::new().route("/", get(|| async { "OK" }));
 
     // TODO: Add auth middleware

@@ -3,10 +3,12 @@ use domain::{
     entity::user::User,
     repository::user::{UserRepository, UserRepositoryError},
 };
-use sea_orm::{ActiveModelTrait, DbConn, DbErr, error::SqlErr};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter, error::SqlErr,
+};
 use tracing::{debug, error, info, instrument};
 
-use crate::entities;
+use crate::{entities, entities::prelude::Users};
 
 pub struct UserRepositoryImpl {
     db: DbConn,
@@ -32,6 +34,27 @@ impl UserRepository for UserRepositoryImpl {
 
         info!(user_id = %db_user_model.id, "User persisted by repository");
         Ok(db_user_model.into())
+    }
+
+    #[instrument(skip(self), fields(card = %card))]
+    async fn find_by_card(&self, card: &str) -> Result<Option<User>, UserRepositoryError> {
+        debug!("Querying user via SeaORM");
+        let model = Users::find()
+            .filter(entities::users::Column::Card.eq(card))
+            .one(&self.db)
+            .await
+            .map_err(|err| {
+                error!(error = %err, "Failed to query user");
+                UserRepositoryError::InternalError(AnyError::from(err))
+            })?;
+
+        if let Some(model) = model {
+            info!(user_id = %model.id, "User fetched successfully");
+            Ok(Some(model.into()))
+        } else {
+            debug!("User not found for supplied card");
+            Ok(None)
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use domain::entity::user::User;
 
+#[derive(Debug)]
 pub struct UserRegisterDto {
     pub card: String,
     pub display_name: String,
@@ -12,6 +13,7 @@ impl UserRegisterDto {
     }
 }
 
+#[derive(Debug)]
 pub struct UserDataDto {
     pub id: String,
     pub card: String,
