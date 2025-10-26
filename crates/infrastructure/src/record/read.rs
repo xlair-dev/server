@@ -2,16 +2,43 @@ use std::collections::{HashMap, HashSet};
 
 use anyhow::Error as AnyError;
 use domain::{
-    entity::level::Level,
+    entity::record::Record,
     repository::record::{RecordRepositoryError, RecordWithMetadata},
 };
 use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter, prelude::Uuid};
 use tracing::{debug, error};
 
-use crate::entities;
+use crate::entities::{self, prelude::Records};
+
+pub async fn records_by_user(
+    db: &DbConn,
+    user_id: &str,
+) -> Result<Vec<Record>, RecordRepositoryError> {
+    debug!("Resolving user before loading records");
+    let uuid = ensure_user_exists(db, user_id).await?;
+
+    let models = Records::find()
+        .filter(entities::records::Column::UserId.eq(uuid))
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to fetch records");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    Ok(models.into_iter().map(Record::from).collect())
+}
+
+pub async fn records_with_metadata_by_user(
+    db: &DbConn,
+    user_id: &str,
+) -> Result<Vec<RecordWithMetadata>, RecordRepositoryError> {
+    let uuid = ensure_user_exists(db, user_id).await?;
+    records_with_metadata(db, uuid).await
+}
 
 pub async fn ensure_user_exists(db: &DbConn, user_id: &str) -> Result<Uuid, RecordRepositoryError> {
-    let uuid = crate::record::mapper::parse_user_uuid(user_id)?;
+    let uuid = crate::record::adapter::parse_user_uuid(user_id)?;
 
     let user_exists = entities::users::Entity::find_by_id(uuid)
         .one(db)
@@ -31,7 +58,7 @@ pub async fn ensure_user_exists(db: &DbConn, user_id: &str) -> Result<Uuid, Reco
 
 /// Loads records alongside sheet/music metadata. Relies on the `fk_records_sheet` and
 /// `fk_sheets_music` constraints to guarantee referential integrity across tables.
-pub async fn records_with_metadata(
+async fn records_with_metadata(
     db: &DbConn,
     user_uuid: Uuid,
 ) -> Result<Vec<RecordWithMetadata>, RecordRepositoryError> {
@@ -94,7 +121,7 @@ pub async fn records_with_metadata(
     Ok(result)
 }
 
-fn convert_level(raw_level: i32) -> Result<Level, RecordRepositoryError> {
+fn convert_level(raw_level: i32) -> Result<domain::entity::level::Level, RecordRepositoryError> {
     if raw_level < 0 {
         error!(value = raw_level, "Level must be non-negative");
         return Err(RecordRepositoryError::InternalError(AnyError::msg(
@@ -111,7 +138,7 @@ fn convert_level(raw_level: i32) -> Result<Level, RecordRepositoryError> {
         RecordRepositoryError::InternalError(AnyError::from(err))
     })?;
 
-    Level::new(integer, decimal).map_err(|err| {
+    domain::entity::level::Level::new(integer, decimal).map_err(|err| {
         error!(error = ?err, value = raw_level, "Invalid level value returned from database");
         RecordRepositoryError::InternalError(AnyError::from(err))
     })

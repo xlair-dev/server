@@ -5,10 +5,23 @@ use sea_orm::{
 };
 use tracing::{debug, error, info};
 
-use super::query::parse_user_uuid;
+use super::adapter::{convert_user_insert_error, parse_user_uuid};
 use crate::entities;
 
-pub async fn increment_credits(db: &DbConn, user_id: &str) -> Result<u32, UserRepositoryError> {
+pub async fn create_user(db: &DbConn, user: User) -> Result<User, UserRepositoryError> {
+    let card_id = user.card().to_owned();
+    let db_user: entities::users::ActiveModel = user.into();
+
+    let db_user_model = db_user.insert(db).await.map_err(|err| {
+        error!(error = %err, "Failed to insert user");
+        convert_user_insert_error(err, &card_id)
+    })?;
+
+    debug!(user_id = %db_user_model.id, "User persisted by repository");
+    Ok(db_user_model.into())
+}
+
+pub async fn increment_credits(db: &DbConn, user_id: &str) -> Result<(), UserRepositoryError> {
     let uuid = parse_user_uuid(user_id)?;
 
     let update = entities::users::Entity::update_many()
@@ -29,21 +42,9 @@ pub async fn increment_credits(db: &DbConn, user_id: &str) -> Result<u32, UserRe
         return Err(UserRepositoryError::NotFound(user_id.to_owned()));
     }
 
-    let model = entities::users::Entity::find_by_id(uuid)
-        .one(db)
-        .await
-        .map_err(|err| {
-            error!(error = %err, "Failed to fetch user after increment");
-            UserRepositoryError::InternalError(AnyError::from(err))
-        })?
-        .ok_or_else(|| {
-            debug!("User disappeared after increment");
-            UserRepositoryError::NotFound(user_id.to_owned())
-        })?;
+    debug!(user_id = %uuid, "User credits incremented successfully");
 
-    info!(user_id = %model.id, credits = model.credits, "User credits incremented successfully");
-
-    Ok(model.credits as u32)
+    Ok(())
 }
 
 pub async fn save_user(db: &DbConn, user: User) -> Result<User, UserRepositoryError> {

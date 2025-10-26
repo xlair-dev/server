@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::Error as AnyError;
+use chrono::{TimeZone, Utc};
 use domain::{entity::record::Record, repository::record::RecordRepositoryError};
 use sea_orm::{ActiveValue, prelude::Uuid};
 
@@ -31,7 +32,7 @@ pub fn active_model_for_insert(
         score: ActiveValue::Set(convert_score(*record.score())?),
         clear_type: ActiveValue::Set(DbClearType::from(*record.clear_type())),
         play_count: ActiveValue::Set(convert_play_count(*record.play_count())?),
-        updated_at: ActiveValue::NotSet,
+        updated_at: ActiveValue::Set(Utc.from_utc_datetime(record.updated_at()).into()),
     })
 }
 
@@ -49,33 +50,8 @@ pub fn active_model_for_update(
         score: ActiveValue::Set(convert_score(*record.score())?),
         clear_type: ActiveValue::Set(DbClearType::from(*record.clear_type())),
         play_count: ActiveValue::Set(convert_play_count(*record.play_count())?),
-        updated_at: ActiveValue::NotSet,
+        updated_at: ActiveValue::Set(Utc.from_utc_datetime(record.updated_at()).into()),
     })
-}
-
-pub fn convert_insert_error(
-    err: sea_orm::DbErr,
-    user_id: &str,
-    sheet_id: &str,
-) -> RecordRepositoryError {
-    let message = err.to_string();
-    if message.contains("fk_records_user") {
-        return RecordRepositoryError::UserNotFound(user_id.to_owned());
-    }
-
-    if message.contains("fk_records_sheet") {
-        return RecordRepositoryError::SheetNotFound(sheet_id.to_owned());
-    }
-
-    RecordRepositoryError::InternalError(AnyError::from(err))
-}
-
-pub fn convert_update_error(err: sea_orm::DbErr, record_id: &str) -> RecordRepositoryError {
-    if matches!(err, sea_orm::DbErr::RecordNotUpdated) {
-        tracing::debug!(record_id = %record_id, "Record not updated; underlying row may be missing");
-    }
-
-    RecordRepositoryError::InternalError(AnyError::from(err))
 }
 
 pub fn parse_user_uuid(user_id: &str) -> Result<Uuid, RecordRepositoryError> {

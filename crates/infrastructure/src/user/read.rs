@@ -1,9 +1,9 @@
 use anyhow::Error as AnyError;
 use domain::{entity::user::User, repository::user::UserRepositoryError};
-use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter, prelude::Uuid};
+use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter};
 use tracing::{debug, error, info};
 
-use crate::entities;
+use crate::{entities, user::adapter::parse_user_uuid};
 
 pub async fn find_by_card(db: &DbConn, card: &str) -> Result<Option<User>, UserRepositoryError> {
     debug!("Querying user via SeaORM");
@@ -37,11 +37,4 @@ pub async fn find_by_id(db: &DbConn, user_id: &str) -> Result<Option<User>, User
         })?;
 
     Ok(model.map(Into::into))
-}
-
-pub fn parse_user_uuid(user_id: &str) -> Result<Uuid, UserRepositoryError> {
-    Uuid::parse_str(user_id).map_err(|err| {
-        debug!(error = %err, "Failed to parse user id");
-        UserRepositoryError::NotFound(user_id.to_owned())
-    })
 }

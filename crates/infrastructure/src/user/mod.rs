@@ -1,22 +1,16 @@
-mod error;
-mod mutation;
-mod query;
+mod adapter;
+mod read;
+mod write;
 
 use domain::{
     entity::user::User,
     repository::user::{UserRepository, UserRepositoryError},
 };
-use sea_orm::{ActiveModelTrait, DbConn};
+use read::{find_by_card as query_by_card, find_by_id as query_by_id};
+use sea_orm::DbConn;
 use std::sync::Arc;
-use tracing::{debug, error, info, instrument};
-
-use crate::entities;
-use error::convert_user_insert_error;
-use mutation::{increment_credits as mutate_increment_credits, save_user};
-use query::{find_by_card as query_by_card, find_by_id as query_by_id};
-
-#[cfg(test)]
-mod tests;
+use tracing::{debug, info, instrument};
+use write::{create_user, increment_credits as mutate_increment_credits, save_user};
 
 pub struct UserRepositoryImpl {
     db: Arc<DbConn>,
@@ -32,16 +26,9 @@ impl UserRepository for UserRepositoryImpl {
     #[instrument(skip(self, user), fields(card = %user.card()))]
     async fn create(&self, user: User) -> Result<User, UserRepositoryError> {
         debug!("Persisting user via SeaORM");
-        let card_id = user.card().to_owned();
-        let db_user: entities::users::ActiveModel = user.into();
-
-        let db_user_model = db_user.insert(self.db.as_ref()).await.map_err(|err| {
-            error!(error = %err, "Failed to insert user");
-            convert_user_insert_error(err, &card_id)
-        })?;
-
-        info!(user_id = %db_user_model.id, "User persisted by repository");
-        Ok(db_user_model.into())
+        let created = create_user(self.db.as_ref(), user).await?;
+        info!(user_id = %created.id(), "User persisted by repository");
+        Ok(created)
     }
 
     #[instrument(skip(self), fields(card = %card))]
@@ -51,7 +38,14 @@ impl UserRepository for UserRepositoryImpl {
 
     #[instrument(skip(self), fields(user_id = %user_id))]
     async fn increment_credits(&self, user_id: &str) -> Result<u32, UserRepositoryError> {
-        mutate_increment_credits(self.db.as_ref(), user_id).await
+        mutate_increment_credits(self.db.as_ref(), user_id).await?;
+        let user = query_by_id(self.db.as_ref(), user_id)
+            .await?
+            .ok_or_else(|| UserRepositoryError::NotFound(user_id.to_owned()))?;
+
+        let credits = *user.credits();
+        info!(user_id = %user.id(), credits, "User credits incremented successfully");
+        Ok(credits)
     }
 
     #[instrument(skip(self), fields(user_id = %user_id))]
