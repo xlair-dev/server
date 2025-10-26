@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use usecase::model::user::{UserDataDto, UserRegisterDto};
+use usecase::model::user::{UserCreditsDto, UserDataDto, UserRegisterDto};
 
 #[derive(Deserialize)]
 pub struct RegisterUserRequest {
@@ -73,5 +73,18 @@ impl From<UserDataDto> for UserDataResponse {
             user_data.is_admin,
             user_data.created_at.to_string(),
         )
+    }
+}
+
+#[derive(Serialize)]
+pub struct CreditsIncrementResponse {
+    pub credits: u32,
+}
+
+impl From<UserCreditsDto> for CreditsIncrementResponse {
+    fn from(dto: UserCreditsDto) -> Self {
+        Self {
+            credits: dto.credits,
+        }
     }
 }
