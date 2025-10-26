@@ -1,4 +1,4 @@
-use domain::repository::user::UserRepositoryError;
+use domain::repository::{record::RecordRepositoryError, user::UserRepositoryError};
 use usecase::user::UserUsecaseError;
 
 use crate::error::AppError;
@@ -22,6 +22,21 @@ impl From<UserRepositoryError> for AppError {
     }
 }
 
+impl From<RecordRepositoryError> for AppError {
+    fn from(error: RecordRepositoryError) -> Self {
+        match error {
+            RecordRepositoryError::UserNotFound(id) => AppError {
+                status_code: axum::http::StatusCode::NOT_FOUND,
+                message: format!("User not found: {id}"),
+            },
+            RecordRepositoryError::InternalError(err) => AppError {
+                status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                message: err.to_string(),
+            },
+        }
+    }
+}
+
 impl From<UserUsecaseError> for AppError {
     fn from(error: UserUsecaseError) -> Self {
         match error {
@@ -34,6 +49,7 @@ impl From<UserUsecaseError> for AppError {
                 status_code: axum::http::StatusCode::NOT_FOUND,
                 message: format!("User not found for id: {user_id}"),
             },
+            UserUsecaseError::RecordRepositoryError(repo_error) => repo_error.into(),
             UserUsecaseError::InternalError(err) => AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 message: err.to_string(),

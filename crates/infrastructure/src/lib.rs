@@ -1,17 +1,20 @@
 use domain::repository::Repositories;
+use std::sync::Arc;
 use tracing::{error, info, instrument};
 
 pub mod entities;
 pub mod model;
+pub mod record;
 pub mod user;
 
 pub struct RepositoriesImpl {
     user: user::UserRepositoryImpl,
+    record: record::RecordRepositoryImpl,
 }
 
 impl RepositoriesImpl {
-    pub fn new(user: user::UserRepositoryImpl) -> Self {
-        Self { user }
+    pub fn new(user: user::UserRepositoryImpl, record: record::RecordRepositoryImpl) -> Self {
+        Self { user, record }
     }
 
     /// Initializes the SeaORM connection. Implicitly depends on a tracing subscriber already being set up so logging can emit.
@@ -26,16 +29,26 @@ impl RepositoriesImpl {
             });
         info!("Database connection established");
 
-        let user_repo = user::UserRepositoryImpl::new(db);
+        let db = Arc::new(db);
+        let user_repo = user::UserRepositoryImpl::new(db.clone());
+        let record_repo = record::RecordRepositoryImpl::new(db.clone());
 
-        Self { user: user_repo }
+        Self {
+            user: user_repo,
+            record: record_repo,
+        }
     }
 }
 
 impl Repositories for RepositoriesImpl {
     type UserRepositoryImpl = user::UserRepositoryImpl;
+    type RecordRepositoryImpl = record::RecordRepositoryImpl;
 
     fn user(&self) -> &Self::UserRepositoryImpl {
         &self.user
+    }
+
+    fn record(&self) -> &Self::RecordRepositoryImpl {
+        &self.record
     }
 }

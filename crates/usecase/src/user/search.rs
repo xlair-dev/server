@@ -21,7 +21,9 @@ impl<R: Repositories> UserUsecase<R> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use domain::repository::{MockRepositories, user::UserRepositoryError};
+    use domain::repository::{
+        MockRepositories, record::MockRecordRepository, user::UserRepositoryError,
+    };
     use domain::testing::{
         datetime::sample_timestamp,
         user::{USER1, USER2},
@@ -39,7 +41,10 @@ mod tests {
                 Box::pin(async move { Ok(Some(aggregate)) })
             });
 
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: MockRecordRepository::new(),
+        };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
         let result = usecase
@@ -59,7 +64,10 @@ mod tests {
             .withf(|card| card == USER2.card)
             .returning(|_| Box::pin(async { Ok(None) }));
 
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: MockRecordRepository::new(),
+        };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
         let err = usecase
@@ -84,7 +92,10 @@ mod tests {
             })
         });
 
-        let repositories = MockRepositories { user: user_repo };
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: MockRecordRepository::new(),
+        };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
         let err = usecase

@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use domain::entity::user::User;
+use domain::entity::{clear_type::ClearType, record::Record, user::User};
 
 #[derive(Debug)]
 pub struct UserRegisterDto {
@@ -73,5 +73,48 @@ pub struct UserCreditsDto {
 impl UserCreditsDto {
     pub fn new(credits: u32) -> Self {
         Self { credits }
+    }
+}
+
+#[derive(Debug)]
+pub struct UserRecordDto {
+    pub id: String,
+    pub sheet_id: String,
+    pub score: u32,
+    pub clear_type: ClearType,
+    pub play_count: u32,
+    pub updated_at: NaiveDateTime,
+}
+
+impl UserRecordDto {
+    pub fn new(
+        id: String,
+        sheet_id: String,
+        score: u32,
+        clear_type: ClearType,
+        play_count: u32,
+        updated_at: NaiveDateTime,
+    ) -> Self {
+        Self {
+            id,
+            sheet_id,
+            score,
+            clear_type,
+            play_count,
+            updated_at,
+        }
+    }
+}
+
+impl From<Record> for UserRecordDto {
+    fn from(record: Record) -> Self {
+        Self::new(
+            record.id().to_owned(),
+            record.sheet_id().to_owned(),
+            record.score().to_owned(),
+            *record.clear_type(),
+            record.play_count().to_owned(),
+            record.updated_at().to_owned(),
+        )
     }
 }
