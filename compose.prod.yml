@@ -28,6 +28,8 @@ services:
     entrypoint: ["/app/migrate"]
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
       db:
         condition: service_healthy
