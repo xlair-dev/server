@@ -1,9 +1,3 @@
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-    time::{SystemTime, UNIX_EPOCH},
-};
-
 use anyhow::Error as AnyError;
 use chrono::{TimeZone, Utc};
 use domain::{
@@ -16,20 +10,23 @@ use crate::entities::{
     records::ActiveModel as RecordActiveModel, sea_orm_active_enums::ClearType as DbClearType,
 };
 
+/// Builds an `ActiveModel` for inserts, delegating `id` generation to the
+/// database default (`gen_random_uuid()` defined in
+/// `m20251007_000004_create_records_table`).
 pub fn active_model_for_insert(
     record: &Record,
 ) -> Result<RecordActiveModel, RecordRepositoryError> {
     let record_id = if record.id().is_empty() {
-        generate_record_uuid(record.user_id(), record.sheet_id())
+        ActiveValue::NotSet
     } else {
-        parse_record_uuid(record.id())?
+        ActiveValue::Set(parse_record_uuid(record.id())?)
     };
 
     let user_uuid = parse_user_uuid(record.user_id())?;
     let sheet_uuid = parse_sheet_uuid(record.sheet_id())?;
 
     Ok(RecordActiveModel {
-        id: ActiveValue::Set(record_id),
+        id: record_id,
         user_id: ActiveValue::Set(user_uuid),
         sheet_id: ActiveValue::Set(sheet_uuid),
         score: ActiveValue::Set(convert_score(*record.score())?),
@@ -113,26 +110,6 @@ fn convert_play_count(play_count: u32) -> Result<i32, RecordRepositoryError> {
         tracing::error!(error = %err, "Play count exceeds database range");
         RecordRepositoryError::InternalError(AnyError::from(err))
     })
-}
-
-fn generate_record_uuid(user_id: &str, sheet_id: &str) -> Uuid {
-    let mut upper = DefaultHasher::new();
-    user_id.hash(&mut upper);
-    sheet_id.hash(&mut upper);
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    timestamp.hash(&mut upper);
-    let high = upper.finish();
-
-    let mut lower = DefaultHasher::new();
-    sheet_id.hash(&mut lower);
-    timestamp.wrapping_mul(31).hash(&mut lower);
-    let low = lower.finish();
-
-    let combined = ((high as u128) << 64) | (low as u128);
-    Uuid::from_u128(combined)
 }
 
 pub fn convert_insert_error(err: DbErr, user_id: &str, sheet_id: &str) -> RecordRepositoryError {
