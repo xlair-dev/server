@@ -12,7 +12,7 @@ API server for XLAIR
    ```
 3. スキーマ変更がある場合は、アプリ再起動前に以下でマイグレーションを実行します。
    ```sh
-   docker compose --env-file ./.env -f compose.prod.yml run --rm migrator migrate up
+   docker compose --env-file ./.env -f compose.prod.yml run --rm migrator refresh
    ```
 
 ## CI での想定フロー
