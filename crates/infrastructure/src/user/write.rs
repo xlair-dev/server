@@ -12,10 +12,10 @@ pub async fn create_user(db: &DbConn, user: User) -> Result<User, UserRepository
     let card_id = user.card().to_owned();
     let db_user: entities::users::ActiveModel = user.into();
 
-    let db_user_model = db_user.insert(db).await.map_err(|err| {
-        error!(error = %err, "Failed to insert user");
-        convert_user_insert_error(err, &card_id)
-    })?;
+    let db_user_model = db_user
+        .insert(db)
+        .await
+        .map_err(|err| convert_user_insert_error(err, &card_id))?;
 
     debug!(user_id = %db_user_model.id, "User persisted by repository");
     Ok(db_user_model.into())
@@ -33,7 +33,7 @@ pub async fn increment_credits(db: &DbConn, user_id: &str) -> Result<(), UserRep
         .exec(db)
         .await
         .map_err(|err| {
-            error!(error = %err, "Failed to increment user credits");
+            error!(error = %err, user_id = %uuid, "Failed to increment user credits");
             UserRepositoryError::InternalError(AnyError::from(err))
         })?;
 
@@ -54,7 +54,7 @@ pub async fn save_user(db: &DbConn, user: User) -> Result<User, UserRepositoryEr
     active.id = ActiveValue::Set(uuid);
 
     let model = active.update(db).await.map_err(|err| {
-        error!(error = %err, "Failed to update user");
+        error!(error = %err, user_id = %uuid, "Failed to update user");
         UserRepositoryError::InternalError(AnyError::from(err))
     })?;
 

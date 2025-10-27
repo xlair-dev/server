@@ -114,20 +114,25 @@ fn convert_play_count(play_count: u32) -> Result<i32, RecordRepositoryError> {
 pub fn convert_insert_error(err: DbErr, user_id: &str, sheet_id: &str) -> RecordRepositoryError {
     let message = err.to_string();
     if message.contains("fk_records_user") {
+        tracing::warn!(user_id = %user_id, "User not found for foreign key constraint");
         return RecordRepositoryError::UserNotFound(user_id.to_owned());
     }
 
     if message.contains("fk_records_sheet") {
+        tracing::warn!(sheet_id = %sheet_id, "Sheet not found for foreign key constraint");
         return RecordRepositoryError::SheetNotFound(sheet_id.to_owned());
     }
 
+    tracing::error!(error = %err, "Failed to insert record");
     RecordRepositoryError::InternalError(AnyError::from(err))
 }
 
 pub fn convert_update_error(err: DbErr, record_id: &str) -> RecordRepositoryError {
     if matches!(err, DbErr::RecordNotUpdated) {
         tracing::debug!(record_id = %record_id, "Record not updated; underlying row may be missing");
+        RecordRepositoryError::InternalError(AnyError::from(err))
+    } else {
+        tracing::error!(error = %err, record_id = %record_id, "Failed to update record");
+        RecordRepositoryError::InternalError(AnyError::from(err))
     }
-
-    RecordRepositoryError::InternalError(AnyError::from(err))
 }
