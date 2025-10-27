@@ -69,44 +69,44 @@ pub fn parse_sheet_uuid(sheet_id: &str) -> Result<Uuid, RecordRepositoryError> {
 
 fn parse_record_uuid(record_id: &str) -> Result<Uuid, RecordRepositoryError> {
     Uuid::parse_str(record_id).map_err(|err| {
-        tracing::error!(error = %err, "Failed to parse record id");
+        tracing::debug!(error = %err, "Failed to parse record id");
         RecordRepositoryError::InternalError(AnyError::from(err))
     })
 }
 
 pub fn convert_level(raw_level: i32) -> Result<Level, RecordRepositoryError> {
     if raw_level < 0 {
-        tracing::error!(value = raw_level, "Level must be non-negative");
+        tracing::warn!(value = raw_level, "Level must be non-negative");
         return Err(RecordRepositoryError::InternalError(AnyError::msg(
             "negative level encountered",
         )));
     }
 
     let integer = u32::try_from(raw_level / 10).map_err(|err| {
-        tracing::error!(error = %err, value = raw_level, "Failed to convert level integer part");
+        tracing::warn!(error = %err, value = raw_level, "Failed to convert level integer part");
         RecordRepositoryError::InternalError(AnyError::from(err))
     })?;
     let decimal = u32::try_from(raw_level % 10).map_err(|err| {
-        tracing::error!(error = %err, value = raw_level, "Failed to convert level decimal part");
+        tracing::warn!(error = %err, value = raw_level, "Failed to convert level decimal part");
         RecordRepositoryError::InternalError(AnyError::from(err))
     })?;
 
     Level::new(integer, decimal).map_err(|err| {
-        tracing::error!(error = ?err, value = raw_level, "Invalid level value returned from database");
+        tracing::warn!(error = ?err, value = raw_level, "Invalid level value returned from database");
         RecordRepositoryError::InternalError(AnyError::from(err))
     })
 }
 
 fn convert_score(score: u32) -> Result<i32, RecordRepositoryError> {
     i32::try_from(score).map_err(|err| {
-        tracing::error!(error = %err, "Score exceeds database range");
+        tracing::warn!(error = %err, "Score exceeds database range");
         RecordRepositoryError::InternalError(AnyError::from(err))
     })
 }
 
 fn convert_play_count(play_count: u32) -> Result<i32, RecordRepositoryError> {
     i32::try_from(play_count).map_err(|err| {
-        tracing::error!(error = %err, "Play count exceeds database range");
+        tracing::warn!(error = %err, "Play count exceeds database range");
         RecordRepositoryError::InternalError(AnyError::from(err))
     })
 }
