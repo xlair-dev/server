@@ -5,7 +5,7 @@ use domain::{
     entity::record::Record,
     repository::record::{RecordRepositoryError, RecordWithMetadata},
 };
-use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter, prelude::Uuid};
+use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, prelude::Uuid};
 use tracing::{debug, error};
 
 use crate::entities::{self, prelude::Records};
@@ -19,6 +19,7 @@ pub async fn records_by_user(
 
     let models = Records::find()
         .filter(entities::records::Column::UserId.eq(uuid))
+        .order_by_asc(entities::records::Column::UpdatedAt)
         .all(db)
         .await
         .map_err(|err| {
@@ -65,6 +66,7 @@ async fn records_with_metadata(
     let records_and_sheets = entities::records::Entity::find()
         .filter(entities::records::Column::UserId.eq(user_uuid))
         .find_also_related(entities::sheets::Entity)
+        .order_by_asc(entities::records::Column::UpdatedAt)
         .all(db)
         .await
         .map_err(|err| {
@@ -88,6 +90,7 @@ async fn records_with_metadata(
             .filter(
                 entities::musics::Column::Id.is_in(music_ids.iter().copied().collect::<Vec<_>>()),
             )
+            .order_by_asc(entities::musics::Column::Id)
             .all(db)
             .await
             .map_err(|err| {
