@@ -6,7 +6,7 @@ use domain::{
     repository::record::{RecordRepositoryError, RecordWithMetadata},
 };
 use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, prelude::Uuid};
-use tracing::{debug, error};
+use tracing::{debug, error, warn};
 
 use crate::entities::{self, prelude::Records};
 
@@ -77,7 +77,7 @@ async fn records_with_metadata(
     let mut music_ids = HashSet::new();
     for (record_model, sheet_model) in &records_and_sheets {
         let sheet = sheet_model.as_ref().ok_or_else(|| {
-            error!(sheet_id = %record_model.sheet_id, "Sheet missing while loading records");
+            warn!(sheet_id = %record_model.sheet_id, "Sheet missing while loading records");
             RecordRepositoryError::SheetNotFound(record_model.sheet_id.to_string())
         })?;
         music_ids.insert(sheet.music_id);
@@ -107,12 +107,12 @@ async fn records_with_metadata(
     let mut result = Vec::with_capacity(records_and_sheets.len());
     for (record_model, sheet_model) in records_and_sheets {
         let sheet = sheet_model.ok_or_else(|| {
-            error!(sheet_id = %record_model.sheet_id, "Sheet missing while composing metadata");
+            warn!(sheet_id = %record_model.sheet_id, "Sheet missing while composing metadata");
             RecordRepositoryError::SheetNotFound(record_model.sheet_id.to_string())
         })?;
 
         let is_test = music_map.get(&sheet.music_id).copied().ok_or_else(|| {
-            error!(music_id = %sheet.music_id, "Music metadata missing for sheet");
+            warn!(music_id = %sheet.music_id, "Music metadata missing for sheet");
             RecordRepositoryError::SheetNotFound(sheet.id.to_string())
         })?;
 
