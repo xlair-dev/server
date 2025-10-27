@@ -5,6 +5,7 @@ use usecase::model::user::{
 };
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RegisterUserRequest {
     pub card: String,
     pub display_name: String,
@@ -28,6 +29,7 @@ impl From<RegisterUserRequest> for UserRegisterDto {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserDataResponse {
     pub id: String,
     pub card: String,
@@ -93,16 +95,13 @@ impl From<UserCreditsDto> for CreditsIncrementResponse {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserRecordResponse {
     pub id: String,
-    #[serde(rename = "sheetId")]
     pub sheet_id: String,
     pub score: u32,
-    #[serde(rename = "clearType")]
     pub clear_type: String,
-    #[serde(rename = "playCount")]
     pub play_count: u32,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
@@ -128,13 +127,11 @@ impl From<UserRecordDto> for UserRecordResponse {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserRecordRequest {
-    #[serde(rename = "userId")]
     pub user_id: String,
-    #[serde(rename = "sheetId")]
     pub sheet_id: String,
     pub score: u32,
-    #[serde(rename = "clearType")]
     pub clear_type: String,
 }
 
