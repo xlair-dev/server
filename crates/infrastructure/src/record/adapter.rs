@@ -1,5 +1,4 @@
 use anyhow::Error as AnyError;
-use chrono::{TimeZone, Utc};
 use domain::{
     entity::{level::Level, record::Record},
     repository::record::RecordRepositoryError,
@@ -32,7 +31,7 @@ pub fn active_model_for_insert(
         score: ActiveValue::Set(convert_score(*record.score())?),
         clear_type: ActiveValue::Set(DbClearType::from(*record.clear_type())),
         play_count: ActiveValue::Set(convert_play_count(*record.play_count())?),
-        updated_at: ActiveValue::Set(Utc.from_utc_datetime(record.updated_at()).into()),
+        updated_at: ActiveValue::Set((*record.updated_at()).into()),
     })
 }
 
@@ -50,7 +49,7 @@ pub fn active_model_for_update(
         score: ActiveValue::Set(convert_score(*record.score())?),
         clear_type: ActiveValue::Set(DbClearType::from(*record.clear_type())),
         play_count: ActiveValue::Set(convert_play_count(*record.play_count())?),
-        updated_at: ActiveValue::Set(Utc.from_utc_datetime(record.updated_at()).into()),
+        updated_at: ActiveValue::Set((*record.updated_at()).into()),
     })
 }
 

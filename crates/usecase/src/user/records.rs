@@ -77,7 +77,7 @@ impl<R: Repositories> UserUsecase<R> {
         for submission in submissions {
             let sheet_id = submission.sheet_id.clone();
             xp_delta = xp_delta.saturating_add(experience::xp_for_score(submission.score));
-            let submitted_at = Utc::now().naive_utc();
+            let submitted_at = Utc::now();
 
             match record_map.remove(&sheet_id) {
                 Some(mut record) => {
@@ -148,7 +148,6 @@ impl<R: Repositories> UserUsecase<R> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::NaiveDate;
     use domain::{
         entity::rating::Rating,
         entity::{clear_type::ClearType, level::Level, record::Record, user::User},
@@ -160,11 +159,12 @@ mod tests {
     };
     use std::sync::Arc;
 
-    fn sample_timestamp() -> chrono::NaiveDateTime {
-        NaiveDate::from_ymd_opt(2025, 10, 26)
+    fn sample_timestamp() -> chrono::DateTime<chrono::Utc> {
+        chrono::NaiveDate::from_ymd_opt(2025, 10, 26)
             .unwrap()
             .and_hms_opt(9, 30, 0)
             .unwrap()
+            .and_utc()
     }
 
     #[tokio::test]

@@ -1,4 +1,4 @@
-use chrono::{NaiveDateTime, TimeZone, Utc};
+use chrono::Utc;
 use sea_orm::prelude::Uuid;
 use std::convert::TryFrom;
 
@@ -21,7 +21,7 @@ impl From<User> for UserModel {
             xp: domain_user.xp().to_owned() as i64,
             credits: domain_user.credits().to_owned() as i64,
             is_admin: *domain_user.is_admin(),
-            created_at: Utc.from_utc_datetime(domain_user.created_at()).into(),
+            created_at: (*domain_user.created_at()).into(),
             updated_at: Utc::now().into(),
         }
     }
@@ -30,7 +30,7 @@ impl From<User> for UserModel {
 impl From<UserModel> for User {
     fn from(db_user: UserModel) -> Self {
         let id = db_user.id.to_string();
-        let created_at: NaiveDateTime = db_user.created_at.naive_utc();
+        let created_at = db_user.created_at.with_timezone(&chrono::Utc);
 
         Self::new(
             id,
@@ -57,7 +57,7 @@ impl From<User> for UserActiveModel {
         let db_user_created_at = if domain_user.id().is_empty() {
             ActiveValue::NotSet
         } else {
-            ActiveValue::Set(Utc.from_utc_datetime(domain_user.created_at()).into())
+            ActiveValue::Set((*domain_user.created_at()).into())
         };
 
         UserActiveModel {
@@ -80,11 +80,7 @@ impl From<User> for UserActiveModel {
 mod tests {
     use super::*;
     use crate::entities::users::Model as RawUserModel;
-    use chrono::TimeZone;
-    use domain::testing::{
-        datetime::later_timestamp,
-        user::{USER2, USER3, created_at1},
-    };
+    use domain::testing::user::{USER2, USER3, created_at1};
     use sea_orm::prelude::Uuid;
 
     #[test]
@@ -101,13 +97,12 @@ mod tests {
         assert_eq!(model.xp, USER2.xp as i64);
         assert_eq!(model.credits, USER2.credits as i64);
         assert!(model.is_admin);
-        assert_eq!(model.created_at.naive_utc(), created_at);
+        assert_eq!(model.created_at, created_at);
     }
 
     #[test]
     fn domain_user_from_model_preserves_scalar_fields() {
-        let created_at_naive = later_timestamp();
-        let created_at = chrono::Utc.from_utc_datetime(&created_at_naive);
+        let created_at = chrono::Utc::now();
         let model = RawUserModel {
             id: Uuid::parse_str(USER3.id).unwrap(),
             card: USER3.card.to_owned(),
@@ -130,7 +125,7 @@ mod tests {
         assert_eq!(*user.xp(), USER3.xp);
         assert_eq!(*user.credits(), USER3.credits);
         assert!(!user.is_admin());
-        assert_eq!(*user.created_at(), created_at_naive);
+        assert_eq!(*user.created_at(), created_at);
     }
 
     #[test]

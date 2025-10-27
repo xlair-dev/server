@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 
 use crate::entity::{rating::Rating, user::User};
 
@@ -15,7 +15,7 @@ pub struct UserSample {
 
 impl UserSample {
     /// Builds a `User` aggregate based on this sample and the supplied metadata.
-    pub fn build(&self, created_at: NaiveDateTime, is_admin: bool) -> User {
+    pub fn build(&self, created_at: DateTime<Utc>, is_admin: bool) -> User {
         User::new(
             self.id.to_owned(),
             self.card.to_owned(),
@@ -56,10 +56,10 @@ pub const USER3: UserSample = UserSample {
     credits: 456,
 };
 
-pub fn created_at1() -> NaiveDateTime {
+pub fn created_at1() -> DateTime<Utc> {
     sample_timestamp()
 }
 
-pub fn created_at2() -> NaiveDateTime {
+pub fn created_at2() -> DateTime<Utc> {
     later_timestamp()
 }

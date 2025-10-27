@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use domain::entity::{clear_type::ClearType as DomainClearType, record::Record};
 
 use crate::entities::{
@@ -12,7 +11,7 @@ impl From<RecordModel> for Record {
         let sheet_id = model.sheet_id.to_string();
         let score = u32::try_from(model.score).expect("score must be non-negative");
         let play_count = u32::try_from(model.play_count).expect("play_count must be non-negative");
-        let updated_at: NaiveDateTime = model.updated_at.naive_utc();
+        let updated_at = model.updated_at.with_timezone(&chrono::Utc);
 
         Record::new(
             id,

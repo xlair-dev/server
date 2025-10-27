@@ -111,7 +111,6 @@ mod tests {
         body::{self, Body},
         http::Request,
     };
-    use chrono::NaiveDate;
     use domain::entity::rating::Rating;
     use domain::{
         entity::{clear_type::ClearType, level::Level, record::Record, user::User},
@@ -141,11 +140,12 @@ mod tests {
         super::super::create_app(state)
     }
 
-    fn sample_timestamp() -> chrono::NaiveDateTime {
-        NaiveDate::from_ymd_opt(2025, 10, 26)
+    fn sample_timestamp() -> chrono::DateTime<chrono::Utc> {
+        chrono::NaiveDate::from_ymd_opt(2025, 10, 26)
             .unwrap()
             .and_hms_opt(12, 0, 0)
             .unwrap()
+            .and_utc()
     }
 
     #[tokio::test]
@@ -197,7 +197,7 @@ mod tests {
         assert_eq!(json["xp"], USER2.xp);
         assert_eq!(json["credits"], USER2.credits);
         assert_eq!(json["is_admin"], false);
-        assert_eq!(json["created_at"], "2025-10-21 15:00:00");
+        assert_eq!(json["created_at"], "2025-10-21T15:00:00+00:00");
     }
 
     #[tokio::test]
@@ -363,10 +363,11 @@ mod tests {
                         1_000_000,
                         ClearType::Clear,
                         5,
-                        NaiveDate::from_ymd_opt(2025, 10, 26)
+                        chrono::NaiveDate::from_ymd_opt(2025, 10, 26)
                             .unwrap()
                             .and_hms_opt(12, 0, 0)
-                            .unwrap(),
+                            .unwrap()
+                            .and_utc(),
                     )])
                 })
             });

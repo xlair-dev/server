@@ -74,7 +74,7 @@ impl From<UserDataDto> for UserDataResponse {
             user_data.xp,
             user_data.credits,
             user_data.is_admin,
-            user_data.created_at.to_string(),
+            user_data.created_at.to_rfc3339(),
         )
     }
 }
@@ -122,7 +122,7 @@ impl From<UserRecordDto> for UserRecordResponse {
             score: dto.score,
             clear_type,
             play_count: dto.play_count,
-            updated_at: dto.updated_at.to_string(),
+            updated_at: dto.updated_at.to_rfc3339(),
         }
     }
 }

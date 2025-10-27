@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use domain::entity::{clear_type::ClearType, record::Record, user::User};
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ pub struct UserDataDto {
     pub xp: u32,
     pub credits: u32,
     pub is_admin: bool,
-    pub created_at: NaiveDateTime,
+    pub created_at: DateTime<Utc>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -35,7 +35,7 @@ impl UserDataDto {
         xp: u32,
         credits: u32,
         is_admin: bool,
-        created_at: NaiveDateTime,
+        created_at: DateTime<Utc>,
     ) -> Self {
         Self {
             id,
@@ -83,7 +83,7 @@ pub struct UserRecordDto {
     pub score: u32,
     pub clear_type: ClearType,
     pub play_count: u32,
-    pub updated_at: NaiveDateTime,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone)]
@@ -110,7 +110,7 @@ impl UserRecordDto {
         score: u32,
         clear_type: ClearType,
         play_count: u32,
-        updated_at: NaiveDateTime,
+        updated_at: DateTime<Utc>,
     ) -> Self {
         Self {
             id,

@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use getset::{Getters, Setters};
 
 use super::clear_type::ClearType;
@@ -18,7 +18,7 @@ pub struct Record {
     #[getset(get = "pub", set = "pub")]
     play_count: u32,
     #[getset(get = "pub", set = "pub")]
-    updated_at: NaiveDateTime,
+    updated_at: DateTime<Utc>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -30,7 +30,7 @@ impl Record {
         score: u32,
         clear_type: ClearType,
         play_count: u32,
-        updated_at: NaiveDateTime,
+        updated_at: DateTime<Utc>,
     ) -> Self {
         Self {
             id,
@@ -48,7 +48,7 @@ impl Record {
         sheet_id: String,
         score: u32,
         clear_type: ClearType,
-        updated_at: NaiveDateTime,
+        updated_at: DateTime<Utc>,
     ) -> Self {
         Self::new(
             String::new(),
@@ -65,7 +65,7 @@ impl Record {
         &mut self,
         score: u32,
         clear_type: ClearType,
-        updated_at: NaiveDateTime,
+        updated_at: DateTime<Utc>,
     ) {
         self.set_play_count(self.play_count() + 1);
         if score > *self.score() {
