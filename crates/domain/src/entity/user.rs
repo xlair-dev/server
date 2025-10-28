@@ -18,6 +18,8 @@ pub struct User {
     #[getset(get = "pub", set = "pub")]
     credits: u32,
     #[getset(get = "pub")]
+    is_public: bool,
+    #[getset(get = "pub")]
     is_admin: bool,
     #[getset(get = "pub")]
     created_at: DateTime<Utc>,
@@ -32,6 +34,7 @@ impl User {
         rating: Rating,
         xp: u32,
         credits: u32,
+        is_public: bool,
         is_admin: bool,
         created_at: DateTime<Utc>,
     ) -> Self {
@@ -42,6 +45,7 @@ impl User {
             rating,
             xp,
             credits,
+            is_public,
             is_admin,
             created_at,
         }
@@ -55,6 +59,7 @@ impl User {
             rating: Rating::default(),
             xp: 0,
             credits: 0,
+            is_public: false,
             is_admin: false,
             created_at: chrono::Utc::now(),
         }
@@ -87,6 +92,7 @@ mod tests {
         assert_eq!(user.rating().value(), 0);
         assert_eq!(*user.xp(), 0);
         assert_eq!(*user.credits(), 0);
+        assert!(!user.is_public());
         assert!(!user.is_admin());
     }
 
@@ -105,6 +111,7 @@ mod tests {
             Rating::new(1234),
             100,
             50,
+            false,
             true,
             timestamp,
         );
@@ -115,6 +122,7 @@ mod tests {
         assert_eq!(user.rating().value(), 1234);
         assert_eq!(*user.xp(), 100);
         assert_eq!(*user.credits(), 50);
+        assert!(user.is_public());
         assert!(user.is_admin());
         assert_eq!(*user.created_at(), timestamp);
     }

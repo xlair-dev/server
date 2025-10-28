@@ -21,6 +21,7 @@ pub struct UserDataDto {
     pub rating: u32,
     pub xp: u32,
     pub credits: u32,
+    pub is_public: bool,
     pub is_admin: bool,
     pub created_at: DateTime<Utc>,
 }
@@ -34,6 +35,7 @@ impl UserDataDto {
         rating: u32,
         xp: u32,
         credits: u32,
+        is_public: bool,
         is_admin: bool,
         created_at: DateTime<Utc>,
     ) -> Self {
@@ -44,6 +46,7 @@ impl UserDataDto {
             rating,
             xp,
             credits,
+            is_public,
             is_admin,
             created_at,
         }
@@ -59,6 +62,7 @@ impl From<User> for UserDataDto {
             user.rating().value(),
             user.xp().to_owned(),
             user.credits().to_owned(),
+            user.is_public().to_owned(),
             user.is_admin().to_owned(),
             user.created_at().to_owned(),
         )
