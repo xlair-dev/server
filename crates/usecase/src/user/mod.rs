@@ -7,6 +7,7 @@ pub mod credits;
 pub mod records;
 pub mod register;
 pub mod search;
+pub mod update;
 
 #[derive(Debug, Error)]
 pub enum UserUsecaseError {

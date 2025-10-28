@@ -2,6 +2,7 @@ use domain::entity::clear_type::ClearType;
 use serde::{Deserialize, Serialize};
 use usecase::model::user::{
     UserCreditsDto, UserDataDto, UserRecordDto, UserRecordSubmissionDto, UserRegisterDto,
+    UserUpdateDto,
 };
 
 #[derive(Deserialize)]
@@ -156,5 +157,18 @@ impl TryFrom<UserRecordRequest> for UserRecordSubmissionDto {
             request.score,
             clear_type,
         ))
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateUserRequest {
+    pub display_name: String,
+    pub is_public: bool,
+}
+
+impl From<UpdateUserRequest> for UserUpdateDto {
+    fn from(req: UpdateUserRequest) -> Self {
+        UserUpdateDto::new(req.display_name, req.is_public)
     }
 }

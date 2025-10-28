@@ -9,8 +9,8 @@ use usecase::model::user::UserRecordSubmissionDto;
 use crate::{
     error::AppError,
     model::user::{
-        CreditsIncrementResponse, FindUserQuery, RegisterUserRequest, UserDataResponse,
-        UserRecordRequest, UserRecordResponse,
+        CreditsIncrementResponse, FindUserQuery, RegisterUserRequest, UpdateUserRequest,
+        UserDataResponse, UserRecordRequest, UserRecordResponse,
     },
 };
 
@@ -60,6 +60,22 @@ pub async fn handle_get_records(
     let response: Vec<UserRecordResponse> =
         records.into_iter().map(UserRecordResponse::from).collect();
     Ok(Json(response))
+}
+
+#[instrument(skip(state, request), fields(user_id = %user_id))]
+pub async fn handle_update_user(
+    State(state): State<crate::state::State>,
+    Path(user_id): Path<String>,
+    Json(request): Json<UpdateUserRequest>,
+) -> AppResult<Json<UserDataResponse>> {
+    info!("Update user request received");
+    let user_data = state
+        .usecases
+        .user
+        .update_user(user_id, request.into())
+        .await?;
+    info!(user_id = %user_data.id, "User updated successfully");
+    Ok(Json(user_data.into()))
 }
 
 #[instrument(skip(state, payload), fields(user_id = %user_id))]

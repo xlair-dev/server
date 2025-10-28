@@ -90,6 +90,21 @@ pub struct UserRecordDto {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug)]
+pub struct UserUpdateDto {
+    pub display_name: String,
+    pub is_public: bool,
+}
+
+impl UserUpdateDto {
+    pub fn new(display_name: String, is_public: bool) -> Self {
+        Self {
+            display_name,
+            is_public,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct UserRecordSubmissionDto {
     pub sheet_id: String,
