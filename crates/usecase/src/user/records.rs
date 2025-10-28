@@ -49,7 +49,13 @@ impl<R: Repositories> UserUsecase<R> {
             return Ok(Vec::new());
         }
 
-        let existing_records = match self.repositories.record().find_by_user_id(&user_id).await {
+        let sheet_ids: Vec<String> = submissions.iter().map(|s| s.sheet_id.clone()).collect();
+        let existing_records = match self
+            .repositories
+            .record()
+            .find_by_user_id_and_sheet_ids(&user_id, &sheet_ids)
+            .await
+        {
             Ok(records) => records,
             Err(RecordRepositoryError::UserNotFound(_)) => {
                 return Err(UserUsecaseError::NotFoundById { user_id });
@@ -264,9 +270,11 @@ mod tests {
     async fn submit_records_creates_new_entries() {
         let mut record_repo = MockRecordRepository::new();
         record_repo
-            .expect_find_by_user_id()
-            .withf(|user_id| user_id == "user-123")
-            .returning(|_| Box::pin(async { Ok(Vec::new()) }));
+            .expect_find_by_user_id_and_sheet_ids()
+            .withf(|user_id, sheet_ids| {
+                user_id == "user-123" && sheet_ids.len() == 1 && sheet_ids[0] == "sheet-1"
+            })
+            .returning(|_, _| Box::pin(async { Ok(Vec::new()) }));
         record_repo
             .expect_insert()
             .withf(|record| record.user_id() == "user-123" && record.sheet_id() == "sheet-1")
@@ -348,9 +356,11 @@ mod tests {
     async fn submit_records_updates_existing_entries() {
         let mut record_repo = MockRecordRepository::new();
         record_repo
-            .expect_find_by_user_id()
-            .withf(|user_id| user_id == "user-456")
-            .returning(|_| {
+            .expect_find_by_user_id_and_sheet_ids()
+            .withf(|user_id, sheet_ids| {
+                user_id == "user-456" && sheet_ids.len() == 1 && sheet_ids[0] == "sheet-1"
+            })
+            .returning(|_, _| {
                 Box::pin(async move {
                     Ok(vec![Record::new(
                         "record-1".to_owned(),
@@ -448,9 +458,11 @@ mod tests {
     #[tokio::test]
     async fn submit_records_maps_user_not_found() {
         let mut record_repo = MockRecordRepository::new();
-        record_repo.expect_find_by_user_id().returning(|_| {
-            Box::pin(async { Err(RecordRepositoryError::UserNotFound("missing".to_owned())) })
-        });
+        record_repo
+            .expect_find_by_user_id_and_sheet_ids()
+            .returning(|_, _| {
+                Box::pin(async { Err(RecordRepositoryError::UserNotFound("missing".to_owned())) })
+            });
 
         let repositories = MockRepositories {
             user: MockUserRepository::new(),
@@ -476,8 +488,8 @@ mod tests {
     async fn submit_records_propagates_user_repo_errors() {
         let mut record_repo = MockRecordRepository::new();
         record_repo
-            .expect_find_by_user_id()
-            .returning(|_| Box::pin(async { Ok(Vec::new()) }));
+            .expect_find_by_user_id_and_sheet_ids()
+            .returning(|_, _| Box::pin(async { Ok(Vec::new()) }));
         record_repo.expect_insert().returning(|record| {
             Box::pin(async move {
                 Ok(Record::new(

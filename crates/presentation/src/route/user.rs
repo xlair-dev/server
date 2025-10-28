@@ -433,9 +433,11 @@ mod tests {
     async fn handle_post_records_returns_created() {
         let mut record_repo = MockRecordRepository::new();
         record_repo
-            .expect_find_by_user_id()
-            .withf(|user_id| user_id == USER1.id)
-            .returning(|_| Box::pin(async { Ok(Vec::new()) }));
+            .expect_find_by_user_id_and_sheet_ids()
+            .withf(|user_id, sheet_ids| {
+                user_id == USER1.id && sheet_ids.len() == 1 && sheet_ids[0] == "sheet-1"
+            })
+            .returning(|_, _| Box::pin(async { Ok(Vec::new()) }));
         record_repo
             .expect_insert()
             .withf(|record| record.user_id() == USER1.id && record.sheet_id() == "sheet-1")

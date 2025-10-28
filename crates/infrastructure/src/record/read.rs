@@ -30,6 +30,38 @@ pub async fn records_by_user(
     Ok(models.into_iter().map(Record::from).collect())
 }
 
+pub async fn records_by_user_and_sheet_ids(
+    db: &DbConn,
+    user_id: &str,
+    sheet_ids: &[String],
+) -> Result<Vec<Record>, RecordRepositoryError> {
+    debug!("Resolving user before loading records by sheet IDs");
+    let uuid = ensure_user_exists(db, user_id).await?;
+
+    if sheet_ids.is_empty() {
+        debug!("No sheet IDs provided");
+        return Ok(Vec::new());
+    }
+
+    let mut sheet_uuids = Vec::with_capacity(sheet_ids.len());
+    for sheet_id in sheet_ids {
+        let parsed = crate::record::adapter::parse_sheet_uuid(sheet_id)?;
+        sheet_uuids.push(parsed);
+    }
+
+    let models = Records::find()
+        .filter(entities::records::Column::UserId.eq(uuid))
+        .filter(entities::records::Column::SheetId.is_in(sheet_uuids))
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to fetch records by sheet IDs");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    Ok(models.into_iter().map(Record::from).collect())
+}
+
 pub async fn records_with_metadata_by_user(
     db: &DbConn,
     user_id: &str,
