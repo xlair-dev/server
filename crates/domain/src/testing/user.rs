@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
 
-use crate::entity::{rating::Rating, user::User};
-
 use super::datetime::{later_timestamp, sample_timestamp};
+use crate::entity::{rating::Rating, user::User};
 
 pub struct UserSample {
     pub id: &'static str,

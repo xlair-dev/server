@@ -30,9 +30,10 @@ pub fn parse_user_uuid(user_id: &str) -> Result<Uuid, UserRepositoryError> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use domain::{repository::user::UserRepositoryError, testing::user::USER1};
     use sea_orm::RuntimeErr;
+
+    use super::*;
 
     #[test]
     fn convert_user_insert_error_returns_conflict_for_record_not_inserted() {

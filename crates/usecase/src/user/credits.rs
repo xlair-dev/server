@@ -25,14 +25,16 @@ impl<R: Repositories> UserUsecase<R> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::sync::Arc;
+
     use anyhow::anyhow;
     use domain::repository::{
         MockRepositories,
         record::MockRecordRepository,
         user::{MockUserRepository, UserRepositoryError},
     };
-    use std::sync::Arc;
+
+    use super::*;
 
     #[tokio::test]
     async fn increment_credits_returns_new_value() {

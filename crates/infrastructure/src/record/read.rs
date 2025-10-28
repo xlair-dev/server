@@ -1,5 +1,7 @@
-use std::collections::{HashMap, HashSet};
-use std::convert::TryFrom;
+use std::{
+    collections::{HashMap, HashSet},
+    convert::TryFrom,
+};
 
 use anyhow::Error as AnyError;
 use domain::{

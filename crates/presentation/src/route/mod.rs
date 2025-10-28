@@ -1,4 +1,7 @@
-use axum::{Router, routing::get, routing::post};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 use tower_http::trace::TraceLayer;
 
 use crate::state::State;
