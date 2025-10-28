@@ -40,5 +40,11 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --all -- --check
 
+      - name: Install cargo-sort
+        run: cargo install cargo-sort
+
+      - name: Run cargo sort check
+        run: cargo sort --check --workspace
+
       - name: Run cargo clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
