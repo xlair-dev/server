@@ -114,6 +114,7 @@ mod tests {
         entity::{clear_type::ClearType, level::Level, rating::Rating, record::Record, user::User},
         repository::{
             MockRepositories,
+            music::MockMusicRepository,
             record::{MockRecordRepository, RecordWithMetadata},
             user::UserRepositoryError,
         },
@@ -135,6 +136,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: record_repo,
+            music: MockMusicRepository::new(),
         };
         let state = crate::state::State::new(config, repositories);
         super::super::create_app(state)

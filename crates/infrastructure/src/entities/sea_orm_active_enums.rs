@@ -17,12 +17,10 @@ pub enum ClearType {
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "difficulty")]
 pub enum Difficulty {
-    #[sea_orm(string_value = "basic")]
-    Basic,
-    #[sea_orm(string_value = "advanced")]
-    Advanced,
-    #[sea_orm(string_value = "expert")]
-    Expert,
-    #[sea_orm(string_value = "master")]
-    Master,
+    #[sea_orm(string_value = "easy")]
+    Easy,
+    #[sea_orm(string_value = "normal")]
+    Normal,
+    #[sea_orm(string_value = "hard")]
+    Hard,
 }

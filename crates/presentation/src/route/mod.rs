@@ -6,6 +6,7 @@ use tower_http::trace::TraceLayer;
 
 use crate::state::State;
 
+pub mod sync;
 pub mod user;
 
 pub fn create_app(state: State) -> Router {
@@ -20,10 +21,13 @@ pub fn create_app(state: State) -> Router {
             "/{userId}/credits/increment",
             post(user::handle_increment_credits),
         );
+    let sync_route = Router::new().route("/", get(sync::handle_get));
     let health = Router::new().route("/", get(|| async { "OK" }));
 
     // TODO: Add auth middleware
-    let private_routes = Router::new().nest("/users", users);
+    let private_routes = Router::new()
+        .nest("/users", users)
+        .nest("/sync", sync_route);
 
     let public_routes = Router::new().nest("/health", health);
 

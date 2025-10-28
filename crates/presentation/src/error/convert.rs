@@ -1,5 +1,7 @@
-use domain::repository::{record::RecordRepositoryError, user::UserRepositoryError};
-use usecase::user::UserUsecaseError;
+use domain::repository::{
+    music::MusicRepositoryError, record::RecordRepositoryError, user::UserRepositoryError,
+};
+use usecase::{music::MusicUsecaseError, user::UserUsecaseError};
 
 use crate::error::AppError;
 
@@ -58,6 +60,25 @@ impl From<UserUsecaseError> for AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 message: err.to_string(),
             },
+        }
+    }
+}
+
+impl From<MusicRepositoryError> for AppError {
+    fn from(error: MusicRepositoryError) -> Self {
+        match error {
+            MusicRepositoryError::InternalError(err) => AppError {
+                status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                message: err.to_string(),
+            },
+        }
+    }
+}
+
+impl From<MusicUsecaseError> for AppError {
+    fn from(error: MusicUsecaseError) -> Self {
+        match error {
+            MusicUsecaseError::MusicRepository(err) => err.into(),
         }
     }
 }

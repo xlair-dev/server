@@ -11,12 +11,7 @@ impl MigrationTrait for Migration {
             .create_type(
                 Type::create()
                     .as_enum(Difficulty::Table)
-                    .values([
-                        Difficulty::Basic,
-                        Difficulty::Advanced,
-                        Difficulty::Expert,
-                        Difficulty::Master,
-                    ])
+                    .values([Difficulty::Easy, Difficulty::Normal, Difficulty::Hard])
                     .to_owned(),
             )
             .await?;
@@ -98,10 +93,9 @@ enum Sheets {
 #[sea_orm(iden = "difficulty_type")]
 enum Difficulty {
     Table,
-    Basic,
-    Advanced,
-    Expert,
-    Master,
+    Easy,
+    Normal,
+    Hard,
 }
 
 #[derive(DeriveIden)]

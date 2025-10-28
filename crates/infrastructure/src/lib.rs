@@ -5,17 +5,27 @@ use tracing::{error, info, instrument};
 
 pub mod entities;
 pub mod model;
+pub mod music;
 pub mod record;
 pub mod user;
 
 pub struct RepositoriesImpl {
     user: user::UserRepositoryImpl,
     record: record::RecordRepositoryImpl,
+    music: music::MusicRepositoryImpl,
 }
 
 impl RepositoriesImpl {
-    pub fn new(user: user::UserRepositoryImpl, record: record::RecordRepositoryImpl) -> Self {
-        Self { user, record }
+    pub fn new(
+        user: user::UserRepositoryImpl,
+        record: record::RecordRepositoryImpl,
+        music: music::MusicRepositoryImpl,
+    ) -> Self {
+        Self {
+            user,
+            record,
+            music,
+        }
     }
 
     /// Initializes the SeaORM connection. Implicitly depends on a tracing subscriber already being set up so logging can emit.
@@ -37,10 +47,12 @@ impl RepositoriesImpl {
         let db = Arc::new(db);
         let user_repo = user::UserRepositoryImpl::new(db.clone());
         let record_repo = record::RecordRepositoryImpl::new(db.clone());
+        let music_repo = music::MusicRepositoryImpl::new(db.clone());
 
         Self {
             user: user_repo,
             record: record_repo,
+            music: music_repo,
         }
     }
 }
@@ -48,6 +60,7 @@ impl RepositoriesImpl {
 impl Repositories for RepositoriesImpl {
     type UserRepositoryImpl = user::UserRepositoryImpl;
     type RecordRepositoryImpl = record::RecordRepositoryImpl;
+    type MusicRepositoryImpl = music::MusicRepositoryImpl;
 
     fn user(&self) -> &Self::UserRepositoryImpl {
         &self.user
@@ -55,5 +68,9 @@ impl Repositories for RepositoriesImpl {
 
     fn record(&self) -> &Self::RecordRepositoryImpl {
         &self.record
+    }
+
+    fn music(&self) -> &Self::MusicRepositoryImpl {
+        &self.music
     }
 }

@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 // TODO: Add the rest of the genres
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Genre {
     ORIGINAL,
 }

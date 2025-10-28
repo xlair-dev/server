@@ -159,6 +159,7 @@ mod tests {
         entity::{clear_type::ClearType, level::Level, rating::Rating, record::Record, user::User},
         repository::{
             MockRepositories,
+            music::MockMusicRepository,
             record::{MockRecordRepository, RecordRepositoryError, RecordWithMetadata},
             user::{MockUserRepository, UserRepositoryError},
         },
@@ -197,6 +198,7 @@ mod tests {
         let repositories = MockRepositories {
             user: MockUserRepository::new(),
             record: record_repo,
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -221,6 +223,7 @@ mod tests {
         let repositories = MockRepositories {
             user: MockUserRepository::new(),
             record: record_repo,
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -249,6 +252,7 @@ mod tests {
         let repositories = MockRepositories {
             user: MockUserRepository::new(),
             record: record_repo,
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -338,6 +342,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: record_repo,
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -441,6 +446,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: record_repo,
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -468,6 +474,7 @@ mod tests {
         let repositories = MockRepositories {
             user: MockUserRepository::new(),
             record: record_repo,
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -546,6 +553,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: record_repo,
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 

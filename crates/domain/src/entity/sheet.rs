@@ -12,15 +12,24 @@ pub struct Sheet {
     difficulty: Difficulty,
     #[getset(get = "pub")]
     level: Level,
+    #[getset(get = "pub")]
+    notes_designer: String,
 }
 
 impl Sheet {
-    pub fn new(id: String, music_id: String, difficulty: Difficulty, level: Level) -> Self {
+    pub fn new(
+        id: String,
+        music_id: String,
+        difficulty: Difficulty,
+        level: Level,
+        notes_designer: String,
+    ) -> Self {
         Self {
             id,
             music_id,
             difficulty,
             level,
+            notes_designer,
         }
     }
 }
