@@ -10,9 +10,7 @@ use sea_orm::DbConn;
 use std::sync::Arc;
 use tracing::{debug, info, instrument};
 
-use read::{
-    records_by_user, records_by_user_and_sheet_ids, records_with_metadata_by_user,
-};
+use read::{records_by_user, records_by_user_and_sheet_ids, records_with_metadata_by_user};
 
 pub struct RecordRepositoryImpl {
     db: Arc<DbConn>,
@@ -58,7 +56,10 @@ impl RecordRepository for RecordRepositoryImpl {
     ) -> Result<Vec<Record>, RecordRepositoryError> {
         debug!("Fetching records by sheet IDs via SeaORM");
         let records = records_by_user_and_sheet_ids(self.db.as_ref(), user_id, sheet_ids).await?;
-        info!(count = records.len(), "Records by sheet IDs fetched successfully");
+        info!(
+            count = records.len(),
+            "Records by sheet IDs fetched successfully"
+        );
         Ok(records)
     }
 

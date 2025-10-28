@@ -8,7 +8,7 @@ use crate::entities::{
 };
 
 /// Converts database record model to domain entity.
-/// 
+///
 /// # Errors
 /// Returns `InternalError` if the database contains invalid data (negative score or play_count).
 /// This conversion assumes database integrity constraints ensure valid data.
