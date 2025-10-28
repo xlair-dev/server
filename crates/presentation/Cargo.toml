@@ -4,21 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-domain.workspace = true
-usecase.workspace = true
-infrastructure.workspace = true
 anyhow.workspace = true
-thiserror.workspace = true
-tokio.workspace = true
 axum.workspace = true
+domain.workspace = true
+dotenvy.workspace = true
+infrastructure.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-dotenvy.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
-tower-http.workspace = true
+usecase.workspace = true
 
 [dev-dependencies]
-tower.workspace = true
 chrono.workspace = true
 domain = { workspace = true, features = ["test-support"] }
+tower.workspace = true

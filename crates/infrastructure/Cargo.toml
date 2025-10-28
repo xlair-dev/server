@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-domain.workspace = true
-sea-orm.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
+domain.workspace = true
+sea-orm.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]

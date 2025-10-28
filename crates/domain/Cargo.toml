@@ -7,8 +7,8 @@ edition = "2024"
 test-support = []
 
 [dependencies]
-getset.workspace = true
-chrono.workspace = true
 anyhow.workspace = true
-thiserror.workspace = true
+chrono.workspace = true
+getset.workspace = true
 mockall.workspace = true
+thiserror.workspace = true
