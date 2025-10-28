@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter, Result};
 
-// TODO: Determine the difficulty names
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Difficulty {
     Easy,
     Normal,
