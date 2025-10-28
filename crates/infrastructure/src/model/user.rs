@@ -1,14 +1,20 @@
+use anyhow::Error as AnyError;
 use chrono::Utc;
 use sea_orm::prelude::Uuid;
-use std::convert::TryFrom;
 
 use domain::entity::rating::Rating;
 use domain::entity::user::User;
+use domain::repository::user::UserRepositoryError;
 
 use crate::entities::users::ActiveModel as UserActiveModel;
 use crate::entities::users::Model as UserModel;
 use sea_orm::ActiveValue;
 
+/// Converts domain user entity to database model.
+///
+/// # Panics
+/// Panics if rating value exceeds i32 range. This should never happen in practice
+/// as rating values are constrained by business logic (typically under 10,000).
 impl From<User> for UserModel {
     fn from(domain_user: User) -> Self {
         let id = Uuid::parse_str(domain_user.id()).unwrap_or_else(|_| Uuid::nil());
@@ -27,24 +33,42 @@ impl From<User> for UserModel {
     }
 }
 
-impl From<UserModel> for User {
-    fn from(db_user: UserModel) -> Self {
+/// Converts database user model to domain entity.
+///
+/// # Errors
+/// Returns `InternalError` if the database contains invalid data (negative rating).
+/// This conversion assumes database integrity constraints ensure valid data.
+impl std::convert::TryFrom<UserModel> for User {
+    type Error = UserRepositoryError;
+
+    fn try_from(db_user: UserModel) -> Result<Self, Self::Error> {
         let id = db_user.id.to_string();
         let created_at = db_user.created_at.with_timezone(&chrono::Utc);
 
-        Self::new(
+        let rating_value = u32::try_from(db_user.rating).map_err(|err| {
+            tracing::warn!(error = %err, value = db_user.rating, "Rating from database must be non-negative");
+            UserRepositoryError::InternalError(AnyError::from(err))
+        })?;
+        let rating = Rating::new(rating_value);
+
+        Ok(Self::new(
             id,
             db_user.card,
             db_user.display_name,
-            Rating::new(u32::try_from(db_user.rating).expect("rating must be non-negative")),
+            rating,
             db_user.xp as u32,
             db_user.credits as u32,
             db_user.is_admin,
             created_at,
-        )
+        ))
     }
 }
 
+/// Converts domain user entity to database active model for updates.
+///
+/// # Panics
+/// Panics if rating value exceeds i32 range. This should never happen in practice
+/// as rating values are constrained by business logic (typically under 10,000).
 impl From<User> for UserActiveModel {
     fn from(domain_user: User) -> Self {
         // when inserting/updating via ActiveModel we prefer to set fields explicitly
@@ -115,7 +139,7 @@ mod tests {
             updated_at: created_at.into(),
         };
 
-        let user: User = model.clone().into();
+        let user: User = User::try_from(model.clone()).unwrap();
 
         let model_id = model.id.to_string();
         assert_eq!(user.id(), &model_id);

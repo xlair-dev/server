@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::convert::TryFrom;
 
 use anyhow::Error as AnyError;
 use domain::{
@@ -27,7 +28,7 @@ pub async fn records_by_user(
             RecordRepositoryError::InternalError(AnyError::from(err))
         })?;
 
-    Ok(models.into_iter().map(Record::from).collect())
+    models.into_iter().map(Record::try_from).collect()
 }
 
 pub async fn records_by_user_and_sheet_ids(
@@ -59,7 +60,7 @@ pub async fn records_by_user_and_sheet_ids(
             RecordRepositoryError::InternalError(AnyError::from(err))
         })?;
 
-    Ok(models.into_iter().map(Record::from).collect())
+    models.into_iter().map(Record::try_from).collect()
 }
 
 pub async fn records_with_metadata_by_user(
@@ -149,7 +150,7 @@ async fn records_with_metadata(
         })?;
 
         let level = crate::record::adapter::convert_level(sheet.level)?;
-        let record = domain::entity::record::Record::from(record_model);
+        let record = Record::try_from(record_model)?;
         result.push(RecordWithMetadata::new(record, level, is_test));
     }
 
