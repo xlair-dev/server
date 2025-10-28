@@ -47,6 +47,15 @@ pub trait RecordRepository: Send + Sync {
         user_id: &str,
     ) -> impl Future<Output = Result<Vec<RecordWithMetadata>, RecordRepositoryError>> + Send;
 
+    /// Loads records for the specified user and sheet IDs. More efficient than loading all records
+    /// when only a subset is needed. Returns an empty vector if none of the specified sheet IDs
+    /// have records.
+    fn find_by_user_id_and_sheet_ids(
+        &self,
+        user_id: &str,
+        sheet_ids: &[String],
+    ) -> impl Future<Output = Result<Vec<Record>, RecordRepositoryError>> + Send;
+
     /// Persists a new record aggregate. Callers must guarantee that the record identifier is
     /// unique; the repository will generate an error if the tuple `(user_id, sheet_id)` already
     /// exists.

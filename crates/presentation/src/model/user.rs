@@ -5,6 +5,7 @@ use usecase::model::user::{
 };
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RegisterUserRequest {
     pub card: String,
     pub display_name: String,
@@ -28,6 +29,7 @@ impl From<RegisterUserRequest> for UserRegisterDto {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserDataResponse {
     pub id: String,
     pub card: String,
@@ -74,7 +76,7 @@ impl From<UserDataDto> for UserDataResponse {
             user_data.xp,
             user_data.credits,
             user_data.is_admin,
-            user_data.created_at.to_string(),
+            user_data.created_at.to_rfc3339(),
         )
     }
 }
@@ -93,16 +95,13 @@ impl From<UserCreditsDto> for CreditsIncrementResponse {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserRecordResponse {
     pub id: String,
-    #[serde(rename = "sheetId")]
     pub sheet_id: String,
     pub score: u32,
-    #[serde(rename = "clearType")]
     pub clear_type: String,
-    #[serde(rename = "playCount")]
     pub play_count: u32,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
@@ -122,19 +121,17 @@ impl From<UserRecordDto> for UserRecordResponse {
             score: dto.score,
             clear_type,
             play_count: dto.play_count,
-            updated_at: dto.updated_at.to_string(),
+            updated_at: dto.updated_at.to_rfc3339(),
         }
     }
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserRecordRequest {
-    #[serde(rename = "userId")]
     pub user_id: String,
-    #[serde(rename = "sheetId")]
     pub sheet_id: String,
     pub score: u32,
-    #[serde(rename = "clearType")]
     pub clear_type: String,
 }
 

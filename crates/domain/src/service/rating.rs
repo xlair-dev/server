@@ -7,7 +7,7 @@ pub fn calculate_user_rating(records: &[RecordWithMetadata]) -> Rating {
     let mut values: Vec<u32> = records
         .iter()
         .filter(|entry| !entry.is_test)
-        .map(|entry| calculate_single_track_rating(&entry.level, *entry.record.score()))
+        .map(|entry| calculate_sheet_rating(&entry.level, *entry.record.score()))
         .collect();
 
     if values.is_empty() {
@@ -20,7 +20,7 @@ pub fn calculate_user_rating(records: &[RecordWithMetadata]) -> Rating {
     Rating::new(total / count as u32)
 }
 
-fn calculate_single_track_rating(level: &Level, score: u32) -> u32 {
+fn calculate_sheet_rating(level: &Level, score: u32) -> u32 {
     let (integer, decimal) = level.components();
     let base = integer * 100 + decimal * 10;
     let bonus = compute_score_bonus(score);

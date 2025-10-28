@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use getset::{Getters, Setters};
 
 use super::rating::Rating;
@@ -20,7 +20,7 @@ pub struct User {
     #[getset(get = "pub")]
     is_admin: bool,
     #[getset(get = "pub")]
-    created_at: NaiveDateTime,
+    created_at: DateTime<Utc>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -33,7 +33,7 @@ impl User {
         xp: u32,
         credits: u32,
         is_admin: bool,
-        created_at: NaiveDateTime,
+        created_at: DateTime<Utc>,
     ) -> Self {
         Self {
             id,
@@ -56,7 +56,7 @@ impl User {
             xp: 0,
             credits: 0,
             is_admin: false,
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at: chrono::Utc::now(),
         }
     }
 
@@ -95,7 +95,8 @@ mod tests {
         let timestamp = chrono::NaiveDate::from_ymd_opt(2025, 10, 21)
             .unwrap()
             .and_hms_opt(8, 30, 0)
-            .unwrap();
+            .unwrap()
+            .and_utc();
 
         let user = User::new(
             "user-id".to_owned(),

@@ -18,6 +18,10 @@ impl RepositoriesImpl {
     }
 
     /// Initializes the SeaORM connection. Implicitly depends on a tracing subscriber already being set up so logging can emit.
+    ///
+    /// # Panics
+    /// Panics if database connection fails. This is appropriate for startup as the application
+    /// cannot function without a database connection.
     #[instrument(name = "infrastructure.repositories.new_default", skip(db_url))]
     pub async fn new_default(db_url: &str) -> Self {
         info!("Connecting to database via SeaORM");

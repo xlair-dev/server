@@ -26,7 +26,13 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Records::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(Records::Id).uuid().not_null().primary_key())
+                    .col(
+                        ColumnDef::new(Records::Id)
+                            .uuid()
+                            .not_null()
+                            .primary_key()
+                            .default(Expr::cust("gen_random_uuid()")),
+                    )
                     .col(ColumnDef::new(Records::UserId).uuid().not_null())
                     .col(ColumnDef::new(Records::SheetId).uuid().not_null())
                     .col(ColumnDef::new(Records::Score).integer().not_null())

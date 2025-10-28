@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use anyhow::Error as AnyError;
 use domain::{entity::user::User, repository::user::UserRepositoryError};
 use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter};
@@ -18,7 +20,7 @@ pub async fn find_by_card(db: &DbConn, card: &str) -> Result<Option<User>, UserR
 
     if let Some(model) = model {
         info!(user_id = %model.id, "User fetched successfully");
-        Ok(Some(model.into()))
+        Ok(Some(User::try_from(model)?))
     } else {
         debug!("User not found for supplied card");
         Ok(None)
@@ -36,5 +38,5 @@ pub async fn find_by_id(db: &DbConn, user_id: &str) -> Result<Option<User>, User
             UserRepositoryError::InternalError(AnyError::from(err))
         })?;
 
-    Ok(model.map(Into::into))
+    model.map(User::try_from).transpose()
 }
