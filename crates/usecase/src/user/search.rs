@@ -23,7 +23,10 @@ mod tests {
     use std::sync::Arc;
 
     use domain::{
-        repository::{MockRepositories, record::MockRecordRepository, user::UserRepositoryError},
+        repository::{
+            MockRepositories, music::MockMusicRepository, record::MockRecordRepository,
+            user::UserRepositoryError,
+        },
         testing::{
             datetime::sample_timestamp,
             user::{USER1, USER2},
@@ -46,6 +49,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -69,6 +73,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -97,6 +102,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 

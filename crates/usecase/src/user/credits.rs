@@ -30,6 +30,7 @@ mod tests {
     use anyhow::anyhow;
     use domain::repository::{
         MockRepositories,
+        music::MockMusicRepository,
         record::MockRecordRepository,
         user::{MockUserRepository, UserRepositoryError},
     };
@@ -47,6 +48,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -68,6 +70,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -92,6 +95,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 

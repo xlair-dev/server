@@ -32,7 +32,10 @@ mod tests {
 
     use domain::{
         entity::rating::Rating,
-        repository::{MockRepositories, record::MockRecordRepository, user::UserRepositoryError},
+        repository::{
+            MockRepositories, music::MockMusicRepository, record::MockRecordRepository,
+            user::UserRepositoryError,
+        },
         testing::user::{USER1, USER2},
     };
 
@@ -55,6 +58,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
@@ -93,6 +97,7 @@ mod tests {
         let repositories = MockRepositories {
             user: user_repo,
             record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
