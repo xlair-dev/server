@@ -173,7 +173,7 @@ mod tests {
 
         let payload = json!({
             "card": USER2.card,
-            "display_name": USER2.display_name
+            "displayName": USER2.display_name
         });
 
         let response = router
@@ -192,12 +192,12 @@ mod tests {
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["id"], USER2.id);
         assert_eq!(json["card"], USER2.card);
-        assert_eq!(json["display_name"], USER2.display_name);
+        assert_eq!(json["displayName"], USER2.display_name);
         assert_eq!(json["rating"], USER2.rating);
         assert_eq!(json["xp"], USER2.xp);
         assert_eq!(json["credits"], USER2.credits);
-        assert_eq!(json["is_admin"], false);
-        assert_eq!(json["created_at"], "2025-10-21T15:00:00+00:00");
+        assert_eq!(json["isAdmin"], false);
+        assert_eq!(json["createdAt"], "2025-10-21T15:00:00+00:00");
     }
 
     #[tokio::test]
@@ -215,7 +215,7 @@ mod tests {
 
         let payload = json!({
             "card": USER2.card,
-            "display_name": USER1.display_name
+            "displayName": USER1.display_name
         });
 
         let response = router
@@ -268,7 +268,7 @@ mod tests {
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["id"], USER1.id);
         assert_eq!(json["card"], USER1.card);
-        assert_eq!(json["display_name"], USER1.display_name);
+        assert_eq!(json["displayName"], USER1.display_name);
     }
 
     #[tokio::test]
