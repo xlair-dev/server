@@ -328,6 +328,7 @@ mod tests {
                     0,
                     0,
                     false,
+                    false,
                     sample_timestamp(),
                 );
                 Box::pin(async move { Ok(Some(user)) })
@@ -431,6 +432,7 @@ mod tests {
                     Rating::new(1200),
                     100,
                     0,
+                    false,
                     false,
                     sample_timestamp(),
                 );
@@ -541,6 +543,7 @@ mod tests {
                     Rating::new(1100),
                     50,
                     0,
+                    false,
                     false,
                     sample_timestamp(),
                 );

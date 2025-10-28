@@ -166,6 +166,7 @@ mod tests {
                         USER2.xp,
                         USER2.credits,
                         false,
+                        false,
                         timestamp(2025, 10, 21, 15, 0, 0),
                     ))
                 })
@@ -249,7 +250,7 @@ mod tests {
             .expect_find_by_card()
             .withf(|card| card == USER1.card)
             .returning(|_| {
-                let user = USER1.build(timestamp(2025, 10, 21, 15, 0, 0), false);
+                let user = USER1.build(false, false, timestamp(2025, 10, 21, 15, 0, 0));
                 Box::pin(async move { Ok(Some(user)) })
             });
 
@@ -487,6 +488,7 @@ mod tests {
                     Rating::new(USER1.rating),
                     USER1.xp,
                     USER1.credits,
+                    false,
                     false,
                     timestamp(2025, 10, 21, 15, 0, 0),
                 );

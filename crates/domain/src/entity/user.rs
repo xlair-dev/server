@@ -111,7 +111,7 @@ mod tests {
             Rating::new(1234),
             100,
             50,
-            false,
+            true,
             true,
             timestamp,
         );

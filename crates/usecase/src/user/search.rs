@@ -42,7 +42,7 @@ mod tests {
             .expect_find_by_card()
             .withf(|card| card == USER1.card)
             .returning(|_| {
-                let aggregate = USER1.build(sample_timestamp(), false);
+                let aggregate = USER1.build(false, false, sample_timestamp());
                 Box::pin(async move { Ok(Some(aggregate)) })
             });
 
