@@ -1,5 +1,6 @@
-use domain::repository::Repositories;
 use std::sync::Arc;
+
+use domain::repository::Repositories;
 use tracing::{error, info, instrument};
 
 pub mod entities;

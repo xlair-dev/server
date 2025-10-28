@@ -1,14 +1,12 @@
 use anyhow::Error as AnyError;
 use chrono::Utc;
-use sea_orm::prelude::Uuid;
+use domain::{
+    entity::{rating::Rating, user::User},
+    repository::user::UserRepositoryError,
+};
+use sea_orm::{ActiveValue, prelude::Uuid};
 
-use domain::entity::rating::Rating;
-use domain::entity::user::User;
-use domain::repository::user::UserRepositoryError;
-
-use crate::entities::users::ActiveModel as UserActiveModel;
-use crate::entities::users::Model as UserModel;
-use sea_orm::ActiveValue;
+use crate::entities::users::{ActiveModel as UserActiveModel, Model as UserModel};
 
 /// Converts domain user entity to database model.
 ///
@@ -102,10 +100,11 @@ impl From<User> for UserActiveModel {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::entities::users::Model as RawUserModel;
     use domain::testing::user::{USER2, USER3, created_at1};
     use sea_orm::prelude::Uuid;
+
+    use super::*;
+    use crate::entities::users::Model as RawUserModel;
 
     #[test]
     fn user_model_from_domain_sets_uuid_and_timestamps() {

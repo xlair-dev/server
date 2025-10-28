@@ -4,6 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use tracing::{info, instrument};
+use usecase::model::user::UserRecordSubmissionDto;
 
 use crate::{
     error::AppError,
@@ -12,7 +13,6 @@ use crate::{
         UserRecordRequest, UserRecordResponse,
     },
 };
-use usecase::model::user::UserRecordSubmissionDto;
 
 type AppResult<T> = Result<T, AppError>;
 
@@ -105,15 +105,13 @@ pub async fn handle_post_records(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::{
         Router,
         body::{self, Body},
         http::Request,
     };
-    use domain::entity::rating::Rating;
     use domain::{
-        entity::{clear_type::ClearType, level::Level, record::Record, user::User},
+        entity::{clear_type::ClearType, level::Level, rating::Rating, record::Record, user::User},
         repository::{
             MockRepositories,
             record::{MockRecordRepository, RecordWithMetadata},
@@ -126,6 +124,8 @@ mod tests {
     };
     use serde_json::json;
     use tower::ServiceExt;
+
+    use super::*;
 
     fn test_router(
         user_repo: domain::repository::user::MockUserRepository,

@@ -153,17 +153,18 @@ impl<R: Repositories> UserUsecase<R> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::sync::Arc;
+
     use domain::{
-        entity::rating::Rating,
-        entity::{clear_type::ClearType, level::Level, record::Record, user::User},
+        entity::{clear_type::ClearType, level::Level, rating::Rating, record::Record, user::User},
         repository::{
             MockRepositories,
             record::{MockRecordRepository, RecordRepositoryError, RecordWithMetadata},
             user::{MockUserRepository, UserRepositoryError},
         },
     };
-    use std::sync::Arc;
+
+    use super::*;
 
     fn sample_timestamp() -> chrono::DateTime<chrono::Utc> {
         chrono::NaiveDate::from_ymd_opt(2025, 10, 26)

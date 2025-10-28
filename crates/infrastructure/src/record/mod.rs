@@ -2,15 +2,15 @@ mod adapter;
 mod read;
 mod write;
 
+use std::sync::Arc;
+
 use domain::{
     entity::record::Record,
     repository::record::{RecordRepository, RecordRepositoryError, RecordWithMetadata},
 };
-use sea_orm::DbConn;
-use std::sync::Arc;
-use tracing::{debug, info, instrument};
-
 use read::{records_by_user, records_by_user_and_sheet_ids, records_with_metadata_by_user};
+use sea_orm::DbConn;
+use tracing::{debug, info, instrument};
 
 pub struct RecordRepositoryImpl {
     db: Arc<DbConn>,

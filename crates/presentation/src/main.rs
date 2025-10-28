@@ -1,8 +1,7 @@
+use presentation::{config::Config, env, route::create_app, state::State};
 use tokio::net::TcpListener;
 use tracing::info;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
-
-use presentation::{config::Config, env, route::create_app, state::State};
 
 #[tokio::main]
 async fn main() {

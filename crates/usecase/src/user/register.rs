@@ -28,13 +28,15 @@ impl<R: Repositories> UserUsecase<R> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use domain::entity::rating::Rating;
+    use std::sync::Arc;
+
     use domain::{
+        entity::rating::Rating,
         repository::{MockRepositories, record::MockRecordRepository, user::UserRepositoryError},
         testing::user::{USER1, USER2},
     };
-    use std::sync::Arc;
+
+    use super::*;
 
     #[tokio::test]
     async fn register_propagates_duplicate_card_error() {

@@ -2,27 +2,23 @@
 resolver = "3"
 members = [
     "crates/domain",
-    "crates/usecase",
-    "crates/presentation",
     "crates/infrastructure",
     "crates/migration",
+    "crates/presentation",
+    "crates/usecase",
 ]
 
 [workspace.dependencies]
-domain = { path = "crates/domain" }
-usecase = { path = "crates/usecase" }
-presentation = { path = "crates/presentation" }
-infrastructure = { path = "crates/infrastructure" }
-getset = "0.1.4"
-chrono = { version = "0.4.39", features = ["serde", "clock"] }
 anyhow = "1.0.95"
-thiserror = "2.0.11"
-tokio = { version = "1.47.1", features = ["full"] }
+async-std = "1.13"
 axum = "0.8.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-mockall = "0.13.1"
+chrono = { version = "0.4.39", features = ["serde", "clock"] }
+domain = { path = "crates/domain" }
 dotenvy = "0.15.7"
+getset = "0.1.4"
+infrastructure = { path = "crates/infrastructure" }
+mockall = "0.13.1"
+presentation = { path = "crates/presentation" }
 sea-orm = { version = "1.1.16", features = [
     # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
     "sqlx-postgres",
@@ -32,7 +28,6 @@ sea-orm = { version = "1.1.16", features = [
     "with-chrono",
     "with-uuid",
 ] }
-async-std = "1.13"
 sea-orm-migration = { version = "1.1.0", features = [
     # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
     "sqlx-postgres",
@@ -40,7 +35,12 @@ sea-orm-migration = { version = "1.1.0", features = [
     "with-chrono",
     "with-uuid",
 ] }
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0.11"
+tokio = { version = "1.47.1", features = ["full"] }
 tower = { version = "0.5.2", features = ["util"] }
 tower-http = { version = "0.6.6", features = ["trace"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt"] }
+usecase = { path = "crates/usecase" }

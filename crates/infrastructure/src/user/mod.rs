@@ -2,13 +2,14 @@ mod adapter;
 mod read;
 mod write;
 
+use std::sync::Arc;
+
 use domain::{
     entity::user::User,
     repository::user::{UserRepository, UserRepositoryError},
 };
 use read::{find_by_card as query_by_card, find_by_id as query_by_id};
 use sea_orm::DbConn;
-use std::sync::Arc;
 use tracing::{debug, info, instrument};
 use write::{create_user, increment_credits as mutate_increment_credits, save_user};
 

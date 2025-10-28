@@ -20,15 +20,17 @@ impl<R: Repositories> UserUsecase<R> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use domain::repository::{
-        MockRepositories, record::MockRecordRepository, user::UserRepositoryError,
-    };
-    use domain::testing::{
-        datetime::sample_timestamp,
-        user::{USER1, USER2},
-    };
     use std::sync::Arc;
+
+    use domain::{
+        repository::{MockRepositories, record::MockRecordRepository, user::UserRepositoryError},
+        testing::{
+            datetime::sample_timestamp,
+            user::{USER1, USER2},
+        },
+    };
+
+    use super::*;
 
     #[tokio::test]
     async fn find_by_card_returns_user_when_found() {

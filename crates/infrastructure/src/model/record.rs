@@ -1,7 +1,10 @@
-use anyhow::Error as AnyError;
-use domain::entity::{clear_type::ClearType as DomainClearType, record::Record};
-use domain::repository::record::RecordRepositoryError;
 use std::convert::TryFrom;
+
+use anyhow::Error as AnyError;
+use domain::{
+    entity::{clear_type::ClearType as DomainClearType, record::Record},
+    repository::record::RecordRepositoryError,
+};
 
 use crate::entities::{
     records::Model as RecordModel, sea_orm_active_enums::ClearType as DbClearType,
