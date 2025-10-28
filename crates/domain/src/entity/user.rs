@@ -17,7 +17,7 @@ pub struct User {
     xp: u32,
     #[getset(get = "pub", set = "pub")]
     credits: u32,
-    #[getset(get = "pub")]
+    #[getset(get = "pub", set = "pub")]
     is_public: bool,
     #[getset(get = "pub")]
     is_admin: bool,

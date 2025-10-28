@@ -8,6 +8,8 @@ info:
 tags:
   - name: app
     description: XLAIR の筐体
+  - name: station
+    description: カード情報登録機
   - name: web
     description: xlair.dev
   - name: admin
@@ -20,7 +22,7 @@ paths:
   /users:
     post:
       tags:
-        - app
+        - station
       summary: ユーザー登録
       description: カードIDで筐体に新規ログインした時に呼ぶ
       security:
@@ -48,6 +50,7 @@ paths:
     get:
       tags:
         - app
+        - station
       summary: カードIDからユーザー情報を取得
       description: カードIDで筐体に通常ログインした時に呼ぶ
       security:
@@ -72,6 +75,39 @@ paths:
           description: Unauthorized - Invalid API key
         "404":
           description: Not found - User with specified card ID not found
+        "500":
+          description: Internal server error
+  /users/{userId}:
+    post:
+      tags:
+        - station
+      summary: ユーザー情報の更新
+      description: ユーザーの表示名と公開設定を更新する
+      security:
+        - appApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          description: ユーザーのID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/userUpdate"
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userData"
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User not found
         "500":
           description: Internal server error
   /users/{userId}/credits/increment:
@@ -240,6 +276,18 @@ components:
       required:
         - card
         - displayName
+    userUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: ユーザーの表示名
+        isPublic:
+          type: boolean
+          description: ユーザー情報を xlair.dev 上に公開するかどうかのフラグ
+      required:
+        - displayName
+        - isPublic
     userData:
       type: object
       properties:

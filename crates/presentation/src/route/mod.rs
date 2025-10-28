@@ -13,6 +13,7 @@ pub fn create_app(state: State) -> Router {
     let users = Router::new()
         .route("/", post(user::handle_post))
         .route("/", get(user::handle_get))
+        .route("/{userId}", post(user::handle_update_user))
         .route(
             "/{userId}/records",
             get(user::handle_get_records).post(user::handle_post_records),
