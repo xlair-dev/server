@@ -14,7 +14,7 @@ pub struct UserSample {
 
 impl UserSample {
     /// Builds a `User` aggregate based on this sample and the supplied metadata.
-    pub fn build(&self, created_at: DateTime<Utc>, is_admin: bool) -> User {
+    pub fn build(&self, is_public: bool, is_admin: bool, created_at: DateTime<Utc>) -> User {
         User::new(
             self.id.to_owned(),
             self.card.to_owned(),
@@ -22,6 +22,7 @@ impl UserSample {
             Rating::new(self.rating),
             self.xp,
             self.credits,
+            is_public,
             is_admin,
             created_at,
         )

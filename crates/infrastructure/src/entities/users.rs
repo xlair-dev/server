@@ -13,6 +13,7 @@ pub struct Model {
     pub rating: i32,
     pub xp: i64,
     pub credits: i64,
+    pub is_public: bool,
     pub is_admin: bool,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,

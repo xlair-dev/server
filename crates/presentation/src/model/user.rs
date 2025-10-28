@@ -37,6 +37,7 @@ pub struct UserDataResponse {
     pub rating: u32,
     pub xp: u32,
     pub credits: u32,
+    pub is_public: bool,
     pub is_admin: bool,
     pub created_at: String,
 }
@@ -50,6 +51,7 @@ impl UserDataResponse {
         rating: u32,
         xp: u32,
         credits: u32,
+        is_public: bool,
         is_admin: bool,
         created_at: String,
     ) -> Self {
@@ -60,6 +62,7 @@ impl UserDataResponse {
             rating,
             xp,
             credits,
+            is_public,
             is_admin,
             created_at,
         }
@@ -75,6 +78,7 @@ impl From<UserDataDto> for UserDataResponse {
             user_data.rating,
             user_data.xp,
             user_data.credits,
+            user_data.is_public,
             user_data.is_admin,
             user_data.created_at.to_rfc3339(),
         )

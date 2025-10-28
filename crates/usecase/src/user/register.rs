@@ -88,6 +88,7 @@ mod tests {
                         Rating::new(user.rating().value()),
                         *user.xp(),
                         *user.credits(),
+                        *user.is_public(),
                         *user.is_admin(),
                         *user.created_at(),
                     ))

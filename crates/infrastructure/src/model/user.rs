@@ -24,6 +24,7 @@ impl From<User> for UserModel {
                 .expect("rating exceeds database range"),
             xp: domain_user.xp().to_owned() as i64,
             credits: domain_user.credits().to_owned() as i64,
+            is_public: *domain_user.is_public(),
             is_admin: *domain_user.is_admin(),
             created_at: (*domain_user.created_at()).into(),
             updated_at: Utc::now().into(),
@@ -56,6 +57,7 @@ impl std::convert::TryFrom<UserModel> for User {
             rating,
             db_user.xp as u32,
             db_user.credits as u32,
+            db_user.is_public,
             db_user.is_admin,
             created_at,
         ))
@@ -91,6 +93,7 @@ impl From<User> for UserActiveModel {
             ),
             xp: ActiveValue::Set(domain_user.xp().to_owned() as i64),
             credits: ActiveValue::Set(domain_user.credits().to_owned() as i64),
+            is_public: ActiveValue::Set(*domain_user.is_public()),
             is_admin: ActiveValue::Set(*domain_user.is_admin()),
             created_at: db_user_created_at,
             updated_at: ActiveValue::NotSet,
@@ -109,7 +112,7 @@ mod tests {
     #[test]
     fn user_model_from_domain_sets_uuid_and_timestamps() {
         let created_at = created_at1();
-        let user = USER2.build(created_at, true);
+        let user = USER2.build(true, true, created_at);
 
         let model: UserModel = user.into();
 
@@ -119,6 +122,7 @@ mod tests {
         assert_eq!(model.rating, USER2.rating as i32);
         assert_eq!(model.xp, USER2.xp as i64);
         assert_eq!(model.credits, USER2.credits as i64);
+        assert!(model.is_public);
         assert!(model.is_admin);
         assert_eq!(model.created_at, created_at);
     }
@@ -133,6 +137,7 @@ mod tests {
             rating: USER3.rating as i32,
             xp: USER3.xp as i64,
             credits: USER3.credits as i64,
+            is_public: false,
             is_admin: false,
             created_at: created_at.into(),
             updated_at: created_at.into(),
@@ -147,6 +152,7 @@ mod tests {
         assert_eq!(user.rating().value(), USER3.rating);
         assert_eq!(*user.xp(), USER3.xp);
         assert_eq!(*user.credits(), USER3.credits);
+        assert!(!user.is_public());
         assert!(!user.is_admin());
         assert_eq!(*user.created_at(), created_at);
     }

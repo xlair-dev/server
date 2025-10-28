@@ -261,6 +261,9 @@ components:
         credits:
           type: integer
           description: ユーザーの総クレジット数
+        isPublic:
+          type: boolean
+          description: ユーザーの情報を xlair.dev 上に公開するかどうかのフラグ
         isAdmin:
           type: boolean
           description: ユーザーが管理者かどうかを表すフラグ
