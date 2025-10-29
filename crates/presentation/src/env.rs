@@ -11,7 +11,7 @@ pub fn app_port() -> String {
 
 /// allowed cors origin
 pub fn allowed_origin() -> String {
-    env::var("ALLOWED_ORIGIN").expect("ALLOWED_ORIGIN must be set")
+    env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "".into())
 }
 
 pub fn postgres_host() -> String {
