@@ -215,6 +215,7 @@ mod tests {
         assert_eq!(json["rating"], USER2.rating);
         assert_eq!(json["xp"], USER2.xp);
         assert_eq!(json["credits"], USER2.credits);
+        assert_eq!(json["isPublic"], false);
         assert_eq!(json["isAdmin"], false);
         assert_eq!(json["createdAt"], "2025-10-21T15:00:00+00:00");
     }

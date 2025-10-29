@@ -9,6 +9,11 @@ pub fn app_port() -> String {
     env::var("APP_PORT").unwrap_or_else(|_| "8080".into())
 }
 
+/// allowed cors origin
+pub fn allowed_origin() -> String {
+    env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "".into())
+}
+
 pub fn postgres_host() -> String {
     env::var("POSTGRES_HOST").expect("POSTGRES_HOST must be set")
 }

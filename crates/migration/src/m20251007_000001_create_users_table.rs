@@ -57,6 +57,12 @@ impl MigrationTrait for Migration {
                             .default(0),
                     )
                     .col(
+                        ColumnDef::new(Users::IsPublic)
+                            .boolean()
+                            .not_null()
+                            .default(true),
+                    )
+                    .col(
                         ColumnDef::new(Users::IsAdmin)
                             .boolean()
                             .not_null()
@@ -128,6 +134,7 @@ enum Users {
     Rating,
     Xp,
     Credits,
+    IsPublic,
     IsAdmin,
     CreatedAt,
     UpdatedAt,
