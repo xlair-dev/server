@@ -171,7 +171,7 @@ mod tests {
         let mut user_repo = domain::repository::user::MockUserRepository::new();
         user_repo
             .expect_create()
-            .withf(|user| user.card() == USER2.card && user.display_name() == USER2.display_name)
+            .withf(|user| user.card() == USER2.card && user.display_name() == USER2.display_name && !user.is_public())
             .returning(|_| {
                 Box::pin(async {
                     Ok(User::new(
@@ -192,7 +192,8 @@ mod tests {
 
         let payload = json!({
             "card": USER2.card,
-            "displayName": USER2.display_name
+            "displayName": USER2.display_name,
+            "isPublic": false
         });
 
         let response = router
@@ -235,7 +236,8 @@ mod tests {
 
         let payload = json!({
             "card": USER2.card,
-            "displayName": USER1.display_name
+            "displayName": USER1.display_name,
+            "isPublic": false
         });
 
         let response = router

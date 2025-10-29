@@ -17,9 +17,10 @@ impl<R: Repositories> UserUsecase<R> {
     ) -> Result<UserDataDto, UserUsecaseError> {
         let card = raw_user.card.clone();
         let display_name = raw_user.display_name.clone();
-        debug!(%card, %display_name, "Building user aggregate");
+        let is_public = raw_user.is_public;
+        debug!(%card, %display_name, is_public, "Building user aggregate");
 
-        let user = User::new_temporary(raw_user.card, raw_user.display_name);
+        let user = User::new_temporary(raw_user.card, raw_user.display_name, is_public);
         let user = self.repositories.user().create(user).await?;
         info!(user_id = %user.id(), "User persisted by repository");
         Ok(user.into())
@@ -62,7 +63,7 @@ mod tests {
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
-        let input = UserRegisterDto::new(USER1.card.to_owned(), USER1.display_name.to_owned());
+        let input = UserRegisterDto::new(USER1.card.to_owned(), USER1.display_name.to_owned(), false);
         let result = usecase.register(input).await;
 
         match result {
@@ -102,7 +103,7 @@ mod tests {
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
-        let input = UserRegisterDto::new(USER2.card.to_owned(), USER2.display_name.to_owned());
+        let input = UserRegisterDto::new(USER2.card.to_owned(), USER2.display_name.to_owned(), false);
         let result = usecase.register(input).await.expect("should succeed");
 
         assert_eq!(result.card, USER2.card);

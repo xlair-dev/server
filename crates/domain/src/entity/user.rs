@@ -51,7 +51,7 @@ impl User {
         }
     }
 
-    pub fn new_temporary(card: String, display_name: String) -> Self {
+    pub fn new_temporary(card: String, display_name: String, is_public: bool) -> Self {
         Self {
             id: "".to_string(),
             card,
@@ -59,7 +59,7 @@ impl User {
             rating: Rating::default(),
             xp: 0,
             credits: 0,
-            is_public: false,
+            is_public,
             is_admin: false,
             created_at: chrono::Utc::now(),
         }
@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn new_temporary_initializes_with_defaults() {
-        let user = User::new_temporary("CARD-123".to_owned(), "Alice".to_owned());
+        let user = User::new_temporary("CARD-123".to_owned(), "Alice".to_owned(), false);
 
         assert!(user.id().is_empty());
         assert_eq!(user.card(), "CARD-123");
@@ -93,6 +93,20 @@ mod tests {
         assert_eq!(*user.xp(), 0);
         assert_eq!(*user.credits(), 0);
         assert!(!user.is_public());
+        assert!(!user.is_admin());
+    }
+    
+    #[test]
+    fn new_temporary_initializes_with_is_public_true() {
+        let user = User::new_temporary("CARD-456".to_owned(), "Bob".to_owned(), true);
+
+        assert!(user.id().is_empty());
+        assert_eq!(user.card(), "CARD-456");
+        assert_eq!(user.display_name(), "Bob");
+        assert_eq!(user.rating().value(), 0);
+        assert_eq!(*user.xp(), 0);
+        assert_eq!(*user.credits(), 0);
+        assert!(user.is_public());
         assert!(!user.is_admin());
     }
 

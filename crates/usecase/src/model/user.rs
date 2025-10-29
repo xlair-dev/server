@@ -5,11 +5,12 @@ use domain::entity::{clear_type::ClearType, record::Record, user::User};
 pub struct UserRegisterDto {
     pub card: String,
     pub display_name: String,
+    pub is_public: bool,
 }
 
 impl UserRegisterDto {
-    pub fn new(card: String, display_name: String) -> Self {
-        Self { card, display_name }
+    pub fn new(card: String, display_name: String, is_public: bool) -> Self {
+        Self { card, display_name, is_public }
     }
 }
 
