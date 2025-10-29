@@ -95,7 +95,7 @@ mod tests {
         assert!(!user.is_public());
         assert!(!user.is_admin());
     }
-    
+
     #[test]
     fn new_temporary_initializes_with_is_public_true() {
         let user = User::new_temporary("CARD-456".to_owned(), "Bob".to_owned(), true);

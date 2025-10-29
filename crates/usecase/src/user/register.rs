@@ -63,7 +63,8 @@ mod tests {
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
-        let input = UserRegisterDto::new(USER1.card.to_owned(), USER1.display_name.to_owned(), false);
+        let input =
+            UserRegisterDto::new(USER1.card.to_owned(), USER1.display_name.to_owned(), false);
         let result = usecase.register(input).await;
 
         match result {
@@ -103,7 +104,8 @@ mod tests {
         };
         let usecase = UserUsecase::new(Arc::new(repositories));
 
-        let input = UserRegisterDto::new(USER2.card.to_owned(), USER2.display_name.to_owned(), false);
+        let input =
+            UserRegisterDto::new(USER2.card.to_owned(), USER2.display_name.to_owned(), false);
         let result = usecase.register(input).await.expect("should succeed");
 
         assert_eq!(result.card, USER2.card);

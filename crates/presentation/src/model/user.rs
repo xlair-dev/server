@@ -15,7 +15,11 @@ pub struct RegisterUserRequest {
 
 impl RegisterUserRequest {
     pub fn new(card: String, display_name: String, is_public: bool) -> Self {
-        Self { card, display_name, is_public }
+        Self {
+            card,
+            display_name,
+            is_public,
+        }
     }
 }
 
