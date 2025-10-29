@@ -1,10 +1,11 @@
 use axum::{
     Router,
+    http::{HeaderValue, Method, header},
     routing::{get, post},
 };
-use tower_http::trace::TraceLayer;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
-use crate::state::State;
+use crate::{env::allowed_origin, state::State};
 
 pub mod sync;
 pub mod user;
@@ -32,10 +33,15 @@ pub fn create_app(state: State) -> Router {
 
     let public_routes = Router::new().nest("/health", health);
 
-    // TODO: Add cors layer
+    let cors = CorsLayer::new()
+        .allow_origin(allowed_origin().parse::<HeaderValue>().unwrap())
+        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_headers([header::CONTENT_TYPE]);
+
     Router::new()
         .merge(private_routes)
         .merge(public_routes)
         .layer(TraceLayer::new_for_http())
+        .layer(cors)
         .with_state(state)
 }
