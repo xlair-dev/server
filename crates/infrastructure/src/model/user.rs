@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn active_model_from_temporary_user_leaves_identity_unset() {
-        let user = User::new_temporary(USER2.card.to_owned(), USER2.display_name.to_owned());
+        let user = User::new_temporary(USER2.card.to_owned(), USER2.display_name.to_owned(), false);
 
         let active: UserActiveModel = user.into();
 

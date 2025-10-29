@@ -273,9 +273,13 @@ components:
         displayName:
           type: string
           description: ユーザーの表示名
+        isPublic:
+          type: boolean
+          description: ユーザー情報を xlair.dev 上に公開するかどうかのフラグ
       required:
         - card
         - displayName
+        - isPublic
     userUpdate:
       type: object
       properties:

@@ -10,11 +10,16 @@ use usecase::model::user::{
 pub struct RegisterUserRequest {
     pub card: String,
     pub display_name: String,
+    pub is_public: bool,
 }
 
 impl RegisterUserRequest {
-    pub fn new(card: String, display_name: String) -> Self {
-        Self { card, display_name }
+    pub fn new(card: String, display_name: String, is_public: bool) -> Self {
+        Self {
+            card,
+            display_name,
+            is_public,
+        }
     }
 }
 
@@ -25,7 +30,7 @@ pub struct FindUserQuery {
 
 impl From<RegisterUserRequest> for UserRegisterDto {
     fn from(request: RegisterUserRequest) -> Self {
-        UserRegisterDto::new(request.card, request.display_name)
+        UserRegisterDto::new(request.card, request.display_name, request.is_public)
     }
 }
 
