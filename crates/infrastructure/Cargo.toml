@@ -7,8 +7,10 @@ edition = "2024"
 anyhow.workspace = true
 chrono.workspace = true
 domain.workspace = true
+bigdecimal.workspace = true
 sea-orm.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
+tokio.workspace = true
 domain = { workspace = true, features = ["test-support"] }

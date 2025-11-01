@@ -1411,9 +1411,11 @@ name = "infrastructure"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bigdecimal",
  "chrono",
  "domain",
  "sea-orm",
+ "tokio",
  "tracing",
 ]
 
