@@ -21,6 +21,10 @@ pub fn create_app(state: State) -> Router {
             get(user::handle_get_records).post(user::handle_post_records),
         )
         .route(
+            "/{userId}/options",
+            get(user::handle_get_play_option).post(user::handle_post_play_option),
+        )
+        .route(
             "/{userId}/credits/increment",
             post(user::handle_increment_credits),
         );

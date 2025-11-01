@@ -10,7 +10,8 @@ use crate::{
     error::AppError,
     model::user::{
         CreditsIncrementResponse, FindUserQuery, RegisterUserRequest, UpdateUserRequest,
-        UserDataResponse, UserRecordRequest, UserRecordResponse,
+        UserDataResponse, UserPlayOptionRequest, UserPlayOptionResponse, UserRecordRequest,
+        UserRecordResponse,
     },
 };
 
@@ -78,6 +79,33 @@ pub async fn handle_update_user(
     Ok(Json(user_data.into()))
 }
 
+#[instrument(skip(state), fields(user_id = %user_id))]
+pub async fn handle_get_play_option(
+    State(state): State<crate::state::State>,
+    Path(user_id): Path<String>,
+) -> AppResult<Json<UserPlayOptionResponse>> {
+    info!("Get user play option request received");
+    let option = state.usecases.user.get_play_option(user_id.clone()).await?;
+    info!("User play option retrieved successfully");
+    Ok(Json(option.into()))
+}
+
+#[instrument(skip(state, request), fields(user_id = %user_id))]
+pub async fn handle_post_play_option(
+    State(state): State<crate::state::State>,
+    Path(user_id): Path<String>,
+    Json(request): Json<UserPlayOptionRequest>,
+) -> AppResult<Json<UserPlayOptionResponse>> {
+    info!("Save user play option request received");
+    let dto = state
+        .usecases
+        .user
+        .save_play_option(user_id.clone(), request.into())
+        .await?;
+    info!("User play option persisted successfully");
+    Ok(Json(dto.into()))
+}
+
 #[instrument(skip(state, payload), fields(user_id = %user_id))]
 pub async fn handle_post_records(
     State(state): State<crate::state::State>,
@@ -127,7 +155,10 @@ mod tests {
         http::Request,
     };
     use domain::{
-        entity::{clear_type::ClearType, level::Level, rating::Rating, record::Record, user::User},
+        entity::{
+            clear_type::ClearType, level::Level, rating::Rating, record::Record, user::User,
+            user_play_option::UserPlayOption,
+        },
         repository::{
             MockRepositories,
             music::MockMusicRepository,
@@ -453,6 +484,112 @@ mod tests {
         let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert!(json["error"].as_str().unwrap().contains("User not found"));
+    }
+
+    #[tokio::test]
+    async fn handle_get_play_option_returns_value() {
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo
+            .expect_find_by_id()
+            .withf(|user_id| user_id == USER1.id)
+            .returning(|_| {
+                let user = User::new(
+                    USER1.id.to_owned(),
+                    USER1.card.to_owned(),
+                    USER1.display_name.to_owned(),
+                    Rating::new(USER1.rating),
+                    USER1.xp,
+                    USER1.credits,
+                    true,
+                    false,
+                    timestamp(2025, 10, 21, 15, 0, 0),
+                );
+                Box::pin(async move { Ok(Some(user)) })
+            });
+        user_repo
+            .expect_find_play_option()
+            .withf(|user_id| user_id == USER1.id)
+            .returning(|_| {
+                let option = UserPlayOption::new(
+                    USER1.id.to_owned(),
+                    1.5,
+                    -2,
+                    timestamp(2025, 10, 21, 15, 0, 0),
+                );
+                Box::pin(async move { Ok(Some(option)) })
+            });
+
+        let router = test_router(user_repo, MockRecordRepository::new());
+
+        let response = router
+            .oneshot(
+                Request::get(format!("/users/{}/options", USER1.id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!((json["noteSpeed"].as_f64().unwrap() - 1.5).abs() < f64::EPSILON);
+        assert_eq!(json["judgmentOffset"], -2);
+    }
+
+    #[tokio::test]
+    async fn handle_post_play_option_persists_value() {
+        let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo
+            .expect_find_by_id()
+            .withf(|user_id| user_id == USER1.id)
+            .returning(|_| {
+                let user = User::new(
+                    USER1.id.to_owned(),
+                    USER1.card.to_owned(),
+                    USER1.display_name.to_owned(),
+                    Rating::new(USER1.rating),
+                    USER1.xp,
+                    USER1.credits,
+                    true,
+                    false,
+                    timestamp(2025, 10, 21, 15, 0, 0),
+                );
+                Box::pin(async move { Ok(Some(user)) })
+            });
+        user_repo
+            .expect_save_play_option()
+            .withf(|option| {
+                option.user_id() == USER1.id
+                    && (option.note_speed() - 1.25).abs() < f32::EPSILON
+                    && *option.judgment_offset() == 3
+            })
+            .returning(|option| Box::pin(async move { Ok(option) }));
+
+        let router = test_router(user_repo, MockRecordRepository::new());
+
+        let payload = json!({
+            "noteSpeed": 1.25,
+            "judgmentOffset": 3
+        });
+
+        let response = router
+            .oneshot(
+                Request::post(format!("/users/{}/options", USER1.id))
+                    .header(axum::http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(payload.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .expect("handler should respond");
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!((json["noteSpeed"].as_f64().unwrap() - 1.25).abs() < f64::EPSILON);
+        assert_eq!(json["judgmentOffset"], 3);
     }
 
     #[tokio::test]

@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
-use domain::entity::{clear_type::ClearType, record::Record, user::User};
+use domain::entity::{
+    clear_type::ClearType, record::Record, user::User, user_play_option::UserPlayOption,
+};
 
 #[derive(Debug)]
 pub struct UserRegisterDto {
@@ -85,6 +87,46 @@ impl UserCreditsDto {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct UserPlayOptionDto {
+    pub user_id: String,
+    pub note_speed: f32,
+    pub judgment_offset: i32,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl UserPlayOptionDto {
+    pub fn new(
+        user_id: String,
+        note_speed: f32,
+        judgment_offset: i32,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            user_id,
+            note_speed,
+            judgment_offset,
+            updated_at,
+        }
+    }
+
+    /// Defaults mirror cabinet firmware expectation: noteSpeed=1.0 and judgmentOffset=0.
+    pub fn with_defaults(user_id: String) -> Self {
+        Self::new(user_id, 1.0, 0, Utc::now())
+    }
+}
+
+impl From<UserPlayOption> for UserPlayOptionDto {
+    fn from(option: UserPlayOption) -> Self {
+        Self::new(
+            option.user_id().to_owned(),
+            *option.note_speed(),
+            *option.judgment_offset(),
+            *option.updated_at(),
+        )
+    }
+}
+
 #[derive(Debug)]
 pub struct UserRecordDto {
     pub id: String,
@@ -106,6 +148,21 @@ impl UserUpdateDto {
         Self {
             display_name,
             is_public,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UserPlayOptionUpdateDto {
+    pub note_speed: f32,
+    pub judgment_offset: i32,
+}
+
+impl UserPlayOptionUpdateDto {
+    pub fn new(note_speed: f32, judgment_offset: i32) -> Self {
+        Self {
+            note_speed,
+            judgment_offset,
         }
     }
 }

@@ -6,4 +6,5 @@ pub mod musics;
 pub mod records;
 pub mod sea_orm_active_enums;
 pub mod sheets;
+pub mod user_play_options;
 pub mod users;

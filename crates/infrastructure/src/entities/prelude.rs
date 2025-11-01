@@ -2,5 +2,5 @@
 
 pub use super::{
     musics::Entity as Musics, records::Entity as Records, sheets::Entity as Sheets,
-    users::Entity as Users,
+    user_play_options::Entity as UserPlayOptions, users::Entity as Users,
 };

@@ -5,16 +5,19 @@ mod write;
 use std::sync::Arc;
 
 use domain::{
-    entity::user::User,
+    entity::{user::User, user_play_option::UserPlayOption},
     repository::user::{UserRepository, UserRepositoryError},
 };
 use read::{
     count_all as query_count_users, find_by_card as query_by_card, find_by_id as query_by_id,
-    sum_credits as query_sum_credits,
+    find_play_option as query_play_option, sum_credits as query_sum_credits,
 };
 use sea_orm::DbConn;
 use tracing::{debug, info, instrument};
-use write::{create_user, increment_credits as mutate_increment_credits, save_user};
+use write::{
+    create_user, increment_credits as mutate_increment_credits,
+    save_play_option as mutate_play_option, save_user,
+};
 
 pub struct UserRepositoryImpl {
     db: Arc<DbConn>,
@@ -70,5 +73,21 @@ impl UserRepository for UserRepositoryImpl {
     #[instrument(skip(self))]
     async fn sum_credits(&self) -> Result<u64, UserRepositoryError> {
         query_sum_credits(self.db.as_ref()).await
+    }
+
+    #[instrument(skip(self), fields(user_id = %user_id))]
+    async fn find_play_option(
+        &self,
+        user_id: &str,
+    ) -> Result<Option<UserPlayOption>, UserRepositoryError> {
+        query_play_option(self.db.as_ref(), user_id).await
+    }
+
+    #[instrument(skip(self, option), fields(user_id = %option.user_id()))]
+    async fn save_play_option(
+        &self,
+        option: UserPlayOption,
+    ) -> Result<UserPlayOption, UserRepositoryError> {
+        mutate_play_option(self.db.as_ref(), option).await
     }
 }
