@@ -99,11 +99,12 @@ pub async fn sum_credits(db: &DbConn) -> Result<u64, UserRepositoryError> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use bigdecimal::BigDecimal;
-    use sea_orm::sea_query::Value;
-    use sea_orm::{DatabaseBackend, MockDatabase};
     use std::collections::BTreeMap;
+
+    use bigdecimal::BigDecimal;
+    use sea_orm::{DatabaseBackend, MockDatabase, sea_query::Value};
+
+    use super::*;
 
     fn decimal_row(label: &str, value: Option<i64>) -> BTreeMap<String, Value> {
         let mapped_value = value
