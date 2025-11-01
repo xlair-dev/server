@@ -231,6 +231,25 @@ paths:
           description: Unauthorized - Invalid API key
         "500":
           description: Internal server error
+  /statistics/summary:
+    get:
+      tags:
+        - web
+      summary: システム全体の統計情報を取得
+      description: 全ユーザーとレコードの集計値を参照する
+      security:
+        - adminApiKey: []
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/globalStatistics"
+        "401":
+          description: Unauthorized - Invalid admin API key
+        "500":
+          description: Internal server error
   /health:
     get:
       tags:
@@ -486,3 +505,19 @@ components:
       required:
         - status
         - timestamp
+    globalStatistics:
+      type: object
+      properties:
+        totalCredits:
+          type: integer
+          description: 全ユーザーのプレイ数 (クレジット) の合計
+        totalUsers:
+          type: integer
+          description: 登録済みユーザー数
+        totalScore:
+          type: integer
+          description: 全レコードのハイスコア合計
+      required:
+        - totalCredits
+        - totalUsers
+        - totalScore

@@ -38,4 +38,11 @@ pub trait UserRepository: Send + Sync {
     ) -> impl Future<Output = Result<Option<User>, UserRepositoryError>> + Send;
 
     fn save(&self, user: User) -> impl Future<Output = Result<User, UserRepositoryError>> + Send;
+
+    /// Returns the total number of persisted user aggregates.
+    fn count_all(&self) -> impl Future<Output = Result<u64, UserRepositoryError>> + Send;
+
+    /// Sums the `credits` field across all user aggregates. Implementations must default to zero
+    /// when the table is empty to keep the operation idempotent for reporting workloads.
+    fn sum_credits(&self) -> impl Future<Output = Result<u64, UserRepositoryError>> + Send;
 }

@@ -4,12 +4,18 @@ use std::{
 };
 
 use anyhow::Error as AnyError;
+use bigdecimal::{Signed, ToPrimitive};
 use domain::{
     entity::record::Record,
     repository::record::{RecordRepositoryError, RecordWithMetadata},
 };
-use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, prelude::Uuid};
-use tracing::{debug, error, warn};
+use sea_orm::{
+    ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
+    prelude::Uuid,
+    sea_query::{Alias, Expr},
+    sqlx::types::BigDecimal,
+};
+use tracing::{debug, error, info, warn};
 
 use crate::entities::{self, prelude::Records};
 
@@ -157,4 +163,79 @@ async fn records_with_metadata(
     }
 
     Ok(result)
+}
+
+/// Aggregates record scores across all users. Casts SUM(...) to NUMERIC to
+/// stabilize Postgres' return type regardless of column width.
+pub async fn sum_scores(db: &DbConn) -> Result<u64, RecordRepositoryError> {
+    debug!("Summing record scores via SeaORM");
+    let sum = entities::records::Entity::find()
+        .select_only()
+        .column_as(
+            Expr::col(entities::records::Column::Score)
+                .sum()
+                .cast_as(Alias::new("numeric")),
+            "sum",
+        )
+        .into_tuple::<Option<BigDecimal>>()
+        .one(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to sum record scores");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?
+        .flatten()
+        .unwrap_or_else(|| BigDecimal::from(0u8));
+
+    if sum.is_negative() {
+        let err = AnyError::msg("Database returned negative record score sum");
+        error!("Record score sum returned negative value");
+        return Err(RecordRepositoryError::InternalError(err));
+    }
+
+    let sum = sum.to_u64().ok_or_else(|| {
+        let err = AnyError::msg("Record score sum cannot fit in u64");
+        error!("Record score sum overflowed u64 conversion");
+        RecordRepositoryError::InternalError(err)
+    })?;
+
+    info!(total_score = sum, "Record scores summed successfully");
+    Ok(sum)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use bigdecimal::BigDecimal;
+    use sea_orm::{DatabaseBackend, MockDatabase, sea_query::Value};
+
+    use super::*;
+
+    fn decimal_row(label: &str, value: Option<i64>) -> BTreeMap<String, Value> {
+        let mapped_value = value
+            .map(|v| Value::BigDecimal(Some(Box::new(BigDecimal::from(v)))))
+            .unwrap_or(Value::BigDecimal(None));
+        BTreeMap::from([(label.to_owned(), mapped_value)])
+    }
+
+    #[tokio::test]
+    async fn sum_scores_handles_numeric_rows() {
+        let db = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![decimal_row("sum", Some(1_234))]])
+            .into_connection();
+
+        let result = sum_scores(&db).await.unwrap();
+        assert_eq!(result, 1_234);
+    }
+
+    #[tokio::test]
+    async fn sum_scores_defaults_to_zero() {
+        let db = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![decimal_row("sum", None)]])
+            .into_connection();
+
+        let result = sum_scores(&db).await.unwrap();
+        assert_eq!(result, 0);
+    }
 }
