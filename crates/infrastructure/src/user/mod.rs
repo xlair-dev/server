@@ -10,7 +10,8 @@ use domain::{
 };
 use read::{
     count_all as query_count_users, find_by_card as query_by_card, find_by_id as query_by_id,
-    find_play_option as query_play_option, sum_credits as query_sum_credits,
+    find_play_option as query_play_option, public_users_by_rating as query_public_by_rating,
+    public_users_by_xp as query_public_by_xp, sum_credits as query_sum_credits,
 };
 use sea_orm::DbConn;
 use tracing::{debug, info, instrument};
@@ -89,5 +90,30 @@ impl UserRepository for UserRepositoryImpl {
         option: UserPlayOption,
     ) -> Result<UserPlayOption, UserRepositoryError> {
         mutate_play_option(self.db.as_ref(), option).await
+    }
+
+    #[instrument(skip(self), fields(limit))]
+    async fn find_public_top_by_rating(
+        &self,
+        limit: u64,
+    ) -> Result<Vec<User>, UserRepositoryError> {
+        debug!("Fetching public users by rating via SeaORM");
+        let users = query_public_by_rating(self.db.as_ref(), limit).await?;
+        info!(
+            count = users.len(),
+            "Public users by rating fetched successfully"
+        );
+        Ok(users)
+    }
+
+    #[instrument(skip(self), fields(limit))]
+    async fn find_public_top_by_xp(&self, limit: u64) -> Result<Vec<User>, UserRepositoryError> {
+        debug!("Fetching public users by XP via SeaORM");
+        let users = query_public_by_xp(self.db.as_ref(), limit).await?;
+        info!(
+            count = users.len(),
+            "Public users by XP fetched successfully"
+        );
+        Ok(users)
     }
 }
