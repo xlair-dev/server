@@ -36,6 +36,44 @@ impl RecordWithMetadata {
     }
 }
 
+/// Represents a scoreboard row for a single sheet. Implementations must ensure rows are sorted in
+/// descending order by `score` before handing them to the domain layer.
+#[derive(Debug, Clone)]
+pub struct SheetScoreRankingRow {
+    pub user_id: String,
+    pub display_name: String,
+    pub score: u32,
+}
+
+impl SheetScoreRankingRow {
+    pub fn new(user_id: String, display_name: String, score: u32) -> Self {
+        Self {
+            user_id,
+            display_name,
+            score,
+        }
+    }
+}
+
+/// Represents cumulative record scores per user. Underlying queries must aggregate scores using a
+/// stable SUM(...) and exclude non-public users at the persistence layer.
+#[derive(Debug, Clone)]
+pub struct TotalScoreRankingRow {
+    pub user_id: String,
+    pub display_name: String,
+    pub total_score: u64,
+}
+
+impl TotalScoreRankingRow {
+    pub fn new(user_id: String, display_name: String, total_score: u64) -> Self {
+        Self {
+            user_id,
+            display_name,
+            total_score,
+        }
+    }
+}
+
 #[automock]
 pub trait RecordRepository: Send + Sync {
     fn find_by_user_id(
@@ -73,4 +111,18 @@ pub trait RecordRepository: Send + Sync {
     /// Returns the sum of record scores across the entire catalog. Implementations must default to
     /// zero when no records are present to keep the aggregation stable for dashboards.
     fn sum_scores(&self) -> impl Future<Output = Result<u64, RecordRepositoryError>> + Send;
+
+    /// Retrieves the highest scores for the supplied sheet. Persistence adapters must filter out
+    /// non-public users in this query because visibility flags are enforced by the users table.
+    fn find_public_high_scores_by_sheet(
+        &self,
+        sheet_id: &str,
+        limit: u64,
+    ) -> impl Future<Output = Result<Vec<SheetScoreRankingRow>, RecordRepositoryError>> + Send;
+
+    /// Aggregates total record scores per public user and returns the top rows in descending order.
+    fn find_public_total_score_ranking(
+        &self,
+        limit: u64,
+    ) -> impl Future<Output = Result<Vec<TotalScoreRankingRow>, RecordRepositoryError>> + Send;
 }
