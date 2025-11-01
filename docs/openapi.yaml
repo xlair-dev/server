@@ -210,6 +210,66 @@ paths:
           description: Not found - User or sheet not found
         "500":
           description: Internal server error
+  /users/{userId}/options:
+    get:
+      tags:
+        - app
+      summary: ユーザーのプレイオプションを取得
+      description: ゲーム開始時にユーザーのプレイオプションを取得する
+      security:
+        - appApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          description: ユーザーのID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userPlayOption"
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User not found
+        "500":
+          description: Internal server error
+    post:
+      tags:
+        - app
+      summary: ユーザーのプレイオプションを更新
+      description: ゲーム終了時にユーザーのプレイオプションを保存する
+      security:
+        - appApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          description: ユーザーのID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/userPlayOption"
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userPlayOption"
+        "401":
+          description: Unauthorized - Invalid API key
+        "404":
+          description: Not found - User not found
+        "500":
+          description: Internal server error
   /sync:
     get:
       tags:
@@ -350,6 +410,19 @@ components:
         - xp
         - credits
         - createdAt
+    userPlayOption:
+      type: object
+      properties:
+        noteSpeed:
+          type: number
+          format: float
+          description: ノーツの流れる速度
+        judgmentOffset:
+          type: integer
+          description: 判定タイミングの調整値 (ミリ秒)
+      required:
+        - noteSpeed
+        - judgmentOffset
     recordRequest:
       type: object
       properties:
