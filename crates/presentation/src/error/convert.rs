@@ -2,7 +2,8 @@ use domain::repository::{
     music::MusicRepositoryError, record::RecordRepositoryError, user::UserRepositoryError,
 };
 use usecase::{
-    music::MusicUsecaseError, statistics::StatisticsUsecaseError, user::UserUsecaseError,
+    music::MusicUsecaseError, ranking::RankingUsecaseError, statistics::StatisticsUsecaseError,
+    user::UserUsecaseError,
 };
 
 use crate::error::AppError;
@@ -90,6 +91,15 @@ impl From<StatisticsUsecaseError> for AppError {
         match error {
             StatisticsUsecaseError::UserRepository(err) => err.into(),
             StatisticsUsecaseError::RecordRepository(err) => err.into(),
+        }
+    }
+}
+
+impl From<RankingUsecaseError> for AppError {
+    fn from(error: RankingUsecaseError) -> Self {
+        match error {
+            RankingUsecaseError::RecordRepository(err) => err.into(),
+            RankingUsecaseError::UserRepository(err) => err.into(),
         }
     }
 }

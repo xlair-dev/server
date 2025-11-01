@@ -6,11 +6,14 @@ use std::sync::Arc;
 
 use domain::{
     entity::record::Record,
-    repository::record::{RecordRepository, RecordRepositoryError, RecordWithMetadata},
+    repository::record::{
+        RecordRepository, RecordRepositoryError, RecordWithMetadata, SheetScoreRankingRow,
+        TotalScoreRankingRow,
+    },
 };
 use read::{
-    records_by_user, records_by_user_and_sheet_ids, records_with_metadata_by_user,
-    sum_scores as query_sum_scores,
+    public_high_scores_by_sheet, public_total_score_ranking, records_by_user,
+    records_by_user_and_sheet_ids, records_with_metadata_by_user, sum_scores as query_sum_scores,
 };
 use sea_orm::DbConn;
 use tracing::{debug, info, instrument};
@@ -85,5 +88,34 @@ impl RecordRepository for RecordRepositoryImpl {
     #[instrument(skip(self))]
     async fn sum_scores(&self) -> Result<u64, RecordRepositoryError> {
         query_sum_scores(self.db.as_ref()).await
+    }
+
+    #[instrument(skip(self), fields(sheet_id = %sheet_id, limit))]
+    async fn find_public_high_scores_by_sheet(
+        &self,
+        sheet_id: &str,
+        limit: u64,
+    ) -> Result<Vec<SheetScoreRankingRow>, RecordRepositoryError> {
+        debug!("Fetching public sheet ranking via SeaORM");
+        let result = public_high_scores_by_sheet(self.db.as_ref(), sheet_id, limit).await?;
+        info!(
+            count = result.len(),
+            "Public sheet ranking fetched successfully"
+        );
+        Ok(result)
+    }
+
+    #[instrument(skip(self), fields(limit))]
+    async fn find_public_total_score_ranking(
+        &self,
+        limit: u64,
+    ) -> Result<Vec<TotalScoreRankingRow>, RecordRepositoryError> {
+        debug!("Fetching public total score ranking via SeaORM");
+        let result = public_total_score_ranking(self.db.as_ref(), limit).await?;
+        info!(
+            count = result.len(),
+            "Public total score ranking fetched successfully"
+        );
+        Ok(result)
     }
 }

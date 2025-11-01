@@ -55,4 +55,18 @@ pub trait UserRepository: Send + Sync {
         &self,
         option: UserPlayOption,
     ) -> impl Future<Output = Result<UserPlayOption, UserRepositoryError>> + Send;
+
+    /// Fetches public user aggregates ordered by rating in descending order. Implementations must
+    /// apply the visibility filter and return at most `limit` rows.
+    fn find_public_top_by_rating(
+        &self,
+        limit: u64,
+    ) -> impl Future<Output = Result<Vec<User>, UserRepositoryError>> + Send;
+
+    /// Fetches public user aggregates ordered by XP in descending order. Implementations must
+    /// apply the visibility filter and return at most `limit` rows.
+    fn find_public_top_by_xp(
+        &self,
+        limit: u64,
+    ) -> impl Future<Output = Result<Vec<User>, UserRepositoryError>> + Send;
 }

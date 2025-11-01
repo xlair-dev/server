@@ -7,7 +7,7 @@ use domain::{
     repository::user::UserRepositoryError,
 };
 use sea_orm::{
-    ColumnTrait, DbConn, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect,
+    ColumnTrait, DbConn, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
     sea_query::{Alias, Expr},
     sqlx::types::BigDecimal,
 };
@@ -127,20 +127,104 @@ pub async fn sum_credits(db: &DbConn) -> Result<u64, UserRepositoryError> {
     Ok(sum)
 }
 
+pub async fn public_users_by_rating(
+    db: &DbConn,
+    limit: u64,
+) -> Result<Vec<User>, UserRepositoryError> {
+    debug!(limit, "Querying public users by rating via SeaORM");
+    let models = entities::users::Entity::find()
+        .filter(entities::users::Column::IsPublic.eq(true))
+        .order_by_desc(entities::users::Column::Rating)
+        .order_by_asc(entities::users::Column::DisplayName)
+        .limit(limit)
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to query public users by rating");
+            UserRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    let mut result = Vec::with_capacity(models.len());
+    for model in models {
+        let user = User::try_from(model)?;
+        result.push(user);
+    }
+
+    info!(
+        count = result.len(),
+        "Public users by rating fetched successfully"
+    );
+    Ok(result)
+}
+
+pub async fn public_users_by_xp(db: &DbConn, limit: u64) -> Result<Vec<User>, UserRepositoryError> {
+    debug!(limit, "Querying public users by XP via SeaORM");
+    let models = entities::users::Entity::find()
+        .filter(entities::users::Column::IsPublic.eq(true))
+        .order_by_desc(entities::users::Column::Xp)
+        .order_by_desc(entities::users::Column::Rating)
+        .order_by_asc(entities::users::Column::DisplayName)
+        .limit(limit)
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to query public users by XP");
+            UserRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    let mut result = Vec::with_capacity(models.len());
+    for model in models {
+        let user = User::try_from(model)?;
+        result.push(user);
+    }
+
+    info!(
+        count = result.len(),
+        "Public users by XP fetched successfully"
+    );
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
 
     use bigdecimal::BigDecimal;
-    use sea_orm::{DatabaseBackend, MockDatabase, sea_query::Value};
+    use chrono::{TimeZone, Utc};
+    use sea_orm::{DatabaseBackend, MockDatabase, prelude::Uuid, sea_query::Value};
 
     use super::*;
+    use crate::entities;
 
     fn decimal_row(label: &str, value: Option<i64>) -> BTreeMap<String, Value> {
         let mapped_value = value
             .map(|v| Value::BigDecimal(Some(Box::new(BigDecimal::from(v)))))
             .unwrap_or(Value::BigDecimal(None));
         BTreeMap::from([(label.to_owned(), mapped_value)])
+    }
+
+    fn user_model(
+        id: Uuid,
+        card: &str,
+        display_name: &str,
+        rating: i32,
+        xp: i64,
+        credits: i64,
+        is_public: bool,
+    ) -> entities::users::Model {
+        let timestamp = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        entities::users::Model {
+            id,
+            card: card.to_owned(),
+            display_name: display_name.to_owned(),
+            rating,
+            xp,
+            credits,
+            is_public,
+            is_admin: false,
+            created_at: timestamp.into(),
+            updated_at: timestamp.into(),
+        }
     }
 
     #[tokio::test]
@@ -161,5 +245,41 @@ mod tests {
 
         let result = sum_credits(&db).await.unwrap();
         assert_eq!(result, 0);
+    }
+
+    #[tokio::test]
+    async fn public_users_by_rating_returns_users() {
+        let user_id = Uuid::parse_str("dddddddd-dddd-dddd-dddd-dddddddddddd").expect("valid uuid");
+        let db = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![user_model(
+                user_id, "card-1", "Alice", 1800, 42, 10, true,
+            )]])
+            .into_connection();
+
+        let result = public_users_by_rating(&db, 1).await.unwrap();
+
+        assert_eq!(result.len(), 1);
+        let user = &result[0];
+        assert_eq!(user.id(), &user_id.to_string());
+        assert_eq!(user.display_name(), "Alice");
+        assert_eq!(user.rating().value(), 1800);
+    }
+
+    #[tokio::test]
+    async fn public_users_by_xp_returns_users() {
+        let user_id = Uuid::parse_str("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee").expect("valid uuid");
+        let db = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![user_model(
+                user_id, "card-2", "Bob", 1700, 123, 20, true,
+            )]])
+            .into_connection();
+
+        let result = public_users_by_xp(&db, 1).await.unwrap();
+
+        assert_eq!(result.len(), 1);
+        let user = &result[0];
+        assert_eq!(user.id(), &user_id.to_string());
+        assert_eq!(user.display_name(), "Bob");
+        assert_eq!(user.xp(), &123);
     }
 }

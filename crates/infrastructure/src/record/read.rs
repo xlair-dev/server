@@ -7,10 +7,13 @@ use anyhow::Error as AnyError;
 use bigdecimal::{Signed, ToPrimitive};
 use domain::{
     entity::record::Record,
-    repository::record::{RecordRepositoryError, RecordWithMetadata},
+    repository::record::{
+        RecordRepositoryError, RecordWithMetadata, SheetScoreRankingRow, TotalScoreRankingRow,
+    },
 };
 use sea_orm::{
-    ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
+    ColumnTrait, DbConn, EntityTrait, FromQueryResult, JoinType, QueryFilter, QueryOrder,
+    QuerySelect, RelationTrait,
     prelude::Uuid,
     sea_query::{Alias, Expr},
     sqlx::types::BigDecimal,
@@ -18,6 +21,26 @@ use sea_orm::{
 use tracing::{debug, error, info, warn};
 
 use crate::entities::{self, prelude::Records};
+
+#[derive(Debug, FromQueryResult)]
+struct SheetScoreRow {
+    #[sea_orm(column_name = "user_id")]
+    user_id: Uuid,
+    #[sea_orm(column_name = "display_name")]
+    display_name: String,
+    #[sea_orm(column_name = "score")]
+    score: i32,
+}
+
+#[derive(Debug, FromQueryResult)]
+struct TotalScoreRow {
+    #[sea_orm(column_name = "user_id")]
+    user_id: Uuid,
+    #[sea_orm(column_name = "display_name")]
+    display_name: String,
+    #[sea_orm(column_name = "total_score")]
+    total_score: BigDecimal,
+}
 
 pub async fn records_by_user(
     db: &DbConn,
@@ -203,12 +226,131 @@ pub async fn sum_scores(db: &DbConn) -> Result<u64, RecordRepositoryError> {
     Ok(sum)
 }
 
+pub async fn public_high_scores_by_sheet(
+    db: &DbConn,
+    sheet_id: &str,
+    limit: u64,
+) -> Result<Vec<SheetScoreRankingRow>, RecordRepositoryError> {
+    let sheet_uuid = crate::record::adapter::parse_sheet_uuid(sheet_id)?;
+
+    debug!(
+        sheet_id = %sheet_uuid,
+        limit,
+        "Fetching public high scores for sheet via SeaORM"
+    );
+    let rows = entities::records::Entity::find()
+        .select_only()
+        .column_as(entities::records::Column::UserId, "user_id")
+        .column_as(entities::users::Column::DisplayName, "display_name")
+        .column_as(entities::records::Column::Score, "score")
+        .join(
+            JoinType::InnerJoin,
+            entities::records::Relation::Users.def(),
+        )
+        .filter(entities::records::Column::SheetId.eq(sheet_uuid))
+        .filter(entities::users::Column::IsPublic.eq(true))
+        .order_by_desc(entities::records::Column::Score)
+        .order_by_asc(entities::records::Column::UpdatedAt)
+        .limit(limit)
+        .into_model::<SheetScoreRow>()
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to fetch sheet ranking");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    let mut result = Vec::with_capacity(rows.len());
+    for row in rows {
+        if row.score < 0 {
+            let err = AnyError::msg("Negative score encountered in ranking query");
+            error!("Ranking query returned negative score");
+            return Err(RecordRepositoryError::InternalError(err));
+        }
+        let score = u32::try_from(row.score).map_err(|err| {
+            error!(error = %err, "Failed to convert score to u32");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?;
+        result.push(SheetScoreRankingRow::new(
+            row.user_id.to_string(),
+            row.display_name,
+            score,
+        ));
+    }
+
+    info!(
+        sheet_id = %sheet_uuid,
+        count = result.len(),
+        "Sheet ranking fetched successfully"
+    );
+    Ok(result)
+}
+
+pub async fn public_total_score_ranking(
+    db: &DbConn,
+    limit: u64,
+) -> Result<Vec<TotalScoreRankingRow>, RecordRepositoryError> {
+    debug!(limit, "Fetching public total score ranking via SeaORM");
+    let rows = entities::records::Entity::find()
+        .select_only()
+        .column_as(entities::users::Column::Id, "user_id")
+        .column_as(entities::users::Column::DisplayName, "display_name")
+        .column_as(
+            Expr::col(entities::records::Column::Score)
+                .sum()
+                .cast_as(Alias::new("numeric")),
+            "total_score",
+        )
+        .join(
+            JoinType::InnerJoin,
+            entities::records::Relation::Users.def(),
+        )
+        .filter(entities::users::Column::IsPublic.eq(true))
+        .group_by(entities::users::Column::Id)
+        .group_by(entities::users::Column::DisplayName)
+        .order_by_desc(Expr::col(Alias::new("total_score")))
+        .order_by_asc(entities::users::Column::DisplayName)
+        .limit(limit)
+        .into_model::<TotalScoreRow>()
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to fetch total score ranking");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    let mut result = Vec::with_capacity(rows.len());
+    for row in rows {
+        if row.total_score.is_negative() {
+            let err = AnyError::msg("Negative total score encountered in ranking query");
+            error!("Ranking query returned negative total score");
+            return Err(RecordRepositoryError::InternalError(err));
+        }
+        let total_score = row.total_score.to_u64().ok_or_else(|| {
+            let err = AnyError::msg("Failed to convert total score to u64");
+            error!("Total score conversion failed for ranking");
+            err
+        })?;
+        result.push(TotalScoreRankingRow::new(
+            row.user_id.to_string(),
+            row.display_name,
+            total_score,
+        ));
+    }
+
+    info!(
+        count = result.len(),
+        "Total score ranking fetched successfully"
+    );
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
 
     use bigdecimal::BigDecimal;
-    use sea_orm::{DatabaseBackend, MockDatabase, sea_query::Value};
+    use sea_orm::{DatabaseBackend, MockDatabase, prelude::Uuid, sea_query::Value};
 
     use super::*;
 
@@ -217,6 +359,35 @@ mod tests {
             .map(|v| Value::BigDecimal(Some(Box::new(BigDecimal::from(v)))))
             .unwrap_or(Value::BigDecimal(None));
         BTreeMap::from([(label.to_owned(), mapped_value)])
+    }
+
+    fn sheet_row(user_id: Uuid, display_name: &str, score: i32) -> BTreeMap<String, Value> {
+        BTreeMap::from([
+            ("user_id".to_owned(), Value::Uuid(Some(Box::new(user_id)))),
+            (
+                "display_name".to_owned(),
+                Value::String(Some(Box::new(display_name.to_owned()))),
+            ),
+            ("score".to_owned(), Value::Int(Some(score))),
+        ])
+    }
+
+    fn total_score_row(
+        user_id: Uuid,
+        display_name: &str,
+        total_score: i64,
+    ) -> BTreeMap<String, Value> {
+        BTreeMap::from([
+            ("user_id".to_owned(), Value::Uuid(Some(Box::new(user_id)))),
+            (
+                "display_name".to_owned(),
+                Value::String(Some(Box::new(display_name.to_owned()))),
+            ),
+            (
+                "total_score".to_owned(),
+                Value::BigDecimal(Some(Box::new(BigDecimal::from(total_score)))),
+            ),
+        ])
     }
 
     #[tokio::test]
@@ -237,5 +408,40 @@ mod tests {
 
         let result = sum_scores(&db).await.unwrap();
         assert_eq!(result, 0);
+    }
+
+    #[tokio::test]
+    async fn public_high_scores_by_sheet_converts_rows() {
+        let sheet_id = Uuid::parse_str("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa").expect("valid uuid");
+        let user_id = Uuid::parse_str("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb").expect("valid uuid");
+        let db = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![sheet_row(user_id, "Alice", 987_654)]])
+            .into_connection();
+
+        let result = public_high_scores_by_sheet(&db, &sheet_id.to_string(), 20)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        let entry = &result[0];
+        assert_eq!(entry.user_id, user_id.to_string());
+        assert_eq!(entry.display_name, "Alice");
+        assert_eq!(entry.score, 987_654);
+    }
+
+    #[tokio::test]
+    async fn public_total_score_ranking_converts_rows() {
+        let user_id = Uuid::parse_str("cccccccc-cccc-cccc-cccc-cccccccccccc").expect("valid uuid");
+        let db = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![total_score_row(user_id, "Bob", 1_234_567)]])
+            .into_connection();
+
+        let result = public_total_score_ranking(&db, 20).await.unwrap();
+
+        assert_eq!(result.len(), 1);
+        let entry = &result[0];
+        assert_eq!(entry.user_id, user_id.to_string());
+        assert_eq!(entry.display_name, "Bob");
+        assert_eq!(entry.total_score, 1_234_567);
     }
 }
