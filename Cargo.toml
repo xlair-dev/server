@@ -12,6 +12,7 @@ members = [
 anyhow = "1.0.95"
 async-std = "1.13"
 axum = "0.8.4"
+bigdecimal = "0.4"
 chrono = { version = "0.4.39", features = ["serde", "clock"] }
 domain = { path = "crates/domain" }
 dotenvy = "0.15.7"

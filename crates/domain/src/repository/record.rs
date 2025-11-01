@@ -69,4 +69,8 @@ pub trait RecordRepository: Send + Sync {
         &self,
         record: Record,
     ) -> impl Future<Output = Result<Record, RecordRepositoryError>> + Send;
+
+    /// Returns the sum of record scores across the entire catalog. Implementations must default to
+    /// zero when no records are present to keep the aggregation stable for dashboards.
+    fn sum_scores(&self) -> impl Future<Output = Result<u64, RecordRepositoryError>> + Send;
 }

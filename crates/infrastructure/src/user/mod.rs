@@ -8,7 +8,10 @@ use domain::{
     entity::user::User,
     repository::user::{UserRepository, UserRepositoryError},
 };
-use read::{find_by_card as query_by_card, find_by_id as query_by_id};
+use read::{
+    count_all as query_count_users, find_by_card as query_by_card, find_by_id as query_by_id,
+    sum_credits as query_sum_credits,
+};
 use sea_orm::DbConn;
 use tracing::{debug, info, instrument};
 use write::{create_user, increment_credits as mutate_increment_credits, save_user};
@@ -57,5 +60,15 @@ impl UserRepository for UserRepositoryImpl {
     #[instrument(skip(self, user), fields(user_id = %user.id()))]
     async fn save(&self, user: User) -> Result<User, UserRepositoryError> {
         save_user(self.db.as_ref(), user).await
+    }
+
+    #[instrument(skip(self))]
+    async fn count_all(&self) -> Result<u64, UserRepositoryError> {
+        query_count_users(self.db.as_ref()).await
+    }
+
+    #[instrument(skip(self))]
+    async fn sum_credits(&self) -> Result<u64, UserRepositoryError> {
+        query_sum_credits(self.db.as_ref()).await
     }
 }
