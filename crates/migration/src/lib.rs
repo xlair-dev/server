@@ -4,6 +4,7 @@ mod m20251007_000001_create_users_table;
 mod m20251007_000002_create_musics_table;
 mod m20251007_000003_create_sheets_table;
 mod m20251007_000004_create_records_table;
+mod m20251007_000005_create_user_play_options_table;
 
 pub struct Migrator;
 
@@ -15,6 +16,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251007_000002_create_musics_table::Migration),
             Box::new(m20251007_000003_create_sheets_table::Migration),
             Box::new(m20251007_000004_create_records_table::Migration),
+            Box::new(m20251007_000005_create_user_play_options_table::Migration),
         ]
     }
 }

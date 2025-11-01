@@ -1,8 +1,8 @@
 use domain::entity::clear_type::ClearType;
 use serde::{Deserialize, Serialize};
 use usecase::model::user::{
-    UserCreditsDto, UserDataDto, UserRecordDto, UserRecordSubmissionDto, UserRegisterDto,
-    UserUpdateDto,
+    UserCreditsDto, UserDataDto, UserPlayOptionDto, UserPlayOptionUpdateDto, UserRecordDto,
+    UserRecordSubmissionDto, UserRegisterDto, UserUpdateDto,
 };
 
 #[derive(Deserialize)]
@@ -175,5 +175,34 @@ pub struct UpdateUserRequest {
 impl From<UpdateUserRequest> for UserUpdateDto {
     fn from(req: UpdateUserRequest) -> Self {
         UserUpdateDto::new(req.display_name, req.is_public)
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserPlayOptionResponse {
+    pub note_speed: f32,
+    pub judgment_offset: i32,
+}
+
+impl From<UserPlayOptionDto> for UserPlayOptionResponse {
+    fn from(option: UserPlayOptionDto) -> Self {
+        Self {
+            note_speed: option.note_speed,
+            judgment_offset: option.judgment_offset,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserPlayOptionRequest {
+    pub note_speed: f32,
+    pub judgment_offset: i32,
+}
+
+impl From<UserPlayOptionRequest> for UserPlayOptionUpdateDto {
+    fn from(request: UserPlayOptionRequest) -> Self {
+        UserPlayOptionUpdateDto::new(request.note_speed, request.judgment_offset)
     }
 }

@@ -1,9 +1,14 @@
 use std::convert::TryFrom;
 
 use anyhow::Error as AnyError;
-use domain::{entity::user::User, repository::user::UserRepositoryError};
+use chrono::Utc;
+use domain::{
+    entity::{user::User, user_play_option::UserPlayOption},
+    repository::user::UserRepositoryError,
+};
 use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, DbConn, EntityTrait, QueryFilter, sea_query::Expr,
+    ActiveModelTrait, ActiveValue, ColumnTrait, DbConn, EntityTrait, QueryFilter,
+    sea_query::{Expr, OnConflict},
 };
 use tracing::{debug, error, info};
 
@@ -62,4 +67,39 @@ pub async fn save_user(db: &DbConn, user: User) -> Result<User, UserRepositoryEr
 
     info!(user_id = %model.id, "User updated successfully");
     User::try_from(model)
+}
+
+pub async fn save_play_option(
+    db: &DbConn,
+    mut option: UserPlayOption,
+) -> Result<UserPlayOption, UserRepositoryError> {
+    let uuid = parse_user_uuid(option.user_id())?;
+    option.set_updated_at(Utc::now());
+
+    let mut active: entities::user_play_options::ActiveModel = option.into();
+    active.user_id = ActiveValue::Set(uuid);
+
+    let model = entities::user_play_options::Entity::insert(active)
+        .on_conflict(
+            OnConflict::column(entities::user_play_options::Column::UserId)
+                .update_columns([
+                    entities::user_play_options::Column::NoteSpeed,
+                    entities::user_play_options::Column::JudgmentOffset,
+                    entities::user_play_options::Column::UpdatedAt,
+                ])
+                .to_owned(),
+        )
+        .exec_with_returning(db)
+        .await
+        .map_err(|err| {
+            error!(
+                error = %err,
+                user_id = %uuid,
+                "Failed to persist user play option"
+            );
+            UserRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    info!(user_id = %uuid, "User play option persisted successfully");
+    UserPlayOption::try_from(model)
 }

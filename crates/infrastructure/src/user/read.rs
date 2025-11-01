@@ -2,7 +2,10 @@ use std::convert::TryFrom;
 
 use anyhow::Error as AnyError;
 use bigdecimal::{Signed, ToPrimitive};
-use domain::{entity::user::User, repository::user::UserRepositoryError};
+use domain::{
+    entity::{user::User, user_play_option::UserPlayOption},
+    repository::user::UserRepositoryError,
+};
 use sea_orm::{
     ColumnTrait, DbConn, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect,
     sea_query::{Alias, Expr},
@@ -44,6 +47,33 @@ pub async fn find_by_id(db: &DbConn, user_id: &str) -> Result<Option<User>, User
         })?;
 
     model.map(User::try_from).transpose()
+}
+
+pub async fn find_play_option(
+    db: &DbConn,
+    user_id: &str,
+) -> Result<Option<UserPlayOption>, UserRepositoryError> {
+    let uuid = parse_user_uuid(user_id)?;
+
+    debug!(user_id = %uuid, "Querying user play option via SeaORM");
+    let model = entities::user_play_options::Entity::find_by_id(uuid)
+        .one(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, user_id = %uuid, "Failed to query user play option");
+            UserRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    match model {
+        Some(model) => {
+            info!(user_id = %uuid, "User play option fetched successfully");
+            UserPlayOption::try_from(model).map(Some)
+        }
+        None => {
+            debug!(user_id = %uuid, "User play option not found");
+            Ok(None)
+        }
+    }
 }
 
 pub async fn count_all(db: &DbConn) -> Result<u64, UserRepositoryError> {

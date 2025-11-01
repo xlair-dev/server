@@ -4,6 +4,7 @@ use domain::repository::{Repositories, record::RecordRepositoryError, user::User
 use thiserror::Error;
 
 pub mod credits;
+pub mod options;
 pub mod records;
 pub mod register;
 pub mod search;

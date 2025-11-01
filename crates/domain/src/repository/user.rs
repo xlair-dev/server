@@ -3,7 +3,7 @@ use std::future::Future;
 use mockall::automock;
 use thiserror::Error;
 
-use crate::entity::user::User;
+use crate::entity::{user::User, user_play_option::UserPlayOption};
 
 #[derive(Debug, Error)]
 pub enum UserRepositoryError {
@@ -45,4 +45,14 @@ pub trait UserRepository: Send + Sync {
     /// Sums the `credits` field across all user aggregates. Implementations must default to zero
     /// when the table is empty to keep the operation idempotent for reporting workloads.
     fn sum_credits(&self) -> impl Future<Output = Result<u64, UserRepositoryError>> + Send;
+
+    fn find_play_option(
+        &self,
+        user_id: &str,
+    ) -> impl Future<Output = Result<Option<UserPlayOption>, UserRepositoryError>> + Send;
+
+    fn save_play_option(
+        &self,
+        option: UserPlayOption,
+    ) -> impl Future<Output = Result<UserPlayOption, UserRepositoryError>> + Send;
 }
