@@ -7,8 +7,8 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::{env::allowed_origin, state::State};
 
-pub mod sync;
 pub mod statistics;
+pub mod sync;
 pub mod user;
 
 pub fn create_app(state: State) -> Router {

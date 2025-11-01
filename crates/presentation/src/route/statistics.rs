@@ -25,18 +25,13 @@ pub async fn handle_get_summary(
 mod tests {
     use axum::{Router, body, http::Request};
     use domain::repository::{
-        MockRepositories,
-        music::MockMusicRepository,
-        record::MockRecordRepository,
+        MockRepositories, music::MockMusicRepository, record::MockRecordRepository,
         user::MockUserRepository,
     };
     use serde_json::Value;
     use tower::ServiceExt;
 
-    fn build_router(
-        user_repo: MockUserRepository,
-        record_repo: MockRecordRepository,
-    ) -> Router {
+    fn build_router(user_repo: MockUserRepository, record_repo: MockRecordRepository) -> Router {
         let config = crate::config::Config::default();
         let repositories = MockRepositories {
             user: user_repo,

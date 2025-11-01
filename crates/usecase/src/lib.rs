@@ -4,8 +4,8 @@ use domain::repository::Repositories;
 
 pub mod model;
 pub mod music;
-pub mod user;
 pub mod statistics;
+pub mod user;
 
 pub struct Usecases<R: Repositories> {
     pub user: user::UserUsecase<R>,

@@ -2,9 +2,7 @@ use domain::repository::{
     music::MusicRepositoryError, record::RecordRepositoryError, user::UserRepositoryError,
 };
 use usecase::{
-    music::MusicUsecaseError,
-    statistics::StatisticsUsecaseError,
-    user::UserUsecaseError,
+    music::MusicUsecaseError, statistics::StatisticsUsecaseError, user::UserUsecaseError,
 };
 
 use crate::error::AppError;

@@ -1,11 +1,12 @@
 use std::convert::TryFrom;
 
 use anyhow::Error as AnyError;
-use domain::{entity::user::User, repository::user::UserRepositoryError};
 use bigdecimal::{Signed, ToPrimitive};
+use domain::{entity::user::User, repository::user::UserRepositoryError};
 use sea_orm::{
     ColumnTrait, DbConn, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect,
-    sea_query::{Alias, Expr}, sqlx::types::BigDecimal,
+    sea_query::{Alias, Expr},
+    sqlx::types::BigDecimal,
 };
 use tracing::{debug, error, info};
 
@@ -100,8 +101,8 @@ pub async fn sum_credits(db: &DbConn) -> Result<u64, UserRepositoryError> {
 mod tests {
     use super::*;
     use bigdecimal::BigDecimal;
-    use sea_orm::{DatabaseBackend, MockDatabase};
     use sea_orm::sea_query::Value;
+    use sea_orm::{DatabaseBackend, MockDatabase};
     use std::collections::BTreeMap;
 
     fn decimal_row(label: &str, value: Option<i64>) -> BTreeMap<String, Value> {

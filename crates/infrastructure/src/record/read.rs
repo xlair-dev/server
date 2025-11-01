@@ -4,14 +4,16 @@ use std::{
 };
 
 use anyhow::Error as AnyError;
+use bigdecimal::{Signed, ToPrimitive};
 use domain::{
     entity::record::Record,
     repository::record::{RecordRepositoryError, RecordWithMetadata},
 };
-use bigdecimal::{Signed, ToPrimitive};
 use sea_orm::{
     ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
-    prelude::Uuid, sea_query::{Alias, Expr}, sqlx::types::BigDecimal,
+    prelude::Uuid,
+    sea_query::{Alias, Expr},
+    sqlx::types::BigDecimal,
 };
 use tracing::{debug, error, info, warn};
 
@@ -205,8 +207,8 @@ pub async fn sum_scores(db: &DbConn) -> Result<u64, RecordRepositoryError> {
 mod tests {
     use super::*;
     use bigdecimal::BigDecimal;
-    use sea_orm::{DatabaseBackend, MockDatabase};
     use sea_orm::sea_query::Value;
+    use sea_orm::{DatabaseBackend, MockDatabase};
     use std::collections::BTreeMap;
 
     fn decimal_row(label: &str, value: Option<i64>) -> BTreeMap<String, Value> {
