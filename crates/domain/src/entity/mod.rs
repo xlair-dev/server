@@ -7,3 +7,4 @@ pub mod rating;
 pub mod record;
 pub mod sheet;
 pub mod user;
+pub mod user_play_option;
