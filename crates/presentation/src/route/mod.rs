@@ -8,6 +8,7 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use crate::{env::allowed_origin, state::State};
 
 pub mod sync;
+pub mod statistics;
 pub mod user;
 
 pub fn create_app(state: State) -> Router {
@@ -24,12 +25,14 @@ pub fn create_app(state: State) -> Router {
             post(user::handle_increment_credits),
         );
     let sync_route = Router::new().route("/", get(sync::handle_get));
+    let statistics_route = Router::new().route("/summary", get(statistics::handle_get_summary));
     let health = Router::new().route("/", get(|| async { "OK" }));
 
     // TODO: Add auth middleware
     let private_routes = Router::new()
         .nest("/users", users)
-        .nest("/sync", sync_route);
+        .nest("/sync", sync_route)
+        .nest("/statistics", statistics_route);
 
     let public_routes = Router::new().nest("/health", health);
 
