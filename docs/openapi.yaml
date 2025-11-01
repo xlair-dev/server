@@ -291,6 +291,75 @@ paths:
           description: Unauthorized - Invalid API key
         "500":
           description: Internal server error
+  /rankings/sheets/{sheetId}:
+    get:
+      tags:
+        - web
+      summary: 指定した譜面のハイスコアランキングを取得
+      description: 公開ユーザーを対象に、指定した譜面のハイスコア上位20件を取得する
+      parameters:
+        - name: sheetId
+          in: path
+          description: 譜面のID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/sheetScoreRankingResponse"
+        "404":
+          description: Not found - Sheet not found
+        "500":
+          description: Internal server error
+  /rankings/total-score:
+    get:
+      tags:
+        - web
+      summary: 全譜面のハイスコア合計ランキングを取得
+      description: 公開ユーザーを対象に、保有する全譜面のハイスコア合計上位20件を取得する
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/totalScoreRankingResponse"
+        "500":
+          description: Internal server error
+  /rankings/rating:
+    get:
+      tags:
+        - web
+      summary: レーティングのランキングを取得
+      description: 公開ユーザーを対象に、レーティングの上位20件を取得する
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ratingRankingResponse"
+        "500":
+          description: Internal server error
+  /rankings/xp:
+    get:
+      tags:
+        - web
+      summary: 経験値のランキングを取得
+      description: 公開ユーザーを対象に、XP の上位20件を取得する
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/xpRankingResponse"
+        "500":
+          description: Internal server error
   /statistics/summary:
     get:
       tags:
@@ -594,3 +663,127 @@ components:
         - totalCredits
         - totalUsers
         - totalScore
+    sheetScoreRankingEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+          description: ランキング順位 (1 始まり)
+        userId:
+          type: string
+          description: ユーザーのID
+        displayName:
+          type: string
+          description: ユーザーの表示名
+        score:
+          type: integer
+          description: 譜面におけるハイスコア
+      required:
+        - rank
+        - userId
+        - displayName
+        - score
+    sheetScoreRankingResponse:
+      type: object
+      properties:
+        sheetId:
+          type: string
+          description: 取得対象の譜面ID
+        entries:
+          type: array
+          description: ランキング上位20件
+          items:
+            $ref: "#/components/schemas/sheetScoreRankingEntry"
+      required:
+        - sheetId
+        - entries
+    totalScoreRankingEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+          description: ランキング順位 (1 始まり)
+        userId:
+          type: string
+          description: ユーザーのID
+        displayName:
+          type: string
+          description: ユーザーの表示名
+        totalScore:
+          type: integer
+          description: 全譜面のハイスコア合計
+      required:
+        - rank
+        - userId
+        - displayName
+        - totalScore
+    totalScoreRankingResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          description: ランキング上位20件
+          items:
+            $ref: "#/components/schemas/totalScoreRankingEntry"
+      required:
+        - entries
+    ratingRankingEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+          description: ランキング順位 (1 始まり)
+        userId:
+          type: string
+          description: ユーザーのID
+        displayName:
+          type: string
+          description: ユーザーの表示名
+        rating:
+          type: integer
+          description: レーティング値
+      required:
+        - rank
+        - userId
+        - displayName
+        - rating
+    ratingRankingResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          description: ランキング上位20件
+          items:
+            $ref: "#/components/schemas/ratingRankingEntry"
+      required:
+        - entries
+    xpRankingEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+          description: ランキング順位 (1 始まり)
+        userId:
+          type: string
+          description: ユーザーのID
+        displayName:
+          type: string
+          description: ユーザーの表示名
+        xp:
+          type: integer
+          description: 獲得済みの経験値
+      required:
+        - rank
+        - userId
+        - displayName
+        - xp
+    xpRankingResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          description: ランキング上位20件
+          items:
+            $ref: "#/components/schemas/xpRankingEntry"
+      required:
+        - entries
