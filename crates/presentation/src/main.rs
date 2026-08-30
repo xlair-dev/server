@@ -5,12 +5,12 @@ use tracing::info;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     load_env();
     init_tracing();
 
     let postgres_url = env::postgres_url();
-    let repositories = infrastructure::RepositoriesImpl::new_default(&postgres_url).await;
+    let repositories = infrastructure::RepositoriesImpl::new_default(&postgres_url).await?;
 
     let config = Config::default();
     let state = State::new(config, repositories);
@@ -20,9 +20,10 @@ async fn main() {
     let app = create_app(state, Some(authenticator));
 
     let addr = format!("{}:{}", env::host(), env::app_port());
-    let listener = TcpListener::bind(&addr).await.unwrap();
+    let listener = TcpListener::bind(&addr).await?;
     info!(%addr, "Starting HTTP server");
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).await?;
+    Ok(())
 }
 
 /// Loads environment variables from the `.env` file if present. Implicitly depends on environment

@@ -29,19 +29,13 @@ impl RepositoriesImpl {
     }
 
     /// Initializes the SeaORM connection. Implicitly depends on a tracing subscriber already being set up so logging can emit.
-    ///
-    /// # Panics
-    /// Panics if database connection fails. This is appropriate for startup as the application
-    /// cannot function without a database connection.
     #[instrument(name = "infrastructure.repositories.new_default", skip(db_url))]
-    pub async fn new_default(db_url: &str) -> Self {
+    pub async fn new_default(db_url: &str) -> Result<Self, sea_orm::DbErr> {
         info!("Connecting to database via SeaORM");
-        let db = sea_orm::Database::connect(db_url)
-            .await
-            .unwrap_or_else(|err| {
-                error!(error = %err, "Failed to connect to the database");
-                panic!("Failed to connect to the database");
-            });
+        let db = sea_orm::Database::connect(db_url).await.map_err(|err| {
+            error!(error = %err, "Failed to connect to the database");
+            err
+        })?;
         info!("Database connection established");
 
         let db = Arc::new(db);
@@ -49,11 +43,11 @@ impl RepositoriesImpl {
         let record_repo = record::RecordRepositoryImpl::new(db.clone());
         let music_repo = music::MusicRepositoryImpl::new(db.clone());
 
-        Self {
+        Ok(Self {
             user: user_repo,
             record: record_repo,
             music: music_repo,
-        }
+        })
     }
 }
 
