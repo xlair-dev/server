@@ -112,6 +112,37 @@ paths:
           description: Not found - User not found
         "500":
           description: Internal server error
+  /admin/db/synchronize:
+    post:
+      tags:
+        - admin
+      summary: DBの派生値を同期
+      description: 現在のドメインルールに基づいて、DBに保存された派生値を同期する。値が変わるユーザーのみ更新する。
+      security:
+        - userAuth: []
+      responses:
+        "200":
+          description: Recalculation completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updatedUsers:
+                    type: integer
+                    format: int64
+                  updatedRatings:
+                    type: integer
+                    format: int64
+                required:
+                  - updatedUsers
+                  - updatedRatings
+        "401":
+          description: Unauthorized - Invalid user access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "500":
+          description: Internal server error
   /users/{userId}/credits/increment:
     post:
       tags:

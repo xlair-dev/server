@@ -8,6 +8,7 @@ pub mod options;
 pub mod records;
 pub mod register;
 pub mod search;
+pub mod synchronize;
 pub mod update;
 
 #[derive(Debug, Error)]
@@ -26,6 +27,12 @@ pub enum UserUsecaseError {
 
 pub struct UserUsecase<R: Repositories> {
     repositories: Arc<R>,
+}
+
+#[derive(Debug, Default, Eq, PartialEq)]
+pub struct DbSynchronizationResult {
+    pub updated_users: u64,
+    pub updated_ratings: u64,
 }
 
 impl<R: Repositories> UserUsecase<R> {

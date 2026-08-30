@@ -279,4 +279,14 @@ mod tests {
 
         assert!(policy.allows(&principal));
     }
+
+    #[test]
+    fn admin_policy_rejects_device_principal() {
+        let policy = super::AuthorizationPolicy::only(PrincipalKind::Admin);
+        let principal = Principal::Device {
+            client_id: "device-client".into(),
+        };
+
+        assert!(!policy.allows(&principal));
+    }
 }

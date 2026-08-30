@@ -37,6 +37,9 @@ pub trait UserRepository: Send + Sync {
         user_id: &str,
     ) -> impl Future<Output = Result<Option<User>, UserRepositoryError>> + Send;
 
+    /// Returns all user aggregates in a stable identifier order for administrative maintenance.
+    fn find_all(&self) -> impl Future<Output = Result<Vec<User>, UserRepositoryError>> + Send;
+
     fn save(&self, user: User) -> impl Future<Output = Result<User, UserRepositoryError>> + Send;
 
     /// Returns the total number of persisted user aggregates.
