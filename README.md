@@ -9,6 +9,7 @@ API server for XLAIR
 ```sh
 docker compose up -d
 docker compose --profile migration run --rm migrator up
+cargo run -p presentation
 ```
 
 マイグレーションを追加した場合も、同じコマンドで未適用分だけが適用されます。開発用DBを作り直す場合に限り、次を実行してください。
