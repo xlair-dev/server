@@ -87,7 +87,7 @@ update:triggers
 
 初回の CI 実行で共有 M2M Application が作成されます。作成後に Auth0 で Client Secret を確認し、秘密情報として筐体へ配布します。Application を事前に手動作成する必要はありません。Client Secret の再発行時は全筐体へ新しい値を再配置します。
 
-GitHub OAuth App は事前に作成し、client ID と client secret を GitHub Actions secrets に登録します。Auth0 の GitHub Connection は CI で作成されます。
+GitHub OAuth App（`XLAIR Login`）は事前に作成し、client ID と client secret を GitHub Actions secrets に登録します。Auth0 の GitHub Connection は CI で作成されます。
 
 GitHub OAuth App の Authorization callback URL には次を登録します。
 
