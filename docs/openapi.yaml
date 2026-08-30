@@ -369,8 +369,6 @@ paths:
         - web
       summary: システム全体の統計情報を取得
       description: 全ユーザーとレコードの集計値を参照する
-      security:
-        - userAuth: []
       responses:
         "200":
           description: success
@@ -378,10 +376,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/globalStatistics"
-        "401":
-          description: Unauthorized - Invalid administrator access token
-        "403":
-          description: Forbidden - Administrator permission is required
         "500":
           description: Internal server error
   /health:
