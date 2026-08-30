@@ -3,21 +3,19 @@ use crate::{
     repository::record::RecordWithMetadata,
 };
 
+/// Calculates the average of the three highest non-test sheet ratings.
+/// Missing rating slots are treated as zero.
 pub fn calculate_user_rating(records: &[RecordWithMetadata]) -> Rating {
+    const RATING_SLOTS: u32 = 3;
     let mut values: Vec<u32> = records
         .iter()
         .filter(|entry| !entry.is_test)
         .map(|entry| calculate_sheet_rating(&entry.level, *entry.record.score()))
         .collect();
 
-    if values.is_empty() {
-        return Rating::default();
-    }
-
     values.sort_unstable_by(|a, b| b.cmp(a));
-    let count = values.len().min(3);
-    let total: u32 = values.into_iter().take(count).sum();
-    Rating::new(total / count as u32)
+    let total: u32 = values.into_iter().take(RATING_SLOTS as usize).sum();
+    Rating::new(total / RATING_SLOTS)
 }
 
 fn calculate_sheet_rating(level: &Level, score: u32) -> u32 {
@@ -62,4 +60,52 @@ fn compute_score_bonus(score: u32) -> i32 {
     }
 
     ANCHORS[0].1
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::NaiveDate;
+
+    use super::*;
+    use crate::{
+        entity::{clear_type::ClearType, record::Record},
+        repository::record::RecordWithMetadata,
+    };
+
+    fn record_with_rating(level: (u32, u32), score: u32, sheet_id: &str) -> RecordWithMetadata {
+        let timestamp = NaiveDate::from_ymd_opt(2025, 10, 26)
+            .and_then(|date| date.and_hms_opt(12, 0, 0))
+            .map(|value| value.and_utc())
+            .expect("valid test timestamp");
+        let level = Level::new(level.0, level.1).expect("valid test level");
+        let record = Record::new(
+            format!("record-{sheet_id}"),
+            "user-1".to_owned(),
+            sheet_id.to_owned(),
+            score,
+            ClearType::Clear,
+            1,
+            timestamp,
+        );
+        RecordWithMetadata::new(record, level, false)
+    }
+
+    #[test]
+    fn fills_unplayed_rating_slots_with_zero() {
+        let records = [record_with_rating((14, 0), 1_000_000, "sheet-1")];
+
+        assert_eq!(calculate_user_rating(&records).value(), 500);
+    }
+
+    #[test]
+    fn averages_only_the_best_three_records_over_three_slots() {
+        let records = [
+            record_with_rating((14, 0), 1_000_000, "sheet-1"),
+            record_with_rating((13, 0), 1_000_000, "sheet-2"),
+            record_with_rating((12, 0), 1_000_000, "sheet-3"),
+            record_with_rating((11, 0), 1_000_000, "sheet-4"),
+        ];
+
+        assert_eq!(calculate_user_rating(&records).value(), 1400);
+    }
 }

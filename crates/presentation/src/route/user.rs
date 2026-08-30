@@ -658,7 +658,7 @@ mod tests {
             .expect_save()
             .withf(|user| {
                 user.id() == USER1.id
-                    && user.rating().value() == 1470
+                    && user.rating().value() == 490
                     && *user.xp() == USER1.xp + 100
             })
             .returning(|user| Box::pin(async move { Ok(user) }));
