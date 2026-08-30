@@ -14,10 +14,9 @@ pub mod sync;
 pub mod user;
 
 pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router {
-    let users = Router::new()
+    let device_users = Router::new()
         .route("/", post(user::handle_post))
         .route("/", get(user::handle_get))
-        .route("/{userId}", post(user::handle_update_user))
         .route(
             "/{userId}/records",
             get(user::handle_get_records).post(user::handle_post_records),
@@ -30,6 +29,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             "/{userId}/credits/increment",
             post(user::handle_increment_credits),
         );
+    let user_update = Router::new().route("/{userId}", post(user::handle_update_user));
     let sync_route = Router::new().route("/", get(sync::handle_get));
     let statistics_route = Router::new().route("/summary", get(statistics::handle_get_summary));
     let ranking_route = Router::new()
@@ -39,16 +39,27 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .route("/xp", get(ranking::handle_get_xp_ranking));
     let health = Router::new().route("/", get(|| async { "OK" }));
 
-    let private_routes = Router::new()
-        .nest("/users", users)
+    let device_routes = Router::new()
+        .nest("/users", device_users)
         .nest("/sync", sync_route);
     let private_routes = if let Some(authenticator) = authenticator {
-        private_routes.layer(middleware::from_fn_with_state(
-            authenticator,
+        let user_update = user_update.layer(middleware::from_fn_with_state(
+            authenticator.clone(),
             crate::auth::middleware,
-        ))
+        ));
+        let device_routes = device_routes
+            .layer(middleware::from_fn(crate::auth::require_device))
+            .layer(middleware::from_fn_with_state(
+                authenticator,
+                crate::auth::middleware,
+            ));
+        Router::new()
+            .merge(device_routes)
+            .nest("/users", user_update)
     } else {
-        private_routes
+        Router::new()
+            .merge(device_routes)
+            .nest("/users", user_update)
     };
 
     let public_routes = Router::new()

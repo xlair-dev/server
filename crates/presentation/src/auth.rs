@@ -124,6 +124,14 @@ pub async fn middleware(
     Ok(next.run(request).await)
 }
 
+pub async fn require_device(request: Request, next: Next) -> Result<Response, StatusCode> {
+    match request.extensions().get::<Principal>() {
+        Some(Principal::Device { .. }) => Ok(next.run(request).await),
+        Some(Principal::Admin { .. }) => Err(StatusCode::FORBIDDEN),
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+
 fn find_jwk<'a>(set: &'a JwkSet, kid: Option<&str>) -> Option<&'a jsonwebtoken::jwk::Jwk> {
     set.keys
         .iter()
