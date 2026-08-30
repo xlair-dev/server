@@ -14,8 +14,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = Config::default();
     let state = State::new(config, repositories);
-    let authenticator =
-        Authenticator::new(Client::new(), env::auth0_issuer(), env::auth0_audience());
+    let authenticator = Authenticator::new(
+        Client::new(),
+        env::auth0_issuer(),
+        env::auth0_audience(),
+        env::auth0_dashboard_client_id(),
+    );
 
     let app = create_app(state, Some(authenticator));
 
