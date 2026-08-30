@@ -7,6 +7,8 @@ use serde::Deserialize;
 use thiserror::Error;
 use tokio::sync::RwLock;
 
+use crate::error::AppError;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PrincipalKind {
     Admin,
@@ -147,18 +149,25 @@ pub async fn middleware(
     axum::extract::State(authenticator): axum::extract::State<Authenticator>,
     mut request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, AppError> {
     let token = request
         .headers()
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.strip_prefix("Bearer "))
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .ok_or_else(|| {
+            AppError::new(
+                StatusCode::UNAUTHORIZED,
+                "Authentication required".to_owned(),
+            )
+        })?;
 
-    let principal = authenticator
-        .authenticate(token)
-        .await
-        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+    let principal = authenticator.authenticate(token).await.map_err(|_| {
+        AppError::new(
+            StatusCode::UNAUTHORIZED,
+            "Invalid authentication token".to_owned(),
+        )
+    })?;
     request.extensions_mut().insert(principal);
     Ok(next.run(request).await)
 }
@@ -167,11 +176,14 @@ pub async fn authorize(
     axum::extract::State(policy): axum::extract::State<AuthorizationPolicy>,
     request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, AppError> {
     match request.extensions().get::<Principal>() {
         Some(principal) if policy.allows(principal) => Ok(next.run(request).await),
-        Some(_) => Err(StatusCode::FORBIDDEN),
-        None => Err(StatusCode::UNAUTHORIZED),
+        Some(_) => Err(AppError::new(StatusCode::FORBIDDEN, "Forbidden".to_owned())),
+        None => Err(AppError::new(
+            StatusCode::UNAUTHORIZED,
+            "Authentication required".to_owned(),
+        )),
     }
 }
 

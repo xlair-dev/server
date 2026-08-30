@@ -12,6 +12,13 @@ impl AppError {
             message,
         }
     }
+
+    pub fn not_found() -> Self {
+        Self::new(
+            axum::http::StatusCode::NOT_FOUND,
+            "Resource not found".to_owned(),
+        )
+    }
 }
 
 impl axum::response::IntoResponse for AppError {
