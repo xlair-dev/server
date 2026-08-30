@@ -84,6 +84,8 @@ pub async fn records_by_user_and_sheet_ids(
     let models = Records::find()
         .filter(entities::records::Column::UserId.eq(uuid))
         .filter(entities::records::Column::SheetId.is_in(sheet_uuids))
+        .order_by_asc(entities::records::Column::UpdatedAt)
+        .order_by_asc(entities::records::Column::Id)
         .all(db)
         .await
         .map_err(|err| {

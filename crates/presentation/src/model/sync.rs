@@ -3,6 +3,7 @@ use serde::Serialize;
 use usecase::model::music::{MusicDto, MusicWithSheetsDto, SheetDto};
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SyncItemResponse {
     pub music: MusicResponse,
     pub sheets: Vec<SheetResponse>,
