@@ -1,11 +1,12 @@
 use axum::{
     Router,
     http::{HeaderValue, Method, header},
+    middleware,
     routing::{get, post},
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
-use crate::{env::allowed_origin, state::State};
+use crate::{auth::Authenticator, env::allowed_origin, state::State};
 
 pub mod ranking;
 pub mod statistics;
@@ -13,6 +14,14 @@ pub mod sync;
 pub mod user;
 
 pub fn create_app(state: State) -> Router {
+    create_app_with_optional_auth(state, None)
+}
+
+pub fn create_app_with_auth(state: State, authenticator: Authenticator) -> Router {
+    create_app_with_optional_auth(state, Some(authenticator))
+}
+
+fn create_app_with_optional_auth(state: State, authenticator: Option<Authenticator>) -> Router {
     let users = Router::new()
         .route("/", post(user::handle_post))
         .route("/", get(user::handle_get))
@@ -38,11 +47,18 @@ pub fn create_app(state: State) -> Router {
         .route("/xp", get(ranking::handle_get_xp_ranking));
     let health = Router::new().route("/", get(|| async { "OK" }));
 
-    // TODO: Add auth middleware
     let private_routes = Router::new()
         .nest("/users", users)
         .nest("/sync", sync_route)
         .nest("/statistics", statistics_route);
+    let private_routes = if let Some(authenticator) = authenticator {
+        private_routes.layer(middleware::from_fn_with_state(
+            authenticator,
+            crate::auth::middleware,
+        ))
+    } else {
+        private_routes
+    };
 
     let public_routes = Router::new()
         .nest("/health", health)
