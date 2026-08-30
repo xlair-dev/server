@@ -109,6 +109,8 @@ Deploy CLI 用の Auth0 Management API 認証情報は CI の secret として�
 
 Auth0 の OIDC discovery と JWKS を利用し、API サーバーで access token をローカル検証する。Auth0 の推奨設定に合わせ、次を検証する。
 
+Rust では `jsonwebtoken` で JWT を検証し、`reqwest` で JWKS を取得する。JWKS はメモリにキャッシュし、未知の `kid` を受け取った場合に再取得する。
+
 - `iss`
 - `aud`
 - `exp`、`nbf`
@@ -116,7 +118,7 @@ Auth0 の OIDC discovery と JWKS を利用し、API サーバーで access toke
 - 許可する署名アルゴリズム（RS256）
 - JWKS の `kid`
 
-JWKS はキャッシュし、未知の `kid` を受け取った場合に鍵を再取得する。token の検証後、`permissions` と token の主体情報を XLAIR 内部の principal に変換する。
+token の検証後、`permissions` と token の主体情報を XLAIR 内部の principal に変換する。
 
 ## 未確定事項
 
