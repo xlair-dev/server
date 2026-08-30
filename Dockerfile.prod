@@ -12,8 +12,10 @@ COPY . .
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,target=/workspace/target,sharing=locked \
-    cargo build --release --bin presentation --bin migration
-RUN strip target/release/presentation target/release/migration || true
+    cargo build --locked --release --bin presentation --bin migration \
+    && mkdir -p /workspace/bin \
+    && strip target/release/presentation target/release/migration \
+    && cp target/release/presentation target/release/migration /workspace/bin/
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
@@ -22,8 +24,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /workspace/target/release/presentation /app/presentation
-COPY --from=builder /workspace/target/release/migration /app/migrate
+COPY --from=builder /workspace/bin/presentation /app/presentation
+COPY --from=builder /workspace/bin/migration /app/migrate
 
 EXPOSE 8080
 ENV RUST_LOG="presentation=info,tower_http=warn"
