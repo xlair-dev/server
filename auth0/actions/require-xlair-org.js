@@ -18,6 +18,7 @@ const getIdentityProviderAccessToken = async (event) => {
   });
 
   if (!tokenResponse.ok) {
+    console.log(`Auth0 Management API token request failed: ${tokenResponse.status}`);
     return null;
   }
 
@@ -28,6 +29,7 @@ const getIdentityProviderAccessToken = async (event) => {
   );
 
   if (!userResponse.ok) {
+    console.log(`Auth0 user profile request failed: ${userResponse.status}`);
     return null;
   }
 
@@ -67,6 +69,7 @@ exports.onExecutePostLogin = async (event, api) => {
   }
 
   if (!response.ok) {
+    console.log(`GitHub organization membership request failed: ${response.status}`);
     deny(api);
     return;
   }
