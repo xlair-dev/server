@@ -6,6 +6,10 @@ const deny = (api) => {
 };
 
 const getIdentityProviderAccessToken = async (event) => {
+  console.log(
+    `stage=start management_client_id=${event.secrets.AUTH0_MANAGEMENT_CLIENT_ID}`,
+  );
+
   let tokenResponse;
   try {
     tokenResponse = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
@@ -19,12 +23,13 @@ const getIdentityProviderAccessToken = async (event) => {
       }),
     });
   } catch (_error) {
-    console.log("Auth0 Management API token request threw an exception");
+    console.log("stage=management-token exception");
     return null;
   }
 
+  console.log(`stage=management-token status=${tokenResponse.status}`);
+
   if (!tokenResponse.ok) {
-    console.log(`Auth0 Management API token request failed: ${tokenResponse.status}`);
     return null;
   }
 
@@ -32,7 +37,7 @@ const getIdentityProviderAccessToken = async (event) => {
   try {
     token = await tokenResponse.json();
   } catch (_error) {
-    console.log("Auth0 Management API token response could not be parsed");
+    console.log("stage=management-token parse_error");
     return null;
   }
 
@@ -43,12 +48,13 @@ const getIdentityProviderAccessToken = async (event) => {
       { headers: { Authorization: `Bearer ${token.access_token}` } },
     );
   } catch (_error) {
-    console.log("Auth0 user profile request threw an exception");
+    console.log("stage=user-profile exception");
     return null;
   }
 
+  console.log(`stage=user-profile status=${userResponse.status}`);
+
   if (!userResponse.ok) {
-    console.log(`Auth0 user profile request failed: ${userResponse.status}`);
     return null;
   }
 
@@ -56,10 +62,17 @@ const getIdentityProviderAccessToken = async (event) => {
   try {
     user = await userResponse.json();
   } catch (_error) {
-    console.log("Auth0 user profile response could not be parsed");
+    console.log("stage=user-profile parse_error");
     return null;
   }
-  return user.identities?.find(({ provider }) => provider === "github")?.access_token;
+
+  const githubIdentity = user.identities?.find(
+    ({ provider }) => provider === "github",
+  );
+  console.log(
+    `stage=idp-token github_identity=${Boolean(githubIdentity)} access_token=${Boolean(githubIdentity?.access_token)}`,
+  );
+  return githubIdentity?.access_token;
 };
 
 exports.onExecutePostLogin = async (event, api) => {
@@ -67,7 +80,7 @@ exports.onExecutePostLogin = async (event, api) => {
   try {
     accessToken = await getIdentityProviderAccessToken(event);
   } catch (_error) {
-    console.log("GitHub organization membership request threw an exception");
+    console.log("stage=github-membership exception");
     deny(api);
     return;
   }
@@ -96,7 +109,7 @@ exports.onExecutePostLogin = async (event, api) => {
   }
 
   if (!response.ok) {
-    console.log(`GitHub organization membership request failed: ${response.status}`);
+    console.log(`stage=github-membership status=${response.status}`);
     deny(api);
     return;
   }
@@ -105,9 +118,13 @@ exports.onExecutePostLogin = async (event, api) => {
   try {
     membership = await response.json();
   } catch (_error) {
+    console.log("stage=github-membership parse_error");
     deny(api);
     return;
   }
+
+  console.log(`stage=github-membership status=${response.status}`);
+  console.log(`stage=github-membership state=${membership.state}`);
 
   if (membership.state !== "active") {
     api.access.deny("An active XLAIR GitHub organization membership is required.");
