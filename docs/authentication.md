@@ -65,7 +65,7 @@ AUTH0_ISSUER=https://dev-2dn3mvmvr8tccoss.us.auth0.com/
 AUTH0_AUDIENCE=https://api.xlair.dev
 ```
 
-`/health` と `/rankings` 以外の route では Bearer token を必須とする。
+`/health`、`/rankings`、`/statistics/summary` 以外の route では Bearer token を必須とする。
 
 ### 一般ユーザー
 
