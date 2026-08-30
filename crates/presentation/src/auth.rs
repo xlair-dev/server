@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header, jwk::JwkSet};
 use reqwest::Client;
 use serde::Deserialize;
@@ -101,6 +102,26 @@ impl Authenticator {
             .await
             .map_err(AuthError::JwksResponse)
     }
+}
+
+pub async fn middleware(
+    axum::extract::State(authenticator): axum::extract::State<Authenticator>,
+    mut request: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    let token = request
+        .headers()
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    let principal = authenticator
+        .authenticate(token)
+        .await
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+    request.extensions_mut().insert(principal);
+    Ok(next.run(request).await)
 }
 
 fn find_jwk<'a>(set: &'a JwkSet, kid: Option<&str>) -> Option<&'a jsonwebtoken::jwk::Jwk> {

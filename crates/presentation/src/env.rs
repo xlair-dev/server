@@ -14,6 +14,14 @@ pub fn allowed_origin() -> String {
     env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "".into())
 }
 
+pub fn auth0_issuer() -> String {
+    env::var("AUTH0_ISSUER").expect("AUTH0_ISSUER must be set")
+}
+
+pub fn auth0_audience() -> String {
+    env::var("AUTH0_AUDIENCE").expect("AUTH0_AUDIENCE must be set")
+}
+
 pub fn postgres_host() -> String {
     env::var("POSTGRES_HOST").expect("POSTGRES_HOST must be set")
 }

@@ -58,6 +58,15 @@ UserPrincipal { subject }
 
 ## 認証フロー
 
+API サーバーは次の設定で Auth0 access token を検証する。
+
+```text
+AUTH0_ISSUER=https://dev-2dn3mvmvr8tccoss.us.auth0.com/
+AUTH0_AUDIENCE=https://api.xlair.dev
+```
+
+`/health` と `/rankings` 以外の route では Bearer token を必須とする。
+
 ### 一般ユーザー
 
 1. 筐体が card ID を読み取る

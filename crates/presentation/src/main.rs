@@ -1,4 +1,7 @@
-use presentation::{config::Config, env, route::create_app, state::State};
+use presentation::{
+    auth::Authenticator, config::Config, env, route::create_app_with_auth, state::State,
+};
+use reqwest::Client;
 use tokio::net::TcpListener;
 use tracing::info;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
@@ -13,8 +16,10 @@ async fn main() {
 
     let config = Config::default();
     let state = State::new(config, repositories);
+    let authenticator =
+        Authenticator::new(Client::new(), env::auth0_issuer(), env::auth0_audience());
 
-    let app = create_app(state);
+    let app = create_app_with_auth(state, authenticator);
 
     let addr = format!("{}:{}", env::host(), env::app_port());
     let listener = TcpListener::bind(&addr).await.unwrap();
