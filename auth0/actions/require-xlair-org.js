@@ -59,7 +59,6 @@ exports.onExecutePostLogin = async (event, api) => {
         headers: {
           Accept: "application/vnd.github+json",
           Authorization: `Bearer ${accessToken}`,
-          "User-Agent": "XLAIR-Auth0-Action",
           "X-GitHub-Api-Version": "2022-11-28",
         },
       },
