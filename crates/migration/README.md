@@ -6,9 +6,6 @@
     ```
 - Apply all pending migrations
     ```sh
-    cargo run
-    ```
-    ```sh
     cargo run -- up
     ```
 - Apply first 10 pending migrations
@@ -28,6 +25,7 @@
     cargo run -- fresh
     ```
 - Rollback all applied migrations, then reapply all migrations
+  This command is destructive and should only be used when intentionally rebuilding the database.
     ```sh
     cargo run -- refresh
     ```
