@@ -12,6 +12,7 @@ use crate::{
     state::State,
 };
 
+pub mod admin;
 pub mod ranking;
 pub mod statistics;
 pub mod sync;
@@ -42,11 +43,15 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .route("/rating", get(ranking::handle_get_rating_ranking))
         .route("/xp", get(ranking::handle_get_xp_ranking));
     let health = Router::new().route("/", get(|| async { "OK" }));
+    let admin_routes = Router::new().route(
+        "/users/rating/recalculate",
+        post(admin::handle_recalculate_ratings),
+    );
 
     let private_routes = Router::new()
         .nest("/users", users)
         .nest("/sync", sync_route);
-    let private_routes = if let Some(authenticator) = authenticator {
+    let private_routes = if let Some(authenticator) = authenticator.clone() {
         private_routes
             .layer(middleware::from_fn_with_state(
                 AuthorizationPolicy::only(PrincipalKind::Device),
@@ -58,6 +63,20 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             ))
     } else {
         private_routes
+    };
+
+    let admin_routes = if let Some(authenticator) = authenticator {
+        admin_routes
+            .layer(middleware::from_fn_with_state(
+                AuthorizationPolicy::only(PrincipalKind::Admin),
+                crate::auth::authorize,
+            ))
+            .layer(middleware::from_fn_with_state(
+                authenticator,
+                crate::auth::middleware,
+            ))
+    } else {
+        admin_routes
     };
 
     let public_routes = Router::new()
@@ -72,6 +91,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
 
     Router::new()
         .merge(private_routes)
+        .nest("/admin", admin_routes)
         .merge(public_routes)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
@@ -109,6 +129,20 @@ mod tests {
     async fn private_route_requires_authentication() {
         let response = build_authenticated_router()
             .oneshot(Request::get("/sync").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn admin_route_requires_authentication() {
+        let response = build_authenticated_router()
+            .oneshot(
+                Request::post("/admin/users/rating/recalculate")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 

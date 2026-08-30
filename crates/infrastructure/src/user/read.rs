@@ -49,6 +49,19 @@ pub async fn find_by_id(db: &DbConn, user_id: &str) -> Result<Option<User>, User
     model.map(User::try_from).transpose()
 }
 
+pub async fn find_all(db: &DbConn) -> Result<Vec<User>, UserRepositoryError> {
+    let models = entities::users::Entity::find()
+        .order_by_asc(entities::users::Column::Id)
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to query all users");
+            UserRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    models.into_iter().map(User::try_from).collect()
+}
+
 pub async fn find_play_option(
     db: &DbConn,
     user_id: &str,

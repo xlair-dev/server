@@ -9,9 +9,10 @@ use domain::{
     repository::user::{UserRepository, UserRepositoryError},
 };
 use read::{
-    count_all as query_count_users, find_by_card as query_by_card, find_by_id as query_by_id,
-    find_play_option as query_play_option, public_users_by_rating as query_public_by_rating,
-    public_users_by_xp as query_public_by_xp, sum_credits as query_sum_credits,
+    count_all as query_count_users, find_all as query_all_users, find_by_card as query_by_card,
+    find_by_id as query_by_id, find_play_option as query_play_option,
+    public_users_by_rating as query_public_by_rating, public_users_by_xp as query_public_by_xp,
+    sum_credits as query_sum_credits,
 };
 use sea_orm::DbConn;
 use tracing::{debug, info, instrument};
@@ -59,6 +60,11 @@ impl UserRepository for UserRepositoryImpl {
     #[instrument(skip(self), fields(user_id = %user_id))]
     async fn find_by_id(&self, user_id: &str) -> Result<Option<User>, UserRepositoryError> {
         query_by_id(self.db.as_ref(), user_id).await
+    }
+
+    #[instrument(skip(self))]
+    async fn find_all(&self) -> Result<Vec<User>, UserRepositoryError> {
+        query_all_users(self.db.as_ref()).await
     }
 
     #[instrument(skip(self, user), fields(user_id = %user.id()))]

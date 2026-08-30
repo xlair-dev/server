@@ -5,6 +5,7 @@ use thiserror::Error;
 
 pub mod credits;
 pub mod options;
+pub mod recalculate_ratings;
 pub mod records;
 pub mod register;
 pub mod search;
