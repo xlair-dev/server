@@ -85,7 +85,6 @@ paths:
       description: ユーザーの表示名と公開設定を更新する
       security:
         - deviceAuth: []
-        - userAuth: []
       parameters:
         - name: userId
           in: path

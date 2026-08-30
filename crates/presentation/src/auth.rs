@@ -7,10 +7,49 @@ use serde::Deserialize;
 use thiserror::Error;
 use tokio::sync::RwLock;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PrincipalKind {
+    Admin,
+    Device,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Principal {
     Admin { subject: String },
     Device { client_id: String },
+}
+
+impl Principal {
+    pub fn kind(&self) -> PrincipalKind {
+        match self {
+            Self::Admin { .. } => PrincipalKind::Admin,
+            Self::Device { .. } => PrincipalKind::Device,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct AuthorizationPolicy {
+    allowed_kinds: Vec<PrincipalKind>,
+}
+
+impl AuthorizationPolicy {
+    pub fn only(kind: PrincipalKind) -> Self {
+        Self::any_of([kind])
+    }
+
+    pub fn any_of<I>(kinds: I) -> Self
+    where
+        I: IntoIterator<Item = PrincipalKind>,
+    {
+        Self {
+            allowed_kinds: kinds.into_iter().collect(),
+        }
+    }
+
+    pub fn allows(&self, principal: &Principal) -> bool {
+        self.allowed_kinds.contains(&principal.kind())
+    }
 }
 
 #[derive(Clone)]
@@ -124,6 +163,18 @@ pub async fn middleware(
     Ok(next.run(request).await)
 }
 
+pub async fn authorize(
+    axum::extract::State(policy): axum::extract::State<AuthorizationPolicy>,
+    request: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    match request.extensions().get::<Principal>() {
+        Some(principal) if policy.allows(principal) => Ok(next.run(request).await),
+        Some(_) => Err(StatusCode::FORBIDDEN),
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+
 fn find_jwk<'a>(set: &'a JwkSet, kid: Option<&str>) -> Option<&'a jsonwebtoken::jwk::Jwk> {
     set.keys
         .iter()
@@ -159,7 +210,7 @@ fn principal_from_claims(claims: Claims) -> Result<Principal, AuthError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Claims, Principal, principal_from_claims};
+    use super::{Claims, Principal, PrincipalKind, principal_from_claims};
 
     #[test]
     fn converts_device_claims_to_device_principal() {
@@ -204,5 +255,16 @@ mod tests {
         });
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn policy_can_allow_multiple_principal_kinds() {
+        let policy =
+            super::AuthorizationPolicy::any_of([PrincipalKind::Admin, PrincipalKind::Device]);
+        let principal = Principal::Admin {
+            subject: "auth0|user-id".into(),
+        };
+
+        assert!(policy.allows(&principal));
     }
 }

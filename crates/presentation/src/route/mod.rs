@@ -2,11 +2,15 @@ use axum::{
     Router,
     http::{HeaderValue, Method, header},
     middleware,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
-use crate::{auth::Authenticator, env::allowed_origin, state::State};
+use crate::{
+    auth::{Authenticator, AuthorizationPolicy, PrincipalKind},
+    env::allowed_origin,
+    state::State,
+};
 
 pub mod ranking;
 pub mod statistics;
@@ -17,7 +21,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
     let users = Router::new()
         .route("/", post(user::handle_post))
         .route("/", get(user::handle_get))
-        .route("/{userId}", post(user::handle_update_user))
+        .route("/{userId}", patch(user::handle_update_user))
         .route(
             "/{userId}/records",
             get(user::handle_get_records).post(user::handle_post_records),
@@ -43,10 +47,15 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .nest("/users", users)
         .nest("/sync", sync_route);
     let private_routes = if let Some(authenticator) = authenticator {
-        private_routes.layer(middleware::from_fn_with_state(
-            authenticator,
-            crate::auth::middleware,
-        ))
+        private_routes
+            .layer(middleware::from_fn_with_state(
+                AuthorizationPolicy::only(PrincipalKind::Device),
+                crate::auth::authorize,
+            ))
+            .layer(middleware::from_fn_with_state(
+                authenticator,
+                crate::auth::middleware,
+            ))
     } else {
         private_routes
     };
