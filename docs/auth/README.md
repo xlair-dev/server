@@ -137,7 +137,9 @@ token の検証後、`permissions`、`azp`、token の主体情報を XLAIR 内�
 
 ## GitHub Connection の設定
 
-Auth0 Deploy CLI の構成には GitHub Connection と `xlair-dev` membership を確認する Post-Login Action を含める。GitHub OAuth App の client ID と client secret は GitHub Actions secrets に `AUTH0_GITHUB_CLIENT_ID` と `AUTH0_GITHUB_CLIENT_SECRET` として登録する。Action は GitHub の `read:org` scope を使い、`GET /user/memberships/orgs/xlair-dev` の `state` が `active` の場合だけログインを許可する。
+Auth0 Deploy CLI の構成には GitHub Connection と `xlair-dev` membership を確認する Post-Login Action を含める。GitHub OAuth App の client ID と client secret は GitHub Actions secrets に `AUTH0_GITHUB_CLIENT_ID` と `AUTH0_GITHUB_CLIENT_SECRET` として登録する。Action は専用 M2M Application の Management API token で GitHub の IdP token を取得し、`GET /user/memberships/orgs/xlair-dev` の `state` が `active` の場合だけログインを許可する。
+
+GitHub membership 確認用 M2M Application には `read:users` と `read:user_idp_tokens` だけを付与し、client ID と client secret を `AUTH0_GITHUB_MEMBERSHIP_CLIENT_ID` と `AUTH0_GITHUB_MEMBERSHIP_CLIENT_SECRET` として GitHub Actions secrets に登録する。
 
 ## 未確定事項
 

@@ -1,13 +1,51 @@
 const ORGANIZATION = "xlair-dev";
+const AUTH0_DOMAIN = "dev-2dn3mvmvr8tccoss.us.auth0.com";
+
+const deny = (api) => {
+  api.access.deny("GitHub organization membership could not be verified.");
+};
+
+const getIdentityProviderAccessToken = async (event) => {
+  const tokenResponse = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+      client_id: event.secrets.AUTH0_MANAGEMENT_CLIENT_ID,
+      client_secret: event.secrets.AUTH0_MANAGEMENT_CLIENT_SECRET,
+      audience: `https://${AUTH0_DOMAIN}/api/v2/`,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    return null;
+  }
+
+  const token = await tokenResponse.json();
+  const userResponse = await fetch(
+    `https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(event.user.user_id)}?fields=identities&include_fields=true`,
+    { headers: { Authorization: `Bearer ${token.access_token}` } },
+  );
+
+  if (!userResponse.ok) {
+    return null;
+  }
+
+  const user = await userResponse.json();
+  return user.identities?.find(({ provider }) => provider === "github")?.access_token;
+};
 
 exports.onExecutePostLogin = async (event, api) => {
-  const identity = event.user.identities?.find(
-    ({ provider }) => provider === "github",
-  );
-  const accessToken = identity?.access_token;
+  let accessToken;
+  try {
+    accessToken = await getIdentityProviderAccessToken(event);
+  } catch (_error) {
+    deny(api);
+    return;
+  }
 
   if (!accessToken) {
-    api.access.deny("GitHub organization membership could not be verified.");
+    deny(api);
     return;
   }
 
@@ -24,12 +62,12 @@ exports.onExecutePostLogin = async (event, api) => {
       },
     );
   } catch (_error) {
-    api.access.deny("GitHub organization membership could not be verified.");
+    deny(api);
     return;
   }
 
   if (!response.ok) {
-    api.access.deny("GitHub organization membership could not be verified.");
+    deny(api);
     return;
   }
 
@@ -37,7 +75,7 @@ exports.onExecutePostLogin = async (event, api) => {
   try {
     membership = await response.json();
   } catch (_error) {
-    api.access.deny("GitHub organization membership could not be verified.");
+    deny(api);
     return;
   }
 
