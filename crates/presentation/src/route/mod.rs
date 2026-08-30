@@ -43,10 +43,8 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .route("/rating", get(ranking::handle_get_rating_ranking))
         .route("/xp", get(ranking::handle_get_xp_ranking));
     let health = Router::new().route("/", get(|| async { "OK" }));
-    let admin_routes = Router::new().route(
-        "/users/rating/recalculate",
-        post(admin::handle_recalculate_ratings),
-    );
+    let admin_routes =
+        Router::new().route("/db/synchronize", post(admin::handle_db_synchronization));
 
     let private_routes = Router::new()
         .nest("/users", users)
@@ -139,7 +137,7 @@ mod tests {
     async fn admin_route_requires_authentication() {
         let response = build_authenticated_router()
             .oneshot(
-                Request::post("/admin/users/rating/recalculate")
+                Request::post("/admin/db/synchronize")
                     .body(Body::empty())
                     .unwrap(),
             )

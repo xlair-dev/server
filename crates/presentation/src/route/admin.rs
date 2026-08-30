@@ -6,14 +6,21 @@ use crate::error::AppError;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RecalculateRatingsResponse {
+pub struct DbSynchronizationResponse {
     pub updated_users: u64,
+    pub updated_ratings: u64,
 }
 
-pub async fn handle_recalculate_ratings(
+pub async fn handle_db_synchronization(
     State(state): State<crate::state::State>,
-) -> Result<Json<RecalculateRatingsResponse>, AppError> {
-    let updated_users = state.usecases.user.recalculate_ratings().await?;
-    info!(updated_users, "Admin rating recalculation completed");
-    Ok(Json(RecalculateRatingsResponse { updated_users }))
+) -> Result<Json<DbSynchronizationResponse>, AppError> {
+    let result = state.usecases.user.synchronize_db().await?;
+    info!(
+        updated_users = result.updated_users,
+        "Admin database synchronization completed"
+    );
+    Ok(Json(DbSynchronizationResponse {
+        updated_users: result.updated_users,
+        updated_ratings: result.updated_ratings,
+    }))
 }
