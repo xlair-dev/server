@@ -5,5 +5,5 @@ edition = "2024"
 publish = false
 
 [dependencies]
-async-std.workspace = true
 sea-orm-migration.workspace = true
+tokio.workspace = true

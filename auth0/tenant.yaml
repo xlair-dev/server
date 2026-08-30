@@ -1,0 +1,22 @@
+# Auth0 Deploy CLI tenant configuration.
+# Keep credentials in the CI environment, not in this file.
+
+resourceServers:
+  - name: XLAIR API
+    identifier: https://api.xlair.dev
+    signing_alg: RS256
+    token_lifetime: 3600
+    enforce_policies: true
+    token_dialect: access_token_authz
+    scopes:
+      - value: admin
+        description: Coarse-grained access class for administrator principals.
+      - value: device
+        description: Coarse-grained access class for device principals.
+
+roles:
+  - name: admin
+    description: XLAIR administrator principal.
+    permissions:
+      - permission_name: admin
+        resource_server_identifier: https://api.xlair.dev
