@@ -18,7 +18,7 @@ pub mod sync;
 pub mod user;
 
 pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router {
-    let device_users = Router::new()
+    let users = Router::new()
         .route("/", post(user::handle_post))
         .route("/", get(user::handle_get))
         .route("/{userId}", patch(user::handle_update_user))
@@ -44,7 +44,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
     let health = Router::new().route("/", get(|| async { "OK" }));
 
     let private_routes = Router::new()
-        .nest("/users", device_users)
+        .nest("/users", users)
         .nest("/sync", sync_route);
     let private_routes = if let Some(authenticator) = authenticator {
         private_routes
