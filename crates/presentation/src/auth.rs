@@ -14,10 +14,18 @@ pub enum PrincipalKind {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Principal {
-    pub kind: PrincipalKind,
-    pub subject: String,
-    pub client_id: Option<String>,
+pub enum Principal {
+    Admin { subject: String },
+    Device { client_id: String },
+}
+
+impl Principal {
+    pub fn kind(&self) -> PrincipalKind {
+        match self {
+            Self::Admin { .. } => PrincipalKind::Admin,
+            Self::Device { .. } => PrincipalKind::Device,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -40,7 +48,7 @@ impl AuthorizationPolicy {
     }
 
     pub fn allows(&self, principal: &Principal) -> bool {
-        self.allowed_kinds.contains(&principal.kind)
+        self.allowed_kinds.contains(&principal.kind())
     }
 }
 
@@ -184,11 +192,7 @@ fn principal_from_claims(claims: Claims) -> Result<Principal, AuthError> {
             .azp
             .or_else(|| claims.sub.strip_suffix("@clients").map(ToOwned::to_owned))
             .ok_or(AuthError::InvalidToken)?;
-        return Ok(Principal {
-            kind: PrincipalKind::Device,
-            subject: claims.sub,
-            client_id: Some(client_id),
-        });
+        return Ok(Principal::Device { client_id });
     }
 
     if claims
@@ -196,10 +200,8 @@ fn principal_from_claims(claims: Claims) -> Result<Principal, AuthError> {
         .iter()
         .any(|permission| permission == "admin")
     {
-        return Ok(Principal {
-            kind: PrincipalKind::Admin,
+        return Ok(Principal::Admin {
             subject: claims.sub,
-            client_id: None,
         });
     }
 
@@ -221,10 +223,8 @@ mod tests {
 
         assert_eq!(
             principal,
-            Principal {
-                kind: PrincipalKind::Device,
-                subject: "client-id@clients".into(),
-                client_id: Some("client-id".into())
+            Principal::Device {
+                client_id: "client-id".into()
             }
         );
     }
@@ -240,10 +240,8 @@ mod tests {
 
         assert_eq!(
             principal,
-            Principal {
-                kind: PrincipalKind::Admin,
-                subject: "auth0|user-id".into(),
-                client_id: None
+            Principal::Admin {
+                subject: "auth0|user-id".into()
             }
         );
     }
@@ -263,10 +261,8 @@ mod tests {
     fn policy_can_allow_multiple_principal_kinds() {
         let policy =
             super::AuthorizationPolicy::any_of([PrincipalKind::Admin, PrincipalKind::Device]);
-        let principal = Principal {
-            kind: PrincipalKind::Admin,
+        let principal = Principal::Admin {
             subject: "auth0|user-id".into(),
-            client_id: None,
         };
 
         assert!(policy.allows(&principal));

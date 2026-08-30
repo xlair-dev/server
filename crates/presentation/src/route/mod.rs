@@ -43,11 +43,11 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .route("/xp", get(ranking::handle_get_xp_ranking));
     let health = Router::new().route("/", get(|| async { "OK" }));
 
-    let protected_routes = Router::new()
+    let private_routes = Router::new()
         .nest("/users", device_users)
         .nest("/sync", sync_route);
     let private_routes = if let Some(authenticator) = authenticator {
-        protected_routes
+        private_routes
             .layer(middleware::from_fn_with_state(
                 AuthorizationPolicy::only(PrincipalKind::Device),
                 crate::auth::authorize,
@@ -57,7 +57,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
                 crate::auth::middleware,
             ))
     } else {
-        protected_routes
+        private_routes
     };
 
     let public_routes = Router::new()
