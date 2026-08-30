@@ -59,6 +59,7 @@ pub struct Authenticator {
     client: Client,
     issuer: String,
     audience: String,
+    dashboard_client_id: String,
     jwks_uri: String,
     jwks: Arc<RwLock<Option<JwkSet>>>,
 }
@@ -83,13 +84,21 @@ struct Claims {
 }
 
 impl Authenticator {
-    pub fn new(client: Client, issuer: String, audience: String) -> Self {
+    /// `dashboard_client_id` identifies the only user-facing client trusted as an admin principal.
+    /// Its login flow must enforce the GitHub organization membership Action in Auth0.
+    pub fn new(
+        client: Client,
+        issuer: String,
+        audience: String,
+        dashboard_client_id: String,
+    ) -> Self {
         let issuer = issuer.trim_end_matches('/').to_owned();
         let jwks_uri = format!("{issuer}/.well-known/jwks.json");
         Self {
             client,
             issuer,
             audience,
+            dashboard_client_id,
             jwks_uri,
             jwks: Arc::new(RwLock::new(None)),
         }
@@ -111,7 +120,7 @@ impl Authenticator {
         let claims = decode::<Claims>(token, &decoding_key, &validation)
             .map_err(|_| AuthError::InvalidToken)?
             .claims;
-        principal_from_claims(claims)
+        principal_from_claims(claims, &self.dashboard_client_id)
     }
 
     async fn find_jwk(&self, kid: Option<&str>) -> Result<jsonwebtoken::jwk::Jwk, AuthError> {
@@ -193,7 +202,10 @@ fn find_jwk<'a>(set: &'a JwkSet, kid: Option<&str>) -> Option<&'a jsonwebtoken::
         .find(|jwk| jwk.common.key_id.as_deref() == kid)
 }
 
-fn principal_from_claims(claims: Claims) -> Result<Principal, AuthError> {
+fn principal_from_claims(
+    claims: Claims,
+    dashboard_client_id: &str,
+) -> Result<Principal, AuthError> {
     if claims
         .permissions
         .iter()
@@ -207,11 +219,7 @@ fn principal_from_claims(claims: Claims) -> Result<Principal, AuthError> {
         return Ok(Principal::Device { client_id });
     }
 
-    if claims
-        .permissions
-        .iter()
-        .any(|permission| permission == "admin")
-    {
+    if claims.azp.as_deref() == Some(dashboard_client_id) {
         return Ok(Principal::Admin {
             subject: claims.sub,
         });
@@ -226,11 +234,14 @@ mod tests {
 
     #[test]
     fn converts_device_claims_to_device_principal() {
-        let principal = principal_from_claims(Claims {
-            sub: "client-id@clients".into(),
-            azp: Some("client-id".into()),
-            permissions: vec!["device".into()],
-        })
+        let principal = principal_from_claims(
+            Claims {
+                sub: "client-id@clients".into(),
+                azp: Some("client-id".into()),
+                permissions: vec!["device".into()],
+            },
+            "dashboard-client-id",
+        )
         .unwrap();
 
         assert_eq!(
@@ -243,11 +254,14 @@ mod tests {
 
     #[test]
     fn converts_admin_claims_to_admin_principal() {
-        let principal = principal_from_claims(Claims {
-            sub: "auth0|user-id".into(),
-            azp: None,
-            permissions: vec!["admin".into()],
-        })
+        let principal = principal_from_claims(
+            Claims {
+                sub: "auth0|user-id".into(),
+                azp: Some("dashboard-client-id".into()),
+                permissions: vec![],
+            },
+            "dashboard-client-id",
+        )
         .unwrap();
 
         assert_eq!(
@@ -260,11 +274,28 @@ mod tests {
 
     #[test]
     fn rejects_device_permission_for_non_client_subject() {
-        let result = principal_from_claims(Claims {
-            sub: "auth0|user-id".into(),
-            azp: None,
-            permissions: vec!["device".into()],
-        });
+        let result = principal_from_claims(
+            Claims {
+                sub: "auth0|user-id".into(),
+                azp: None,
+                permissions: vec!["device".into()],
+            },
+            "dashboard-client-id",
+        );
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn rejects_admin_claims_from_another_client() {
+        let result = principal_from_claims(
+            Claims {
+                sub: "auth0|user-id".into(),
+                azp: Some("another-client-id".into()),
+                permissions: vec!["admin".into()],
+            },
+            "dashboard-client-id",
+        );
 
         assert!(result.is_err());
     }

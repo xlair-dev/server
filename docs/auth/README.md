@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 一般ユーザー | 筐体で読み取った card ID | `users.card` |
 | 筐体 | Auth0 M2M access token | Auth0 の client identity |
-| 管理者・運用者 | Auth0 user access token | Auth0 の user identity |
+| 管理者・運用者 | GitHub OAuth を経由した Auth0 user access token | Auth0 の user identity |
 
 - 一般ユーザーは Auth0 にアカウントを作成しない
 - card ID を XLAIR 上のユーザー識別子として扱う
@@ -16,18 +16,21 @@
 - 筐体認証には Auth0 M2M を使用する
 - 全筐体で 1 つの M2M Application と credentials を共有する
 - 筐体 credentials に定期的な有効期限は設けない
-- 管理者・運用者の認証には Auth0 を使用する
+- 管理者・運用者の認証には GitHub OAuth と Auth0 を使用する
 - OpenAPI では `userAuth` と `deviceAuth` を使用する
 - `/users/{userId}` は筐体と管理者の双方から更新できる
 - 更新メソッドは `PATCH` とする
 
 ## Auth0 と XLAIR の責務
 
-Auth0 は認証と認証主体の大分類を担当する。XLAIR の endpoint、リソース、フィールド単位の認可は XLAIR 側で管理する。
+GitHub は管理者・運用者の identity と組織所属を提供し、Auth0 は認証フローと token 発行を担当する。XLAIR の endpoint、リソース、フィールド単位の認可は XLAIR 側で管理する。
 
 ```text
 Auth0
-  └─ 認証、token 発行、管理者・筐体の識別
+  └─ GitHub login の仲介、token 発行、管理者・筐体の識別
+
+GitHub
+  └─ 管理者・運用者の identity、xlair-dev の membership
 
 XLAIR
   └─ endpoint、リソース、操作内容に対する認可
@@ -35,28 +38,26 @@ XLAIR
 
 `admin` と `device` は細かな API permission ではなく、XLAIR が認可ポリシーを選択するための principal の種類として扱う。
 
-Auth0 の role と permission を細かな権限体系として利用すると、`admin` や `device` が持つ XLAIR の操作内容まで Auth0 の設定に依存し、外部の認証基盤にアプリケーションの認可モデルを露出する。role と permission を利用する場合も、大分類とほぼ 1 対 1 の対応に留める。
-
-採用する Auth0 上の表現は次のとおりとする。
+採用する Auth0 上の表現は次のとおりとする。管理者は GitHub の `xlair-dev` membership を Post-Login Action で確認し、API は Dashboard Application の `azp` を `Admin` principal に変換する。
 
 ```text
-admin role
-  └─ admin permission
+Dashboard Application
+  └─ GitHub membership を確認済みの user token
 
 device M2M client grant
   └─ device permission
 ```
 
-Auth0 には endpoint やフィールド単位の permission を登録しない。`admin` / `device` は操作権限の一覧ではなく、XLAIR が認可ポリシーを選択するための大分類である。role と permission を 1:1 に近づけることで、XLAIR の認可モデルを Auth0 の設定へ依存させない。
+Auth0 には endpoint やフィールド単位の permission を登録しない。`device` permission は M2M client の主体識別にだけ使用し、管理者の主体識別には Dashboard Application の `azp` を使用する。これにより、XLAIR の認可モデルを Auth0 の Role / Permission に依存させない。
 
-API 層は token の `permissions` と token の主体種別を検証し、XLAIR 内部の principal に変換する。`scope` は OAuth の token 上の表現として扱い、アプリケーションの認可モデルには持ち込まない。custom claim は使用しない。
+API 層は token の `permissions`、`azp`、token の主体種別を検証し、XLAIR 内部の principal に変換する。`scope` は OAuth の token 上の表現として扱い、アプリケーションの認可モデルには持ち込まない。custom claim は使用しない。
 
 ```text
 DevicePrincipal { client_id }
 UserPrincipal { subject }
 ```
 
-`device` permission を持つ client credentials token は `DevicePrincipal` に、`admin` permission を持つ user token は `UserPrincipal` の管理者主体に変換する。以降の endpoint・リソース・フィールド単位の認可は XLAIR 側で行う。
+`device` permission を持つ client credentials token は `DevicePrincipal` に、Dashboard Application の `azp` を持つ user token は `Admin` principal に変換する。GitHub の `xlair-dev` membership は Auth0 Post-Login Action で確認する。以降の endpoint・リソース・フィールド単位の認可は XLAIR 側で行う。
 
 現在の endpoint 認可では、private route に `device` を要求する。`/health`、`/rankings`、`/statistics/summary` は公開する。`admin` principal の endpoint 利用は今後追加する。
 
@@ -67,6 +68,7 @@ API サーバーは次の設定で Auth0 access token を検証する。
 ```text
 AUTH0_ISSUER=https://dev-2dn3mvmvr8tccoss.us.auth0.com/
 AUTH0_AUDIENCE=https://api.xlair.dev
+AUTH0_DASHBOARD_CLIENT_ID=<XLAIR Dashboard の Client ID>
 ```
 
 `/health`、`/rankings`、`/statistics/summary` 以外の route では Bearer token を必須とする。
@@ -88,7 +90,7 @@ Authorization: Bearer <device access token>
 
 ### 管理者・運用者
 
-Auth0 の user access token を `userAuth` として送信する。現時点では管理者・運用者用だが、将来の認証対象拡張を考慮して scheme 名は `userAuth` とする。
+GitHub OAuth を経由して取得した Auth0 の user access token を `userAuth` として送信する。現時点では管理者・運用者用だが、将来の認証対象拡張を考慮して scheme 名は `userAuth` とする。
 
 各 endpoint の認証方式は [openapi.yaml](../openapi.yaml) に定義する。筐体と管理者の双方が利用する操作は、認証方式を OR で指定する。
 
@@ -131,7 +133,11 @@ Rust では `jsonwebtoken` で JWT を検証し、`reqwest` で JWKS を取得�
 - 許可する署名アルゴリズム（RS256）
 - JWKS の `kid`
 
-token の検証後、`permissions` と token の主体情報を XLAIR 内部の principal に変換する。
+token の検証後、`permissions`、`azp`、token の主体情報を XLAIR 内部の principal に変換する。
+
+## GitHub Connection の設定
+
+Auth0 Deploy CLI の構成には GitHub Connection と `xlair-dev` membership を確認する Post-Login Action を含める。GitHub OAuth App の client ID と client secret は GitHub Actions secrets に `AUTH0_GITHUB_CLIENT_ID` と `AUTH0_GITHUB_CLIENT_SECRET` として登録する。Action は GitHub の `read:org` scope を使い、`GET /user/memberships/orgs/xlair-dev` の `state` が `active` の場合だけログインを許可する。
 
 ## 未確定事項
 

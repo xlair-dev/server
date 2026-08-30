@@ -128,6 +128,7 @@ mod tests {
             Client::new(),
             "https://issuer.example.com".into(),
             "https://api.example.com".into(),
+            "dashboard-client-id".into(),
         );
         create_app(state, Some(authenticator))
     }

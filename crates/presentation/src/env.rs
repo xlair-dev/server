@@ -22,6 +22,11 @@ pub fn auth0_audience() -> String {
     env::var("AUTH0_AUDIENCE").expect("AUTH0_AUDIENCE must be set")
 }
 
+/// Returns the Auth0 client ID trusted for GitHub-authenticated dashboard users.
+pub fn auth0_dashboard_client_id() -> String {
+    env::var("AUTH0_DASHBOARD_CLIENT_ID").expect("AUTH0_DASHBOARD_CLIENT_ID must be set")
+}
+
 pub fn postgres_host() -> String {
     env::var("POSTGRES_HOST").expect("POSTGRES_HOST must be set")
 }

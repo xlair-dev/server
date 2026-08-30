@@ -9,8 +9,6 @@ resourceServers:
     enforce_policies: true
     token_dialect: access_token_authz
     scopes:
-      - value: admin
-        description: Coarse-grained access class for administrator principals.
       - value: device
         description: Coarse-grained access class for device principals.
 
@@ -32,15 +30,32 @@ clients:
     grant_types:
       - client_credentials
 
+connections:
+  - name: github
+    strategy: github
+    enabled_clients:
+      - XLAIR Dashboard
+    options:
+      client_id: "##AUTH0_GITHUB_CLIENT_ID##"
+      client_secret: "##AUTH0_GITHUB_CLIENT_SECRET##"
+      read_org: true
+
+actions:
+  - name: Require XLAIR GitHub organization membership
+    code: ./actions/require-xlair-org.js
+    deployed: true
+    status: built
+    supported_triggers:
+      - id: post-login
+        version: v2
+
 clientGrants:
   - client_id: XLAIR Device
     audience: https://api.xlair.dev
     scope:
       - device
 
-roles:
-  - name: admin
-    description: XLAIR administrator principal.
-    permissions:
-      - permission_name: admin
-        resource_server_identifier: https://api.xlair.dev
+triggers:
+  post-login:
+    - action_name: Require XLAIR GitHub organization membership
+      display_name: Require XLAIR GitHub organization membership
