@@ -2,7 +2,7 @@ use axum::{
     Router,
     http::{HeaderValue, Method, header},
     middleware,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
@@ -17,6 +17,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
     let device_users = Router::new()
         .route("/", post(user::handle_post))
         .route("/", get(user::handle_get))
+        .route("/{userId}", patch(user::handle_update_user))
         .route(
             "/{userId}/records",
             get(user::handle_get_records).post(user::handle_post_records),
@@ -29,7 +30,6 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             "/{userId}/credits/increment",
             post(user::handle_increment_credits),
         );
-    let user_update = Router::new().route("/{userId}", post(user::handle_update_user));
     let sync_route = Router::new().route("/", get(sync::handle_get));
     let statistics_route = Router::new().route("/summary", get(statistics::handle_get_summary));
     let ranking_route = Router::new()
@@ -43,23 +43,14 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .nest("/users", device_users)
         .nest("/sync", sync_route);
     let private_routes = if let Some(authenticator) = authenticator {
-        let user_update = user_update.layer(middleware::from_fn_with_state(
-            authenticator.clone(),
-            crate::auth::middleware,
-        ));
-        let device_routes = device_routes
+        device_routes
             .layer(middleware::from_fn(crate::auth::require_device))
             .layer(middleware::from_fn_with_state(
                 authenticator,
                 crate::auth::middleware,
-            ));
-        Router::new()
-            .merge(device_routes)
-            .nest("/users", user_update)
+            ))
     } else {
-        Router::new()
-            .merge(device_routes)
-            .nest("/users", user_update)
+        device_routes
     };
 
     let public_routes = Router::new()

@@ -56,7 +56,7 @@ UserPrincipal { subject }
 
 `device` permission を持つ client credentials token は `DevicePrincipal` に、`admin` permission を持つ user token は `UserPrincipal` の管理者主体に変換する。以降の endpoint・リソース・フィールド単位の認可は XLAIR 側で行う。
 
-現在の endpoint 認可では、筐体向けの users / sync route に `device`、ユーザー更新に `device` または `admin` を要求する。`/health`、`/rankings`、`/statistics/summary` は公開する。
+現在の endpoint 認可では、private route に `device` を要求する。`/health`、`/rankings`、`/statistics/summary` は公開する。`admin` principal の endpoint 利用は今後追加する。
 
 ## 認証フロー
 
