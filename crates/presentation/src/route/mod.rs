@@ -6,7 +6,11 @@ use axum::{
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
-use crate::{auth::Authenticator, env::allowed_origin, state::State};
+use crate::{
+    auth::{Authenticator, AuthorizationPolicy, PrincipalKind},
+    env::allowed_origin,
+    state::State,
+};
 
 pub mod ranking;
 pub mod statistics;
@@ -39,18 +43,21 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .route("/xp", get(ranking::handle_get_xp_ranking));
     let health = Router::new().route("/", get(|| async { "OK" }));
 
-    let device_routes = Router::new()
+    let protected_routes = Router::new()
         .nest("/users", device_users)
         .nest("/sync", sync_route);
     let private_routes = if let Some(authenticator) = authenticator {
-        device_routes
-            .layer(middleware::from_fn(crate::auth::require_device))
+        protected_routes
+            .layer(middleware::from_fn_with_state(
+                AuthorizationPolicy::only(PrincipalKind::Device),
+                crate::auth::authorize,
+            ))
             .layer(middleware::from_fn_with_state(
                 authenticator,
                 crate::auth::middleware,
             ))
     } else {
-        device_routes
+        protected_routes
     };
 
     let public_routes = Router::new()

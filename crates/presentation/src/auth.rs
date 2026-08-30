@@ -7,10 +7,41 @@ use serde::Deserialize;
 use thiserror::Error;
 use tokio::sync::RwLock;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PrincipalKind {
+    Admin,
+    Device,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Principal {
-    Admin { subject: String },
-    Device { client_id: String },
+pub struct Principal {
+    pub kind: PrincipalKind,
+    pub subject: String,
+    pub client_id: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct AuthorizationPolicy {
+    allowed_kinds: Vec<PrincipalKind>,
+}
+
+impl AuthorizationPolicy {
+    pub fn only(kind: PrincipalKind) -> Self {
+        Self::any_of([kind])
+    }
+
+    pub fn any_of<I>(kinds: I) -> Self
+    where
+        I: IntoIterator<Item = PrincipalKind>,
+    {
+        Self {
+            allowed_kinds: kinds.into_iter().collect(),
+        }
+    }
+
+    pub fn allows(&self, principal: &Principal) -> bool {
+        self.allowed_kinds.contains(&principal.kind)
+    }
 }
 
 #[derive(Clone)]
@@ -124,10 +155,14 @@ pub async fn middleware(
     Ok(next.run(request).await)
 }
 
-pub async fn require_device(request: Request, next: Next) -> Result<Response, StatusCode> {
+pub async fn authorize(
+    axum::extract::State(policy): axum::extract::State<AuthorizationPolicy>,
+    request: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
     match request.extensions().get::<Principal>() {
-        Some(Principal::Device { .. }) => Ok(next.run(request).await),
-        Some(Principal::Admin { .. }) => Err(StatusCode::FORBIDDEN),
+        Some(principal) if policy.allows(principal) => Ok(next.run(request).await),
+        Some(_) => Err(StatusCode::FORBIDDEN),
         None => Err(StatusCode::UNAUTHORIZED),
     }
 }
@@ -149,7 +184,11 @@ fn principal_from_claims(claims: Claims) -> Result<Principal, AuthError> {
             .azp
             .or_else(|| claims.sub.strip_suffix("@clients").map(ToOwned::to_owned))
             .ok_or(AuthError::InvalidToken)?;
-        return Ok(Principal::Device { client_id });
+        return Ok(Principal {
+            kind: PrincipalKind::Device,
+            subject: claims.sub,
+            client_id: Some(client_id),
+        });
     }
 
     if claims
@@ -157,8 +196,10 @@ fn principal_from_claims(claims: Claims) -> Result<Principal, AuthError> {
         .iter()
         .any(|permission| permission == "admin")
     {
-        return Ok(Principal::Admin {
+        return Ok(Principal {
+            kind: PrincipalKind::Admin,
             subject: claims.sub,
+            client_id: None,
         });
     }
 
@@ -167,7 +208,7 @@ fn principal_from_claims(claims: Claims) -> Result<Principal, AuthError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Claims, Principal, principal_from_claims};
+    use super::{Claims, Principal, PrincipalKind, principal_from_claims};
 
     #[test]
     fn converts_device_claims_to_device_principal() {
@@ -180,8 +221,10 @@ mod tests {
 
         assert_eq!(
             principal,
-            Principal::Device {
-                client_id: "client-id".into()
+            Principal {
+                kind: PrincipalKind::Device,
+                subject: "client-id@clients".into(),
+                client_id: Some("client-id".into())
             }
         );
     }
@@ -197,8 +240,10 @@ mod tests {
 
         assert_eq!(
             principal,
-            Principal::Admin {
-                subject: "auth0|user-id".into()
+            Principal {
+                kind: PrincipalKind::Admin,
+                subject: "auth0|user-id".into(),
+                client_id: None
             }
         );
     }
@@ -212,5 +257,18 @@ mod tests {
         });
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn policy_can_allow_multiple_principal_kinds() {
+        let policy =
+            super::AuthorizationPolicy::any_of([PrincipalKind::Admin, PrincipalKind::Device]);
+        let principal = Principal {
+            kind: PrincipalKind::Admin,
+            subject: "auth0|user-id".into(),
+            client_id: None,
+        };
+
+        assert!(policy.allows(&principal));
     }
 }
