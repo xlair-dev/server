@@ -1,5 +1,7 @@
 # 認証・認可設計
 
+利用手順は [筐体の認証](./device-authentication.md) と [管理 dashboard の認証](./dashboard-authentication.md) を参照する。
+
 ## 決定事項
 
 | 主体 | 認証 | XLAIR 上の識別 |
