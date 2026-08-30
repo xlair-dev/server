@@ -1,6 +1,6 @@
 # 管理 dashboard の認証
 
-管理 dashboard は Auth0 の `XLAIR Dashboard` Regular Web Application を使用する。一般ユーザー向けの Auth0 アカウントは作成しない。
+管理 dashboard は Auth0 の `XLAIR Dashboard` Regular Web Application を使用する。
 
 ## Auth0 Application の設定
 
@@ -25,5 +25,3 @@ access token を要求する際は API の audience を指定する。
 ```text
 https://api.xlair.dev
 ```
-
-現時点では API の private endpoint は `device` principal 用であり、dashboard 用の `userAuth` endpoint は未提供である。管理者向け endpoint を追加する際に `userAuth` を使用する。
