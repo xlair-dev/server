@@ -1,6 +1,6 @@
 # 認証・認可設計
 
-利用手順は [筐体の認証](./device-authentication.md) と [管理 dashboard の認証](./dashboard-authentication.md) を参照する。
+利用手順は [筐体の認証](./device.md) と [管理 dashboard の認証](./dashboard.md) を参照する。
 
 ## 決定事項
 
@@ -90,7 +90,7 @@ Authorization: Bearer <device access token>
 
 Auth0 の user access token を `userAuth` として送信する。現時点では管理者・運用者用だが、将来の認証対象拡張を考慮して scheme 名は `userAuth` とする。
 
-各 endpoint の認証方式は [openapi.yaml](./openapi.yaml) に定義する。筐体と管理者の双方が利用する操作は、認証方式を OR で指定する。
+各 endpoint の認証方式は [openapi.yaml](../openapi.yaml) に定義する。筐体と管理者の双方が利用する操作は、認証方式を OR で指定する。
 
 ## 筐体 credentials の運用（推奨）
 
