@@ -92,6 +92,7 @@ impl From<UserDataDto> for UserDataResponse {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreditsIncrementResponse {
     pub credits: u32,
 }
