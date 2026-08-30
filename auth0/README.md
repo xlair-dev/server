@@ -53,7 +53,7 @@ AUTH0_CLIENT_ID=<Deploy CLI 用 client ID>
 AUTH0_CLIENT_SECRET=<Deploy CLI 用 client secret>
 ```
 
-現時点の構成には Resource Server と Role が含まれるため、Management API には少なくとも次の権限が必要です。
+構成には Resource Server、Application、Role、client grant が含まれるため、Management API には少なくとも次の権限が必要です。
 
 ```text
 read:resource_servers
@@ -62,11 +62,21 @@ update:resource_servers
 read:roles
 create:roles
 update:roles
+
+read:clients
+create:clients
+update:clients
+
+read:client_grants
+create:client_grants
+update:client_grants
 ```
 
-Deploy CLI は client の存在確認にも `read:clients` を使用します。後続の構成で Application と client grant を管理する際は、`clients` と `client_grants` に対する read/create/update 権限を追加します。削除権限は付与しません。
+削除権限は付与しません。
 
-共有 M2M Application と dashboard 用 Regular Web Application は、Deploy CLI 用 Application の準備後に構成ファイルへ追加します。
+共有 M2M Application と dashboard 用 Regular Web Application は `tenant.yaml` で管理します。dashboard の callback URL、logout URL、web origin は dashboard の公開 URL が決まり次第設定します。
+
+初回の CI 実行で共有 M2M Application が作成されます。作成後に Auth0 で Client Secret を確認し、秘密情報として筐体へ配布します。Application を事前に手動作成する必要はありません。Client Secret の再発行時は全筐体へ新しい値を再配置します。
 
 ## 構成モデル
 
@@ -77,4 +87,4 @@ XLAIR API では、主体の大分類として次の permission を使用しま�
 
 `admin` role には `admin` permission を設定します。`device` permission は共有 M2M Application に client grant で付与します。endpoint やフィールド単位の認可は XLAIR 側で扱います。
 
-dashboard 用 Regular Web Application と共有 M2M Application は、次の構成作業で追加します。
+Deploy CLI 用 Application は構成管理の対象外です。共有 M2M Application と dashboard 用 Regular Web Application は `tenant.yaml` の構成対象です。

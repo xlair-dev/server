@@ -85,9 +85,9 @@ Auth0 の user access token を `userAuth` として送信する。現時点で�
 
 client credential の定期的な失効は行わない。access token は短寿命に設定し、紛失・侵害時は Auth0 で対象 client を無効化するか、credential を rotation する。Auth0 で client を無効化しても発行済み token は有効期限まで有効なため、短寿命 token とする。
 
-credential の発行は、共有 M2M Application を初期構成する provisioning とする。公開 API からの自己登録は行わず、Auth0 Deploy CLI または Auth0 Management API を利用する管理用 provisioning 処理で M2M Application と API grant を作成する。
+credential の発行は、共有 M2M Application を初期構成する provisioning とする。初回の CI 実行で Application と API grant を作成し、生成された Client Secret を Auth0 から取得して筐体へ配布する。公開 API からの自己登録は行わない。
 
-Auth0 が利用するプランで Private Key JWT が利用できる場合は、筐体で生成した鍵ペアの公開鍵を Auth0 に登録し、秘密鍵を筐体外へ出さない方式を推奨する。利用できない場合は Client Secret を secure な provisioning 経路で筐体へ配布する。
+Client Secret を secure な provisioning 経路で筐体へ配布する。
 
 ## Auth0 の構成管理
 
