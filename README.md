@@ -2,6 +2,21 @@
 
 API server for XLAIR
 
+## ローカル開発
+
+通常の起動ではDBコンテナだけを起動します。マイグレーションは必要なときに明示的に実行してください。
+
+```sh
+docker compose up -d
+docker compose --profile migration run --rm migrator up
+```
+
+マイグレーションを追加した場合も、同じコマンドで未適用分だけが適用されます。開発用DBを作り直す場合に限り、次を実行してください。
+
+```sh
+docker compose --profile migration run --rm migrator refresh
+```
+
 ## デプロイ手順 (オンプレ)
 
 1. `.env.prod.example` を参考に本番用 `.env` を作成します。
@@ -12,7 +27,7 @@ API server for XLAIR
    ```
 3. スキーマ変更がある場合は、アプリ再起動前に以下でマイグレーションを実行します。
    ```sh
-   docker compose --env-file ./.env -f compose.prod.yml run --rm migrator refresh
+   docker compose --env-file ./.env -f compose.prod.yml --profile migration run --rm migrator up
    ```
 
 ## CI での想定フロー
