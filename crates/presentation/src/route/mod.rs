@@ -13,15 +13,7 @@ pub mod statistics;
 pub mod sync;
 pub mod user;
 
-pub fn create_app(state: State) -> Router {
-    create_app_with_optional_auth(state, None)
-}
-
-pub fn create_app_with_auth(state: State, authenticator: Authenticator) -> Router {
-    create_app_with_optional_auth(state, Some(authenticator))
-}
-
-fn create_app_with_optional_auth(state: State, authenticator: Option<Authenticator>) -> Router {
+pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router {
     let users = Router::new()
         .route("/", post(user::handle_post))
         .route("/", get(user::handle_get))
@@ -49,8 +41,7 @@ fn create_app_with_optional_auth(state: State, authenticator: Option<Authenticat
 
     let private_routes = Router::new()
         .nest("/users", users)
-        .nest("/sync", sync_route)
-        .nest("/statistics", statistics_route);
+        .nest("/sync", sync_route);
     let private_routes = if let Some(authenticator) = authenticator {
         private_routes.layer(middleware::from_fn_with_state(
             authenticator,
@@ -62,7 +53,8 @@ fn create_app_with_optional_auth(state: State, authenticator: Option<Authenticat
 
     let public_routes = Router::new()
         .nest("/health", health)
-        .nest("/rankings", ranking_route);
+        .nest("/rankings", ranking_route)
+        .nest("/statistics", statistics_route);
 
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin().parse::<HeaderValue>().unwrap())

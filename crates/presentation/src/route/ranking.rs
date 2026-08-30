@@ -90,7 +90,7 @@ mod tests {
             music: MockMusicRepository::new(),
         };
         let state = crate::state::State::new(config, repositories);
-        super::super::create_app(state)
+        super::super::create_app(state, None)
     }
 
     fn sample_user(id: &str, display: &str, rating: u32, xp: u32) -> User {

@@ -39,7 +39,7 @@ mod tests {
             music: MockMusicRepository::new(),
         };
         let state = crate::state::State::new(config, repositories);
-        super::super::create_app(state)
+        super::super::create_app(state, None)
     }
 
     #[tokio::test]
