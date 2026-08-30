@@ -6,34 +6,59 @@ const deny = (api) => {
 };
 
 const getIdentityProviderAccessToken = async (event) => {
-  const tokenResponse = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      grant_type: "client_credentials",
-      client_id: event.secrets.AUTH0_MANAGEMENT_CLIENT_ID,
-      client_secret: event.secrets.AUTH0_MANAGEMENT_CLIENT_SECRET,
-      audience: `https://${AUTH0_DOMAIN}/api/v2/`,
-    }),
-  });
+  let tokenResponse;
+  try {
+    tokenResponse = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "client_credentials",
+        client_id: event.secrets.AUTH0_MANAGEMENT_CLIENT_ID,
+        client_secret: event.secrets.AUTH0_MANAGEMENT_CLIENT_SECRET,
+        audience: `https://${AUTH0_DOMAIN}/api/v2/`,
+      }),
+    });
+  } catch (_error) {
+    console.log("Auth0 Management API token request threw an exception");
+    return null;
+  }
 
   if (!tokenResponse.ok) {
     console.log(`Auth0 Management API token request failed: ${tokenResponse.status}`);
     return null;
   }
 
-  const token = await tokenResponse.json();
-  const userResponse = await fetch(
-    `https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(event.user.user_id)}?fields=identities&include_fields=true`,
-    { headers: { Authorization: `Bearer ${token.access_token}` } },
-  );
+  let token;
+  try {
+    token = await tokenResponse.json();
+  } catch (_error) {
+    console.log("Auth0 Management API token response could not be parsed");
+    return null;
+  }
+
+  let userResponse;
+  try {
+    userResponse = await fetch(
+      `https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(event.user.user_id)}?fields=identities&include_fields=true`,
+      { headers: { Authorization: `Bearer ${token.access_token}` } },
+    );
+  } catch (_error) {
+    console.log("Auth0 user profile request threw an exception");
+    return null;
+  }
 
   if (!userResponse.ok) {
     console.log(`Auth0 user profile request failed: ${userResponse.status}`);
     return null;
   }
 
-  const user = await userResponse.json();
+  let user;
+  try {
+    user = await userResponse.json();
+  } catch (_error) {
+    console.log("Auth0 user profile response could not be parsed");
+    return null;
+  }
   return user.identities?.find(({ provider }) => provider === "github")?.access_token;
 };
 
@@ -42,6 +67,7 @@ exports.onExecutePostLogin = async (event, api) => {
   try {
     accessToken = await getIdentityProviderAccessToken(event);
   } catch (_error) {
+    console.log("GitHub organization membership request threw an exception");
     deny(api);
     return;
   }
@@ -64,6 +90,7 @@ exports.onExecutePostLogin = async (event, api) => {
       },
     );
   } catch (_error) {
+    console.log("GitHub organization membership response could not be parsed");
     deny(api);
     return;
   }
