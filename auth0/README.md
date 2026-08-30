@@ -18,6 +18,8 @@ AUTH0_CLIENT_ID=<Deploy CLI 用 client ID>
 AUTH0_CLIENT_SECRET=<Deploy CLI 用 client secret>
 AUTH0_GITHUB_CLIENT_ID=<GitHub OAuth App の client ID>
 AUTH0_GITHUB_CLIENT_SECRET=<GitHub OAuth App の client secret>
+AUTH0_GITHUB_MEMBERSHIP_CLIENT_ID=<GitHub membership 確認用 M2M Application の client ID>
+AUTH0_GITHUB_MEMBERSHIP_CLIENT_SECRET=<GitHub membership 確認用 M2M Application の client secret>
 ```
 
 変更内容の確認:
@@ -94,6 +96,15 @@ GitHub OAuth App の Authorization callback URL には次を登録します。
 ```text
 https://dev-2dn3mvmvr8tccoss.us.auth0.com/login/callback
 ```
+
+GitHub membership 確認用 M2M Application は初回のみ Auth0 Dashboard で作成します。Auth0 Management API を authorize し、次の scope だけを付与します。
+
+```text
+read:users
+read:user_idp_tokens
+```
+
+Client ID と Client Secret を GitHub Actions secrets に登録すると、Application と client grant は以後 CI で管理されます。
 
 ## 構成モデル
 
