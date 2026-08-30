@@ -6,6 +6,15 @@ pub struct AppError {
 }
 
 impl AppError {
+    pub fn not_found() -> Self {
+        Self::new(
+            axum::http::StatusCode::NOT_FOUND,
+            "Resource not found".to_owned(),
+        )
+    }
+}
+
+impl AppError {
     pub fn new(status_code: axum::http::StatusCode, message: String) -> Self {
         Self {
             status_code,

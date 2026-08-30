@@ -73,19 +73,28 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
     Router::new()
         .merge(private_routes)
         .merge(public_routes)
+        .fallback(crate::route::not_found)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)
 }
 
+async fn not_found() -> crate::error::AppError {
+    crate::error::AppError::not_found()
+}
+
 #[cfg(test)]
 mod tests {
-    use axum::{body::Body, http::Request};
+    use axum::{
+        body::{self, Body},
+        http::Request,
+    };
     use domain::repository::{
         MockRepositories, music::MockMusicRepository, record::MockRecordRepository,
         user::MockUserRepository,
     };
     use reqwest::Client;
+    use serde_json::Value;
     use tower::ServiceExt;
 
     use super::*;
@@ -123,5 +132,41 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn unknown_route_returns_json_not_found_body() {
+        let response = build_authenticated_router()
+            .oneshot(Request::get("/unknown").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let body: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["error"], "Resource not found");
+    }
+
+    #[tokio::test]
+    async fn unsupported_method_returns_method_not_allowed() {
+        let repositories = MockRepositories {
+            user: MockUserRepository::new(),
+            record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
+        };
+        let state = State::new(crate::config::Config::default(), repositories);
+        let response = create_app(state, None)
+            .oneshot(
+                Request::get("/users/00000000-0000-0000-0000-000000000000")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(
+            response.status(),
+            axum::http::StatusCode::METHOD_NOT_ALLOWED
+        );
     }
 }
