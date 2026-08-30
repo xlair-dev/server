@@ -413,7 +413,9 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Auth0 Machine-to-Machine Application による筐体認証トークン
+      description: |
+        Auth0 Machine-to-Machine Application による筐体認証トークン。
+        XLAIR が認証主体を筐体として分類するための大分類を含む。
   schemas:
     userRegister:
       type: object

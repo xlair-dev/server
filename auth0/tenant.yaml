@@ -10,9 +10,9 @@ resourceServers:
     token_dialect: access_token_authz
     scopes:
       - value: admin
-        description: Identifies an administrator principal to XLAIR.
+        description: Coarse-grained access class for administrator principals.
       - value: device
-        description: Identifies a device principal to XLAIR.
+        description: Coarse-grained access class for device principals.
 
 roles:
   - name: admin

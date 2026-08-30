@@ -41,6 +41,33 @@ Deploy CLI 用の Auth0 Management API client は構成管理専用とし、こ�
 
 `auth0/` 以下の変更が `main` に反映されると、GitHub Actions が構成を自動適用します。削除は `AUTH0_ALLOW_DELETE=false` により無効にしています。
 
+## GitHub Actions の初期設定
+
+最初に、Auth0 Dashboard で Deploy CLI 専用の M2M Application を 1 つ作成します。この Application は Auth0 Management API を操作するためのもので、共有 M2M Application（筐体用）とは別です。
+
+Deploy CLI が管理するリソースに必要な Management API の権限を付与し、次の値を GitHub repository の Actions secrets に登録します。
+
+```text
+AUTH0_DOMAIN=dev-2dn3mvmvr8tccoss.us.auth0.com
+AUTH0_CLIENT_ID=<Deploy CLI 用 client ID>
+AUTH0_CLIENT_SECRET=<Deploy CLI 用 client secret>
+```
+
+現時点の構成には Resource Server と Role が含まれるため、Management API には少なくとも次の権限が必要です。
+
+```text
+read:resource_servers
+create:resource_servers
+update:resource_servers
+read:roles
+create:roles
+update:roles
+```
+
+Deploy CLI は client の存在確認にも `read:clients` を使用します。後続の構成で Application と client grant を管理する際は、`clients` と `client_grants` に対する read/create/update 権限を追加します。削除権限は付与しません。
+
+共有 M2M Application と dashboard 用 Regular Web Application は、Deploy CLI 用 Application の準備後に構成ファイルへ追加します。
+
 ## 構成モデル
 
 XLAIR API では、主体の大分類として次の permission を使用します。

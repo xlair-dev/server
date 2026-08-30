@@ -45,12 +45,16 @@ device M2M client grant
   └─ device permission
 ```
 
-Auth0 には endpoint やフィールド単位の permission を登録しない。API 層は token の `permissions` を XLAIR 内部の principal に変換し、domain 層と usecase 層には Auth0 固有の情報を渡さない。`scope` は OAuth の token 上の表現として扱い、アプリケーションの認可モデルには持ち込まない。custom claim は使用しない。
+Auth0 には endpoint やフィールド単位の permission を登録しない。`admin` / `device` は操作権限の一覧ではなく、XLAIR が認可ポリシーを選択するための大分類である。role と permission を 1:1 に近づけることで、XLAIR の認可モデルを Auth0 の設定へ依存させない。
+
+API 層は token の `permissions` と token の主体種別を検証し、XLAIR 内部の principal に変換する。`scope` は OAuth の token 上の表現として扱い、アプリケーションの認可モデルには持ち込まない。custom claim は使用しない。
 
 ```text
 DevicePrincipal { client_id }
 UserPrincipal { subject }
 ```
+
+`device` permission を持つ client credentials token は `DevicePrincipal` に、`admin` permission を持つ user token は `UserPrincipal` の管理者主体に変換する。以降の endpoint・リソース・フィールド単位の認可は XLAIR 側で行う。
 
 ## 認証フロー
 
