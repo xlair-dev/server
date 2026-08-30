@@ -1,24 +1,24 @@
-# Auth0 configuration
+# Auth0 構成
 
-This directory contains the Auth0 Tenant configuration managed by Auth0 Deploy CLI (`a0deploy`).
+このディレクトリには、Auth0 Deploy CLI（`a0deploy`）で管理する Auth0 Tenant の構成を置きます。
 
-The repository uses one Auth0 Tenant:
+利用する Tenant は次の 1 つです。
 
 ```text
 dev-2dn3mvmvr8tccoss.us.auth0.com
 ```
 
-## Local usage
+## ローカルでの実行
 
-Install the pinned Deploy CLI version and provide the following environment variables:
+Deploy CLI をインストールし、次の環境変数を設定します。
 
 ```text
 AUTH0_DOMAIN=dev-2dn3mvmvr8tccoss.us.auth0.com
-AUTH0_CLIENT_ID=<deploy-cli-client-id>
-AUTH0_CLIENT_SECRET=<deploy-cli-client-secret>
+AUTH0_CLIENT_ID=<Deploy CLI 用 client ID>
+AUTH0_CLIENT_SECRET=<Deploy CLI 用 client secret>
 ```
 
-Preview the changes:
+変更内容の確認:
 
 ```sh
 a0deploy import \
@@ -27,7 +27,7 @@ a0deploy import \
   --dry-run
 ```
 
-Apply the changes after reviewing the preview:
+変更の適用:
 
 ```sh
 a0deploy import \
@@ -37,17 +37,17 @@ a0deploy import \
   --apply
 ```
 
-The Deploy CLI Management API client should be dedicated to configuration deployment and granted only the Management API permissions required by the resources managed here. Its credentials are supplied through the environment or CI secrets.
+Deploy CLI 用の Auth0 Management API client は構成管理専用とし、このリポジトリで管理するリソースに必要な権限だけを付与します。credentials は環境変数または CI secrets から渡します。
 
-The deployment workflow runs automatically after changes under `auth0/` reach `main`. Deletions remain disabled by `AUTH0_ALLOW_DELETE=false`.
+`auth0/` 以下の変更が `main` に反映されると、GitHub Actions が構成を自動適用します。削除は `AUTH0_ALLOW_DELETE=false` により無効にしています。
 
-## Configuration model
+## 構成モデル
 
-The XLAIR API defines two coarse permissions:
+XLAIR API では、主体の大分類として次の permission を使用します。
 
-- `admin`: administrator principal
-- `device`: device principal
+- `admin`: 管理者
+- `device`: 筐体
 
-The `admin` role contains the `admin` permission. Device access is granted to the shared M2M Application through a client grant. Endpoint and field-level authorization remains an XLAIR implementation concern.
+`admin` role には `admin` permission を設定します。`device` permission は共有 M2M Application に client grant で付与します。endpoint やフィールド単位の認可は XLAIR 側で扱います。
 
-The dashboard Application and the shared device M2M Application will be added after their callback URL and client-grant configuration are finalized.
+dashboard 用 Regular Web Application と共有 M2M Application は、次の構成作業で追加します。
