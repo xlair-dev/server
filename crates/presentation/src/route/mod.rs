@@ -77,3 +77,51 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .layer(cors)
         .with_state(state)
 }
+
+#[cfg(test)]
+mod tests {
+    use axum::{body::Body, http::Request};
+    use domain::repository::{
+        MockRepositories, music::MockMusicRepository, record::MockRecordRepository,
+        user::MockUserRepository,
+    };
+    use reqwest::Client;
+    use tower::ServiceExt;
+
+    use super::*;
+
+    fn build_authenticated_router() -> Router {
+        let repositories = MockRepositories {
+            user: MockUserRepository::new(),
+            record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
+        };
+        let state = State::new(crate::config::Config::default(), repositories);
+        let authenticator = Authenticator::new(
+            Client::new(),
+            "https://issuer.example.com".into(),
+            "https://api.example.com".into(),
+        );
+        create_app(state, Some(authenticator))
+    }
+
+    #[tokio::test]
+    async fn private_route_requires_authentication() {
+        let response = build_authenticated_router()
+            .oneshot(Request::get("/sync").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn public_route_does_not_require_authentication() {
+        let response = build_authenticated_router()
+            .oneshot(Request::get("/health").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+}
