@@ -336,7 +336,7 @@ mod tests {
         user_repo
             .expect_save()
             .withf(|user| {
-                user.id() == "user-123" && *user.xp() == 100 && user.rating().value() == 1470
+                user.id() == "user-123" && *user.xp() == 100 && user.rating().value() == 490
             })
             .returning(|user| Box::pin(async move { Ok(user) }));
 
@@ -441,7 +441,7 @@ mod tests {
         user_repo
             .expect_save()
             .withf(|user| {
-                user.id() == "user-456" && *user.xp() == 180 && user.rating().value() == 1330
+                user.id() == "user-456" && *user.xp() == 180 && user.rating().value() == 443
             })
             .returning(|user| Box::pin(async move { Ok(user) }));
 
