@@ -74,6 +74,8 @@ update:client_grants
 read:connections
 create:connections
 update:connections
+read:connections_options
+update:connections_options
 
 read:actions
 create:actions
