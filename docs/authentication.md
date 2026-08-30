@@ -12,7 +12,7 @@
 - card ID を XLAIR 上のユーザー識別子として扱う
 - カードの複製による同一ユーザーとしての利用を許容する
 - 筐体認証には Auth0 M2M を使用する
-- M2M Application は筐体ごとに作成する
+- 全筐体で 1 つの M2M Application と credentials を共有する
 - 筐体 credentials に定期的な有効期限は設けない
 - 管理者・運用者の認証には Auth0 を使用する
 - OpenAPI では `userAuth` と `deviceAuth` を使用する
@@ -63,7 +63,7 @@ UserPrincipal { subject }
 
 ### 筐体
 
-筐体は筐体ごとの Auth0 M2M Application として API 用 access token を取得し、次の形式で送信する。
+筐体は共有する Auth0 M2M Application として API 用 access token を取得し、次の形式で送信する。
 
 ```http
 Authorization: Bearer <device access token>
@@ -77,27 +77,27 @@ Auth0 の user access token を `userAuth` として送信する。現時点で�
 
 ## 筐体 credentials の運用（推奨）
 
-筐体の登録時に provisioning 処理を実行し、筐体専用の Auth0 M2M Application を作成する。credential は secret manager から設置担当者または筐体へ安全に渡す。XLAIR の公開 API に credential 発行機能は設けない。
+筐体の登録時に provisioning 処理を実行し、共有する Auth0 M2M Application の credential を設置担当者または筐体へ安全に渡す。XLAIR の公開 API に credential 発行機能は設けない。
 
 client credential の定期的な失効は行わない。access token は短寿命に設定し、紛失・侵害時は Auth0 で対象 client を無効化するか、credential を rotation する。Auth0 で client を無効化しても発行済み token は有効期限まで有効なため、短寿命 token とする。
 
-credential の発行は、筐体の設置時に行う provisioning とする。公開 API からの自己登録は行わず、Auth0 Deploy CLI または Auth0 Management API を利用する管理用 provisioning 処理で M2M Application と API grant を作成する。
+credential の発行は、共有 M2M Application を初期構成する provisioning とする。公開 API からの自己登録は行わず、Auth0 Deploy CLI または Auth0 Management API を利用する管理用 provisioning 処理で M2M Application と API grant を作成する。
 
 Auth0 が利用するプランで Private Key JWT が利用できる場合は、筐体で生成した鍵ペアの公開鍵を Auth0 に登録し、秘密鍵を筐体外へ出さない方式を推奨する。利用できない場合は Client Secret を secure な provisioning 経路で筐体へ配布する。
 
 ## Auth0 の構成管理
 
-Auth0 の構成管理には Auth0 Deploy CLI（`a0deploy`）を使用する。Tenant の設定をリポジトリで管理し、import 前に dry run で変更内容を確認する。
+Auth0 の構成管理には Auth0 Deploy CLI（`a0deploy`）を使用する。Tenant の設定をリポジトリで管理し、import 前に dry run で変更内容を確認する。無料プランの制約に合わせ、Tenant は分離しない。
 
 管理対象:
 
 - XLAIR API の Resource Server
-- dashboard 用 Application
-- M2M Application
+- dashboard 用 Regular Web Application
+- 筐体で共有する M2M Application
 - `admin` / `device` の role、permission、client grant
 - Tenant、Connection、Action の設定
 
-Deploy CLI 用の Auth0 Management API 認証情報は CI の secret として注入する。設定ファイルには secret を保存しない。開発・本番などの環境ごとに Auth0 Tenant を分離し、同じ構成を環境別の値で適用する。
+Deploy CLI 用の Auth0 Management API 認証情報は CI の secret として注入する。設定ファイルには secret を保存しない。
 
 公式の Auth0 CLI は、Tenant の確認や個別リソースの操作に使用できる。Tenant 構成を宣言的に export/import する用途は Deploy CLI に統一する。
 

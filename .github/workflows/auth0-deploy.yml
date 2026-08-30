@@ -1,0 +1,41 @@
+name: Deploy Auth0 configuration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - auth0/**
+      - .github/workflows/auth0-deploy.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Auth0 configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Auth0 Deploy CLI
+        run: npm install --global auth0-deploy-cli@8.41.0
+
+      - name: Preview and apply Auth0 configuration
+        run: |
+          a0deploy import \
+            --config_file=auth0/config.json \
+            --input_file=auth0/tenant.yaml \
+            --dry-run \
+            --apply
+        env:
+          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
