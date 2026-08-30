@@ -74,7 +74,7 @@ update:client_grants
 
 削除権限は付与しません。
 
-共有 M2M Application と dashboard 用 Regular Web Application は `tenant.yaml` で管理します。dashboard の callback URL、logout URL、web origin は dashboard の公開 URL が決まり次第設定します。
+共有 M2M Application と dashboard 用 Regular Web Application は `tenant.yaml` で管理します。現在はローカル開発用の callback URL、logout URL、web origin を設定しています。dashboard の公開 URL が決まり次第、同じ設定へ追加します。
 
 初回の CI 実行で共有 M2M Application が作成されます。作成後に Auth0 で Client Secret を確認し、秘密情報として筐体へ配布します。Application を事前に手動作成する必要はありません。Client Secret の再発行時は全筐体へ新しい値を再配置します。
 

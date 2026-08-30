@@ -20,6 +20,12 @@ clients:
     oidc_conformant: true
     grant_types:
       - authorization_code
+    callbacks:
+      - http://localhost:3000/auth/callback
+    allowed_logout_urls:
+      - http://localhost:3000
+    web_origins:
+      - http://localhost:3000
   - name: XLAIR Device
     app_type: non_interactive
     oidc_conformant: true
