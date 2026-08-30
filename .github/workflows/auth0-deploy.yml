@@ -26,7 +26,7 @@ jobs:
           node-version: 20
 
       - name: Install Auth0 Deploy CLI
-        run: npm install --global auth0-deploy-cli@8.41.0
+        run: npm install --global auth0-deploy-cli@8.42.0
 
       - name: Preview and apply Auth0 configuration
         run: |
