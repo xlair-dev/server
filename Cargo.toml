@@ -20,6 +20,7 @@ infrastructure = { path = "crates/infrastructure" }
 jsonwebtoken = "9.3.1"
 mockall = "0.13.1"
 presentation = { path = "crates/presentation" }
+reqwest = { version = "0.12.23", default-features = false, features = ["json", "rustls-tls"] }
 sea-orm = { version = "1.1.16", features = [
     # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
     "sqlx-postgres",
@@ -38,7 +39,6 @@ sea-orm-migration = { version = "1.1.0", features = [
 ] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version = "0.12.23", default-features = false, features = ["json", "rustls-tls"] }
 thiserror = "2.0.11"
 tokio = { version = "1.47.1", features = ["full"] }
 tower = { version = "0.5.2", features = ["util"] }
