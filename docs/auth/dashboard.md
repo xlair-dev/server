@@ -22,10 +22,7 @@ dashboard の公開 URL が決まったら、Auth0 の Application に次を設�
 - Allowed Logout URLs: dashboard の logout URL
 - Allowed Web Origins: dashboard の origin
 
-Application のアイコンは `https://xlair.dev/icon.svg`、Universal Login の会社ロゴは `https://xlair.dev/logo.svg` とする。
-Universal Login の primary color は `#18ace9`、page background は `#4c5255` とする。
-Tenant の表示名は `XLAIR` とする。Auth0 の canonical domain は変更しない。
-Application は `auth0/tenant.yaml` で管理する。URL は公開 URL 決定後に構成へ追加する。
+Auth0 の設定は [`auth0/tenant.yaml`](../../auth0/tenant.yaml) で管理する。URL は公開 URL 決定後に構成へ追加する。
 
 API サーバーは `azp` が `XLAIR Dashboard` の Client ID と一致するユーザートークンだけを `Admin` principal として扱う。Client ID は `AUTH0_DASHBOARD_CLIENT_ID` に設定する。
 
