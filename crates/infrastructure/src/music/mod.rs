@@ -3,7 +3,9 @@ mod read;
 
 use std::sync::Arc;
 
-use domain::repository::music::{MusicRepository, MusicRepositoryError, MusicWithSheets};
+use domain::repository::music::{
+    MusicListCursor, MusicListPage, MusicRepository, MusicRepositoryError, MusicWithSheets,
+};
 use sea_orm::DbConn;
 use tracing::{debug, info, instrument};
 
@@ -24,5 +26,15 @@ impl MusicRepository for MusicRepositoryImpl {
         let musics = read::list_with_sheets(self.db.as_ref()).await?;
         info!(count = musics.len(), "Music metadata loaded");
         Ok(musics)
+    }
+
+    #[instrument(skip(self))]
+    async fn list_with_sheets_page(
+        &self,
+        cursor: Option<MusicListCursor>,
+        limit: u64,
+    ) -> Result<MusicListPage, MusicRepositoryError> {
+        debug!(limit, "Loading a page of music metadata via SeaORM");
+        read::list_with_sheets_page(self.db.as_ref(), cursor, limit).await
     }
 }

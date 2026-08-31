@@ -11,6 +11,7 @@ members = [
 [workspace.dependencies]
 anyhow = "1.0.95"
 axum = "0.8.4"
+base64 = "0.22.1"
 bigdecimal = "0.4"
 chrono = { version = "0.4.39", features = ["serde", "clock"] }
 domain = { path = "crates/domain" }
@@ -46,3 +47,4 @@ tower-http = { version = "0.6.6", features = ["trace", "cors"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt"] }
 usecase = { path = "crates/usecase" }
+uuid = "1.18.1"

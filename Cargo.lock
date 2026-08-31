@@ -1205,6 +1205,7 @@ dependencies = [
  "sea-orm",
  "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -1717,6 +1718,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "base64",
  "chrono",
  "domain",
  "dotenvy",
@@ -1732,6 +1734,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "usecase",
+ "uuid",
 ]
 
 [[package]]

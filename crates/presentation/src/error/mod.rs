@@ -1,5 +1,6 @@
 pub mod convert;
 
+#[derive(Debug)]
 pub struct AppError {
     pub status_code: axum::http::StatusCode,
     pub message: String,
@@ -18,6 +19,10 @@ impl AppError {
             axum::http::StatusCode::NOT_FOUND,
             "Resource not found".to_owned(),
         )
+    }
+
+    pub fn bad_request(message: impl Into<String>) -> Self {
+        Self::new(axum::http::StatusCode::BAD_REQUEST, message.into())
     }
 }
 

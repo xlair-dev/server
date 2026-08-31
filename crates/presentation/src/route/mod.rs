@@ -43,8 +43,9 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .route("/rating", get(ranking::handle_get_rating_ranking))
         .route("/xp", get(ranking::handle_get_xp_ranking));
     let health = Router::new().route("/", get(|| async { "OK" }));
-    let admin_routes =
-        Router::new().route("/db/synchronize", post(admin::handle_db_synchronization));
+    let admin_routes = Router::new()
+        .route("/musics", get(admin::handle_list_musics))
+        .route("/db/synchronize", post(admin::handle_db_synchronization));
 
     let private_routes = Router::new()
         .nest("/users", users)
