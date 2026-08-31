@@ -29,21 +29,23 @@ const createGitHubAppJwt = (event) => {
     JSON.stringify({
       iat: now - 60,
       exp: now + 540,
-      iss: event.secrets.GITHUB_APP_CLIENT_ID,
+      iss: event.secrets.XLAIR_GITHUB_APP_CLIENT_ID,
     }),
   );
   const unsignedToken = `${header}.${payload}`;
   const signature = crypto
     .createSign("RSA-SHA256")
     .update(unsignedToken)
-    .sign(Buffer.from(event.secrets.GITHUB_APP_PRIVATE_KEY_BASE64, "base64"));
+    .sign(
+      Buffer.from(event.secrets.XLAIR_GITHUB_APP_PRIVATE_KEY_BASE64, "base64"),
+    );
 
   return `${unsignedToken}.${base64UrlEncode(signature)}`;
 };
 
 const getInstallationAccessToken = async (event) => {
   const response = await fetch(
-    `https://api.github.com/app/installations/${event.secrets.GITHUB_APP_INSTALLATION_ID}/access_tokens`,
+    `https://api.github.com/app/installations/${event.secrets.XLAIR_GITHUB_APP_INSTALLATION_ID}/access_tokens`,
     {
       method: "POST",
       headers: {

@@ -46,12 +46,12 @@ actions:
     deployed: true
     status: built
     secrets:
-      - name: GITHUB_APP_CLIENT_ID
-        value: "##GITHUB_APP_CLIENT_ID##"
-      - name: GITHUB_APP_PRIVATE_KEY_BASE64
-        value: "##GITHUB_APP_PRIVATE_KEY_BASE64##"
-      - name: GITHUB_APP_INSTALLATION_ID
-        value: "##GITHUB_APP_INSTALLATION_ID##"
+      - name: XLAIR_GITHUB_APP_CLIENT_ID
+        value: "##XLAIR_GITHUB_APP_CLIENT_ID##"
+      - name: XLAIR_GITHUB_APP_PRIVATE_KEY_BASE64
+        value: "##XLAIR_GITHUB_APP_PRIVATE_KEY_BASE64##"
+      - name: XLAIR_GITHUB_APP_INSTALLATION_ID
+        value: "##XLAIR_GITHUB_APP_INSTALLATION_ID##"
     supported_triggers:
       - id: post-login
         version: v2
