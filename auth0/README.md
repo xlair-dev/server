@@ -18,8 +18,9 @@ AUTH0_CLIENT_ID=<Deploy CLI 用 client ID>
 AUTH0_CLIENT_SECRET=<Deploy CLI 用 client secret>
 AUTH0_GITHUB_CLIENT_ID=<GitHub OAuth App の client ID>
 AUTH0_GITHUB_CLIENT_SECRET=<GitHub OAuth App の client secret>
-AUTH0_GITHUB_MEMBERSHIP_CLIENT_ID=<GitHub membership 確認用 M2M Application の client ID>
-AUTH0_GITHUB_MEMBERSHIP_CLIENT_SECRET=<GitHub membership 確認用 M2M Application の client secret>
+GITHUB_APP_ID=<GitHub App の App ID>
+GITHUB_APP_PRIVATE_KEY_BASE64=<GitHub App の private key を base64 化した値>
+GITHUB_APP_INSTALLATION_ID=<xlair-dev への installation ID>
 ```
 
 変更内容の確認:
@@ -97,14 +98,23 @@ GitHub OAuth App の Authorization callback URL には次を登録します。
 https://dev-2dn3mvmvr8tccoss.us.auth0.com/login/callback
 ```
 
-GitHub membership 確認用 M2M Application は初回のみ Auth0 Dashboard で作成します。Auth0 Management API を authorize し、次の scope だけを付与します。
+GitHub App（例: `XLAIR Auth`）を作成し、`xlair-dev` にインストールします。Organization permissions は `Members: Read-only` だけを付与します。Webhook、Repository permissions、Events は設定しません。
+
+GitHub App の Settings から App ID と private key を取得し、次の値を GitHub Actions secrets に登録します。
 
 ```text
-read:users
-read:user_idp_tokens
+GITHUB_APP_ID=<GitHub App の App ID>
+GITHUB_APP_PRIVATE_KEY_BASE64=<private key の base64 値>
+GITHUB_APP_INSTALLATION_ID=<xlair-dev への installation ID>
 ```
 
-Client ID と Client Secret を GitHub Actions secrets に登録すると、Application と client grant は以後 CI で管理されます。
+private key は次のように base64 化する。
+
+```sh
+base64 -w0 <private-key-file.pem
+```
+
+GitHub App は GitHub の設定対象であり、Auth0 Deploy CLI の管理対象ではない。installation token は Action が実行時に発行する。
 
 ## 構成モデル
 

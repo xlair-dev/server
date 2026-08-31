@@ -38,11 +38,11 @@ XLAIR
 
 `admin` と `device` は細かな API permission ではなく、XLAIR が認可ポリシーを選択するための principal の種類として扱う。
 
-採用する Auth0 上の表現は次のとおりとする。管理者は GitHub の `xlair-dev` membership を Post-Login Action で確認し、API は Dashboard Application の `azp` を `Admin` principal に変換する。
+採用する Auth0 上の表現は次のとおりとする。管理者は GitHub の `xlair-dev` membership を GitHub App を使う Post-Login Action で確認し、API は Dashboard Application の `azp` を `Admin` principal に変換する。
 
 ```text
 Dashboard Application
-  └─ GitHub membership を確認済みの user token
+  └─ GitHub identity を認証した user token
 
 device M2M client grant
   └─ device permission
@@ -57,7 +57,7 @@ DevicePrincipal { client_id }
 UserPrincipal { subject }
 ```
 
-`device` permission を持つ client credentials token は `DevicePrincipal` に、Dashboard Application の `azp` を持つ user token は `Admin` principal に変換する。GitHub の `xlair-dev` membership は Auth0 Post-Login Action で確認する。以降の endpoint・リソース・フィールド単位の認可は XLAIR 側で行う。
+`device` permission を持つ client credentials token は `DevicePrincipal` に、Dashboard Application の `azp` を持つ user token は `Admin` principal に変換する。GitHub の `xlair-dev` membership は GitHub App の installation token を使う Auth0 Post-Login Action で確認する。以降の endpoint・リソース・フィールド単位の認可は XLAIR 側で行う。
 
 現在の endpoint 認可では、private route に `device` を要求する。`/health`、`/rankings`、`/statistics/summary` は公開する。`admin` principal の endpoint 利用は今後追加する。
 
@@ -137,9 +137,9 @@ token の検証後、`permissions`、`azp`、token の主体情報を XLAIR 内�
 
 ## GitHub Connection の設定
 
-Auth0 Deploy CLI の構成には GitHub Connection と `xlair-dev` membership を確認する Post-Login Action を含める。GitHub OAuth App の client ID と client secret は GitHub Actions secrets に `AUTH0_GITHUB_CLIENT_ID` と `AUTH0_GITHUB_CLIENT_SECRET` として登録する。Action は専用 M2M Application の Management API token で GitHub の IdP token を取得し、`GET /user/memberships/orgs/xlair-dev` の `state` が `active` の場合だけログインを許可する。
+Auth0 Deploy CLI の構成には GitHub Connection と `xlair-dev` membership を確認する Post-Login Action を含める。GitHub OAuth App の client ID と client secret は GitHub Actions secrets に `AUTH0_GITHUB_CLIENT_ID` と `AUTH0_GITHUB_CLIENT_SECRET` として登録する。Action は GitHub App の installation token を発行し、Auth0 user の GitHub numeric user ID から login 名を解決して `GET /orgs/xlair-dev/members/{username}` を確認する。レスポンスが `204` の場合だけログインを許可する。
 
-GitHub membership 確認用 M2M Application には `read:users` と `read:user_idp_tokens` だけを付与し、client ID と client secret を `AUTH0_GITHUB_MEMBERSHIP_CLIENT_ID` と `AUTH0_GITHUB_MEMBERSHIP_CLIENT_SECRET` として GitHub Actions secrets に登録する。
+GitHub App の App ID、base64 化した private key、installation ID を `GITHUB_APP_ID`、`GITHUB_APP_PRIVATE_KEY_BASE64`、`GITHUB_APP_INSTALLATION_ID` として GitHub Actions secrets に登録する。private key はリポジトリに保存しない。
 
 ## 未確定事項
 

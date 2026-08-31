@@ -1,5 +1,8 @@
+const crypto = require("crypto");
+
 const ORGANIZATION = "xlair-dev";
 const AUTH0_DOMAIN = "dev-2dn3mvmvr8tccoss.us.auth0.com";
+const GITHUB_API_VERSION = "2026-03-10";
 const RETURN_TO = "http://localhost:3000";
 
 const rejectAndLogout = (event, api) => {
@@ -12,106 +15,109 @@ const rejectAndLogout = (event, api) => {
   });
 };
 
-const getIdentityProviderAccessToken = async (event) => {
-  let tokenResponse;
-  try {
-    tokenResponse = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        grant_type: "client_credentials",
-        client_id: event.secrets.AUTH0_MANAGEMENT_CLIENT_ID,
-        client_secret: event.secrets.AUTH0_MANAGEMENT_CLIENT_SECRET,
-        audience: `https://${AUTH0_DOMAIN}/api/v2/`,
-      }),
-    });
-  } catch (_error) {
-    return null;
-  }
+const base64UrlEncode = (value) =>
+  Buffer.from(value)
+    .toString("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
 
-  if (!tokenResponse.ok) {
-    return null;
-  }
-
-  let token;
-  try {
-    token = await tokenResponse.json();
-  } catch (_error) {
-    return null;
-  }
-
-  let userResponse;
-  try {
-    userResponse = await fetch(
-      `https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(event.user.user_id)}?fields=identities&include_fields=true`,
-      { headers: { Authorization: `Bearer ${token.access_token}` } },
-    );
-  } catch (_error) {
-    return null;
-  }
-
-  if (!userResponse.ok) {
-    return null;
-  }
-
-  let user;
-  try {
-    user = await userResponse.json();
-  } catch (_error) {
-    return null;
-  }
-
-  const githubIdentity = user.identities?.find(
-    ({ provider }) => provider === "github",
+const createGitHubAppJwt = (event) => {
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64UrlEncode(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = base64UrlEncode(
+    JSON.stringify({
+      iat: now - 60,
+      exp: now + 540,
+      iss: event.secrets.GITHUB_APP_ID,
+    }),
   );
-  return githubIdentity?.access_token;
+  const unsignedToken = `${header}.${payload}`;
+  const signature = crypto
+    .createSign("RSA-SHA256")
+    .update(unsignedToken)
+    .sign(Buffer.from(event.secrets.GITHUB_APP_PRIVATE_KEY_BASE64, "base64"));
+
+  return `${unsignedToken}.${base64UrlEncode(signature)}`;
+};
+
+const getInstallationAccessToken = async (event) => {
+  const response = await fetch(
+    `https://api.github.com/app/installations/${event.secrets.GITHUB_APP_INSTALLATION_ID}/access_tokens`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${createGitHubAppJwt(event)}`,
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const body = await response.json();
+  return body.token;
+};
+
+const getGitHubUserId = (event) => {
+  const [provider, userId] = event.user.user_id.split("|", 2);
+  return provider === "github" && /^\d+$/.test(userId) ? userId : null;
+};
+
+const getGitHubLogin = async (userId, accessToken) => {
+  const response = await fetch(`https://api.github.com/user/${userId}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${accessToken}`,
+      "X-GitHub-Api-Version": GITHUB_API_VERSION,
+    },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const body = await response.json();
+  return typeof body.login === "string" ? body.login : null;
+};
+
+const isOrganizationMember = async (login, accessToken) => {
+  const response = await fetch(
+    `https://api.github.com/orgs/${ORGANIZATION}/members/${encodeURIComponent(login)}`,
+    {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${accessToken}`,
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+      },
+    },
+  );
+
+  return response.status === 204;
 };
 
 exports.onExecutePostLogin = async (event, api) => {
-  let accessToken;
   try {
-    accessToken = await getIdentityProviderAccessToken(event);
+    const userId = getGitHubUserId(event);
+    if (!userId) {
+      rejectAndLogout(event, api);
+      return;
+    }
+
+    const accessToken = await getInstallationAccessToken(event);
+    if (!accessToken) {
+      rejectAndLogout(event, api);
+      return;
+    }
+
+    const login = await getGitHubLogin(userId, accessToken);
+    if (!login || !(await isOrganizationMember(login, accessToken))) {
+      rejectAndLogout(event, api);
+    }
   } catch (_error) {
-    rejectAndLogout(event, api);
-    return;
-  }
-
-  if (!accessToken) {
-    rejectAndLogout(event, api);
-    return;
-  }
-
-  let response;
-  try {
-    response = await fetch(
-      `https://api.github.com/user/memberships/orgs/${ORGANIZATION}`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${accessToken}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-      },
-    );
-  } catch (_error) {
-    rejectAndLogout(event, api);
-    return;
-  }
-
-  if (!response.ok) {
-    rejectAndLogout(event, api);
-    return;
-  }
-
-  let membership;
-  try {
-    membership = await response.json();
-  } catch (_error) {
-    rejectAndLogout(event, api);
-    return;
-  }
-
-  if (membership.state !== "active") {
     rejectAndLogout(event, api);
   }
 };
