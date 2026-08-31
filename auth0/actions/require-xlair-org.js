@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+
 const ORGANIZATION = "xlair-dev";
 const AUTH0_DOMAIN = "dev-2dn3mvmvr8tccoss.us.auth0.com";
 
@@ -14,6 +16,9 @@ const describeError = (error) => {
     `cause=${value(error?.cause?.message)}`,
   ].join(" ");
 };
+
+const fingerprint = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex").slice(0, 16);
 
 const getIdentityProviderAccessToken = async (event) => {
   console.log(
@@ -80,7 +85,9 @@ const getIdentityProviderAccessToken = async (event) => {
     ({ provider }) => provider === "github",
   );
   console.log(
-    `stage=idp-token github_identity=${Boolean(githubIdentity)} access_token=${Boolean(githubIdentity?.access_token)}`,
+    `stage=idp-token github_identity=${Boolean(githubIdentity)} ` +
+      `access_token=${Boolean(githubIdentity?.access_token)} ` +
+      `fingerprint=${githubIdentity?.access_token ? fingerprint(githubIdentity.access_token) : "none"}`,
   );
   return githubIdentity?.access_token;
 };
@@ -112,8 +119,8 @@ exports.onExecutePostLogin = async (event, api) => {
         },
       },
     );
-  } catch (_error) {
-    console.log("GitHub organization membership response could not be parsed");
+  } catch (error) {
+    console.log(`stage=github-membership exception ${describeError(error)}`);
     deny(api);
     return;
   }

@@ -48,6 +48,7 @@ connections:
 actions:
   - name: Require XLAIR GitHub organization membership
     code: ./actions/require-xlair-org.js
+    # Pin the runtime because this Action relies on the Node.js built-in Fetch API.
     runtime: node22
     deployed: true
     status: built
