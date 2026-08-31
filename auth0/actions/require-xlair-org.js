@@ -1,30 +1,18 @@
-const crypto = require("crypto");
-
 const ORGANIZATION = "xlair-dev";
 const AUTH0_DOMAIN = "dev-2dn3mvmvr8tccoss.us.auth0.com";
+const RETURN_TO = "http://localhost:3000";
 
-const deny = (api) => {
-  api.access.deny("GitHub organization membership could not be verified.");
+const rejectAndLogout = (event, api) => {
+  // Clear the Auth0 SSO session so the next login starts a fresh IdP authorization.
+  api.redirect.sendUserTo(`https://${AUTH0_DOMAIN}/v2/logout`, {
+    query: {
+      client_id: event.client.client_id,
+      returnTo: RETURN_TO,
+    },
+  });
 };
-
-const describeError = (error) => {
-  const value = (item) => String(item ?? "unknown").slice(0, 80);
-  return [
-    `name=${value(error?.name)}`,
-    `message=${value(error?.message)}`,
-    `cause_code=${value(error?.cause?.code)}`,
-    `cause=${value(error?.cause?.message)}`,
-  ].join(" ");
-};
-
-const fingerprint = (token) =>
-  crypto.createHash("sha256").update(token).digest("hex").slice(0, 16);
 
 const getIdentityProviderAccessToken = async (event) => {
-  console.log(
-    `stage=start management_client_id=${event.secrets.AUTH0_MANAGEMENT_CLIENT_ID}`,
-  );
-
   let tokenResponse;
   try {
     tokenResponse = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
@@ -37,12 +25,9 @@ const getIdentityProviderAccessToken = async (event) => {
         audience: `https://${AUTH0_DOMAIN}/api/v2/`,
       }),
     });
-  } catch (error) {
-    console.log(`stage=management-token exception ${describeError(error)}`);
+  } catch (_error) {
     return null;
   }
-
-  console.log(`stage=management-token status=${tokenResponse.status}`);
 
   if (!tokenResponse.ok) {
     return null;
@@ -52,7 +37,6 @@ const getIdentityProviderAccessToken = async (event) => {
   try {
     token = await tokenResponse.json();
   } catch (_error) {
-    console.log("stage=management-token parse_error");
     return null;
   }
 
@@ -62,12 +46,9 @@ const getIdentityProviderAccessToken = async (event) => {
       `https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(event.user.user_id)}?fields=identities&include_fields=true`,
       { headers: { Authorization: `Bearer ${token.access_token}` } },
     );
-  } catch (error) {
-    console.log(`stage=user-profile exception ${describeError(error)}`);
+  } catch (_error) {
     return null;
   }
-
-  console.log(`stage=user-profile status=${userResponse.status}`);
 
   if (!userResponse.ok) {
     return null;
@@ -77,17 +58,11 @@ const getIdentityProviderAccessToken = async (event) => {
   try {
     user = await userResponse.json();
   } catch (_error) {
-    console.log("stage=user-profile parse_error");
     return null;
   }
 
   const githubIdentity = user.identities?.find(
     ({ provider }) => provider === "github",
-  );
-  console.log(
-    `stage=idp-token github_identity=${Boolean(githubIdentity)} ` +
-      `access_token=${Boolean(githubIdentity?.access_token)} ` +
-      `fingerprint=${githubIdentity?.access_token ? fingerprint(githubIdentity.access_token) : "none"}`,
   );
   return githubIdentity?.access_token;
 };
@@ -96,14 +71,13 @@ exports.onExecutePostLogin = async (event, api) => {
   let accessToken;
   try {
     accessToken = await getIdentityProviderAccessToken(event);
-  } catch (error) {
-    console.log(`stage=github-membership exception ${describeError(error)}`);
-    deny(api);
+  } catch (_error) {
+    rejectAndLogout(event, api);
     return;
   }
 
   if (!accessToken) {
-    deny(api);
+    rejectAndLogout(event, api);
     return;
   }
 
@@ -119,15 +93,13 @@ exports.onExecutePostLogin = async (event, api) => {
         },
       },
     );
-  } catch (error) {
-    console.log(`stage=github-membership exception ${describeError(error)}`);
-    deny(api);
+  } catch (_error) {
+    rejectAndLogout(event, api);
     return;
   }
 
   if (!response.ok) {
-    console.log(`stage=github-membership status=${response.status}`);
-    deny(api);
+    rejectAndLogout(event, api);
     return;
   }
 
@@ -135,15 +107,11 @@ exports.onExecutePostLogin = async (event, api) => {
   try {
     membership = await response.json();
   } catch (_error) {
-    console.log("stage=github-membership parse_error");
-    deny(api);
+    rejectAndLogout(event, api);
     return;
   }
 
-  console.log(`stage=github-membership status=${response.status}`);
-  console.log(`stage=github-membership state=${membership.state}`);
-
   if (membership.state !== "active") {
-    api.access.deny("An active XLAIR GitHub organization membership is required.");
+    rejectAndLogout(event, api);
   }
 };
