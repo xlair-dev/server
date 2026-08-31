@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - crates/**
+      - Dockerfile.prod
+      - .dockerignore
+      - rust-toolchain.toml
+      - .github/workflows/publish-prod-image.yml
   workflow_dispatch:
 
 env:

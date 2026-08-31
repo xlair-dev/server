@@ -4,7 +4,21 @@ on:
   push:
     branches:
       - main
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - crates/**
+      - rust-toolchain.toml
+      - rustfmt.toml
+      - .github/workflows/test.yml
   pull_request:
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - crates/**
+      - rust-toolchain.toml
+      - rustfmt.toml
+      - .github/workflows/test.yml
 
 env:
   CARGO_TERM_COLOR: always
