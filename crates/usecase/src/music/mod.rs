@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use domain::repository::{
     Repositories,
-    music::{MusicRepository, MusicRepositoryError, MusicWithSheets},
+    music::{MusicListCursor, MusicRepository, MusicRepositoryError, MusicWithSheets},
 };
 use thiserror::Error;
 
@@ -27,6 +27,27 @@ impl<R: Repositories> MusicUsecase<R> {
         let musics = self.repositories.music().list_with_sheets().await?;
         Ok(musics.into_iter().map(MusicWithSheetsDto::from).collect())
     }
+
+    pub async fn list_page(
+        &self,
+        cursor: Option<MusicListCursor>,
+        limit: u64,
+    ) -> Result<MusicPageDto, MusicUsecaseError> {
+        let page = self
+            .repositories
+            .music()
+            .list_with_sheets_page(cursor, limit)
+            .await?;
+        Ok(MusicPageDto {
+            items: page.items.into_iter().map(Into::into).collect(),
+            next_cursor: page.next_cursor,
+        })
+    }
+}
+
+pub struct MusicPageDto {
+    pub items: Vec<MusicWithSheetsDto>,
+    pub next_cursor: Option<MusicListCursor>,
 }
 
 impl<R: Repositories> Clone for MusicUsecase<R> {

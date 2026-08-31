@@ -143,6 +143,46 @@ paths:
           description: Forbidden - The authenticated user is not an administrator
         "500":
           description: Internal server error
+  /admin/musics:
+    get:
+      tags:
+        - admin
+      summary: 楽曲と譜面の一覧を取得
+      description: 楽曲を登録日時とIDの昇順で取得する。cursorを指定すると続きから取得する。
+      security:
+        - userAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          description: 前ページのレスポンスに含まれる次のページ用カーソル
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 取得件数 (1〜100、既定値50)
+          required: false
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: 楽曲と譜面のページ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/adminMusicListResponse"
+        "400":
+          description: Bad request - Invalid cursor or limit
+        "401":
+          description: Unauthorized - Invalid user access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "500":
+          description: Internal server error
   /users/{userId}/credits/increment:
     post:
       tags:
@@ -662,6 +702,19 @@ components:
       required:
         - music
         - sheets
+    adminMusicListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/musicWithSheets"
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+        - items
+        - nextCursor
     healthCheck:
       type: object
       properties:

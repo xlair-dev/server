@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow.workspace = true
 axum.workspace = true
+base64.workspace = true
+chrono.workspace = true
 domain.workspace = true
 dotenvy.workspace = true
 infrastructure.workspace = true
@@ -19,6 +21,7 @@ tower-http.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 usecase.workspace = true
+uuid.workspace = true
 
 [dev-dependencies]
 chrono.workspace = true
