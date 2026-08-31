@@ -1,6 +1,17 @@
 # Auth0 Deploy CLI tenant configuration.
 # Keep credentials in the CI environment, not in this file.
 
+tenant:
+  friendly_name: XLAIR
+  picture_url: https://xlair.dev/icon.svg
+
+branding:
+  logo_url: https://xlair.dev/logo.svg
+  favicon_url: https://xlair.dev/favicon.ico
+  colors:
+    primary: '#18ace9'
+    page_background: '#4c5255'
+
 resourceServers:
   - name: XLAIR API
     identifier: https://api.xlair.dev
@@ -8,6 +19,7 @@ resourceServers:
     token_lifetime: 3600
     enforce_policies: true
     token_dialect: access_token_authz
+    skip_consent_for_verifiable_first_party_clients: true
     scopes:
       - value: device
         description: Coarse-grained access class for device principals.
@@ -16,6 +28,7 @@ clients:
   - name: XLAIR Dashboard
     app_type: regular_web
     oidc_conformant: true
+    logo_uri: https://xlair.dev/icon.svg
     grant_types:
       - authorization_code
     callbacks:
@@ -29,6 +42,14 @@ clients:
     oidc_conformant: true
     grant_types:
       - client_credentials
+
+# Keep the dashboard limited to the GitHub connection. The existing default
+# database connection is managed explicitly so AUTH0_ALLOW_DELETE=false does
+# not leave it enabled for this application.
+databases:
+  - name: Username-Password-Authentication
+    enabled_clients: []
+
 connections:
   - name: github
     strategy: github
