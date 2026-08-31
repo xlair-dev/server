@@ -48,6 +48,7 @@ connections:
 actions:
   - name: Require XLAIR GitHub organization membership
     code: ./actions/require-xlair-org.js
+    runtime: node22
     deployed: true
     status: built
     secrets:

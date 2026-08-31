@@ -5,6 +5,16 @@ const deny = (api) => {
   api.access.deny("GitHub organization membership could not be verified.");
 };
 
+const describeError = (error) => {
+  const value = (item) => String(item ?? "unknown").slice(0, 80);
+  return [
+    `name=${value(error?.name)}`,
+    `message=${value(error?.message)}`,
+    `cause_code=${value(error?.cause?.code)}`,
+    `cause=${value(error?.cause?.message)}`,
+  ].join(" ");
+};
+
 const getIdentityProviderAccessToken = async (event) => {
   console.log(
     `stage=start management_client_id=${event.secrets.AUTH0_MANAGEMENT_CLIENT_ID}`,
@@ -22,8 +32,8 @@ const getIdentityProviderAccessToken = async (event) => {
         audience: `https://${AUTH0_DOMAIN}/api/v2/`,
       }),
     });
-  } catch (_error) {
-    console.log("stage=management-token exception");
+  } catch (error) {
+    console.log(`stage=management-token exception ${describeError(error)}`);
     return null;
   }
 
@@ -47,8 +57,8 @@ const getIdentityProviderAccessToken = async (event) => {
       `https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(event.user.user_id)}?fields=identities&include_fields=true`,
       { headers: { Authorization: `Bearer ${token.access_token}` } },
     );
-  } catch (_error) {
-    console.log("stage=user-profile exception");
+  } catch (error) {
+    console.log(`stage=user-profile exception ${describeError(error)}`);
     return null;
   }
 
@@ -79,8 +89,8 @@ exports.onExecutePostLogin = async (event, api) => {
   let accessToken;
   try {
     accessToken = await getIdentityProviderAccessToken(event);
-  } catch (_error) {
-    console.log("stage=github-membership exception");
+  } catch (error) {
+    console.log(`stage=github-membership exception ${describeError(error)}`);
     deny(api);
     return;
   }
