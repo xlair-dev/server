@@ -29,7 +29,7 @@ const createGitHubAppJwt = (event) => {
     JSON.stringify({
       iat: now - 60,
       exp: now + 540,
-      iss: event.secrets.GITHUB_APP_ID,
+      iss: event.secrets.GITHUB_APP_CLIENT_ID,
     }),
   );
   const unsignedToken = `${header}.${payload}`;

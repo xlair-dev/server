@@ -139,7 +139,7 @@ token の検証後、`permissions`、`azp`、token の主体情報を XLAIR 内�
 
 Auth0 Deploy CLI の構成には GitHub Connection と `xlair-dev` membership を確認する Post-Login Action を含める。GitHub OAuth App の client ID と client secret は GitHub Actions secrets に `AUTH0_GITHUB_CLIENT_ID` と `AUTH0_GITHUB_CLIENT_SECRET` として登録する。Action は GitHub App の installation token を発行し、Auth0 user の GitHub numeric user ID から login 名を解決して `GET /orgs/xlair-dev/members/{username}` を確認する。レスポンスが `204` の場合だけログインを許可する。
 
-GitHub App の App ID、base64 化した private key、installation ID を `GITHUB_APP_ID`、`GITHUB_APP_PRIVATE_KEY_BASE64`、`GITHUB_APP_INSTALLATION_ID` として GitHub Actions secrets に登録する。private key はリポジトリに保存しない。
+GitHub App の Client ID、base64 化した private key、installation ID を `GITHUB_APP_CLIENT_ID`、`GITHUB_APP_PRIVATE_KEY_BASE64`、`GITHUB_APP_INSTALLATION_ID` として GitHub Actions secrets に登録する。private key はリポジトリに保存しない。
 
 ## 未確定事項
 

@@ -18,7 +18,7 @@ AUTH0_CLIENT_ID=<Deploy CLI 用 client ID>
 AUTH0_CLIENT_SECRET=<Deploy CLI 用 client secret>
 AUTH0_GITHUB_CLIENT_ID=<GitHub OAuth App の client ID>
 AUTH0_GITHUB_CLIENT_SECRET=<GitHub OAuth App の client secret>
-GITHUB_APP_ID=<GitHub App の App ID>
+GITHUB_APP_CLIENT_ID=<GitHub App の Client ID>
 GITHUB_APP_PRIVATE_KEY_BASE64=<GitHub App の private key を base64 化した値>
 GITHUB_APP_INSTALLATION_ID=<xlair-dev への installation ID>
 ```
@@ -100,10 +100,10 @@ https://dev-2dn3mvmvr8tccoss.us.auth0.com/login/callback
 
 GitHub App（例: `XLAIR Auth`）を作成し、`xlair-dev` にインストールします。Organization permissions は `Members: Read-only` だけを付与します。Webhook、Repository permissions、Events は設定しません。
 
-GitHub App の Settings から App ID と private key を取得し、次の値を GitHub Actions secrets に登録します。
+GitHub App の Settings から Client ID と private key を取得し、次の値を GitHub Actions secrets に登録します。
 
 ```text
-GITHUB_APP_ID=<GitHub App の App ID>
+GITHUB_APP_CLIENT_ID=<GitHub App の Client ID>
 GITHUB_APP_PRIVATE_KEY_BASE64=<private key の base64 値>
 GITHUB_APP_INSTALLATION_ID=<xlair-dev への installation ID>
 ```
