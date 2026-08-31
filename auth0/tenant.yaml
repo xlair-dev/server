@@ -29,12 +29,6 @@ clients:
     oidc_conformant: true
     grant_types:
       - client_credentials
-  - name: XLAIR GitHub Membership
-    app_type: non_interactive
-    oidc_conformant: true
-    grant_types:
-      - client_credentials
-
 connections:
   - name: github
     strategy: github
@@ -43,7 +37,6 @@ connections:
     options:
       client_id: "##AUTH0_GITHUB_CLIENT_ID##"
       client_secret: "##AUTH0_GITHUB_CLIENT_SECRET##"
-      read_org: true
 
 actions:
   - name: Require XLAIR GitHub organization membership
@@ -53,10 +46,12 @@ actions:
     deployed: true
     status: built
     secrets:
-      - name: AUTH0_MANAGEMENT_CLIENT_ID
-        value: "##AUTH0_GITHUB_MEMBERSHIP_CLIENT_ID##"
-      - name: AUTH0_MANAGEMENT_CLIENT_SECRET
-        value: "##AUTH0_GITHUB_MEMBERSHIP_CLIENT_SECRET##"
+      - name: XLAIR_GITHUB_APP_CLIENT_ID
+        value: "##XLAIR_GITHUB_APP_CLIENT_ID##"
+      - name: XLAIR_GITHUB_APP_PRIVATE_KEY_BASE64
+        value: "##XLAIR_GITHUB_APP_PRIVATE_KEY_BASE64##"
+      - name: XLAIR_GITHUB_APP_INSTALLATION_ID
+        value: "##XLAIR_GITHUB_APP_INSTALLATION_ID##"
     supported_triggers:
       - id: post-login
         version: v2
@@ -66,12 +61,6 @@ clientGrants:
     audience: https://api.xlair.dev
     scope:
       - device
-  - client_id: XLAIR GitHub Membership
-    audience: https://dev-2dn3mvmvr8tccoss.us.auth0.com/api/v2/
-    scope:
-      - read:users
-      - read:user_idp_tokens
-
 triggers:
   post-login:
     - action_name: Require XLAIR GitHub organization membership
