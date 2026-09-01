@@ -44,8 +44,14 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .route("/xp", get(ranking::handle_get_xp_ranking));
     let health = Router::new().route("/", get(|| async { "OK" }));
     let admin_routes = Router::new()
-        .route("/musics", get(admin::handle_list_musics))
-        .route("/musics/{musicId}", get(admin::handle_get_music))
+        .route(
+            "/musics",
+            get(admin::handle_list_musics).post(admin::handle_create_music),
+        )
+        .route(
+            "/musics/{musicId}",
+            get(admin::handle_get_music).put(admin::handle_update_music),
+        )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
 
     let private_routes = Router::new()

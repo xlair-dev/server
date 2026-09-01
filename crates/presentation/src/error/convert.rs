@@ -86,6 +86,7 @@ impl From<MusicUsecaseError> for AppError {
     fn from(error: MusicUsecaseError) -> Self {
         match error {
             MusicUsecaseError::MusicRepository(err) => err.into(),
+            MusicUsecaseError::InvalidInput(message) => AppError::bad_request(message),
         }
     }
 }

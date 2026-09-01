@@ -1,5 +1,6 @@
 mod adapter;
 mod read;
+mod write;
 
 use std::sync::Arc;
 
@@ -45,5 +46,21 @@ impl MusicRepository for MusicRepositoryImpl {
     ) -> Result<MusicWithSheets, MusicRepositoryError> {
         debug!("Loading music metadata by id via SeaORM");
         read::find_with_sheets(self.db.as_ref(), music_id).await
+    }
+
+    #[instrument(skip(self), fields(music_id = %music.music.id()))]
+    async fn insert_with_sheets(
+        &self,
+        music: MusicWithSheets,
+    ) -> Result<MusicWithSheets, MusicRepositoryError> {
+        write::insert_with_sheets(self.db.as_ref(), music).await
+    }
+
+    #[instrument(skip(self), fields(music_id = %music.music.id()))]
+    async fn update_with_sheets(
+        &self,
+        music: MusicWithSheets,
+    ) -> Result<MusicWithSheets, MusicRepositoryError> {
+        write::update_with_sheets(self.db.as_ref(), music).await
     }
 }

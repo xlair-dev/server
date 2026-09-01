@@ -1,12 +1,14 @@
 use axum::{
     Json,
     extract::{Path, Query, State},
+    http::StatusCode,
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
 use domain::repository::music::MusicListCursor;
 use serde::{Deserialize, Serialize};
 use tracing::info;
+use usecase::model::music::{MusicWriteInput, SheetWriteInput};
 
 use crate::{error::AppError, model::sync::SyncItemResponse};
 
@@ -39,6 +41,52 @@ pub struct DbSynchronizationResponse {
     pub updated_ratings: u64,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MusicWriteRequest {
+    pub title: String,
+    pub artist: String,
+    pub bpm: f32,
+    pub genre: String,
+    pub jacket: String,
+    pub is_test: bool,
+    pub sheets: Vec<SheetWriteRequest>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SheetWriteRequest {
+    pub id: Option<String>,
+    pub difficulty: String,
+    pub level: f64,
+    pub notes_designer: String,
+}
+
+impl From<MusicWriteRequest> for MusicWriteInput {
+    fn from(request: MusicWriteRequest) -> Self {
+        Self {
+            title: request.title,
+            artist: request.artist,
+            bpm: request.bpm,
+            genre: request.genre,
+            jacket: request.jacket,
+            is_test: request.is_test,
+            sheets: request.sheets.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<SheetWriteRequest> for SheetWriteInput {
+    fn from(request: SheetWriteRequest) -> Self {
+        Self {
+            id: request.id,
+            difficulty: request.difficulty,
+            level: request.level,
+            notes_designer: request.notes_designer,
+        }
+    }
+}
+
 pub async fn handle_list_musics(
     State(state): State<crate::state::State>,
     Query(query): Query<MusicListQuery>,
@@ -63,6 +111,27 @@ pub async fn handle_get_music(
     Path(music_id): Path<String>,
 ) -> Result<Json<SyncItemResponse>, AppError> {
     let music = state.usecases.music.find_by_id(music_id).await?;
+    Ok(Json(SyncItemResponse::from(music)))
+}
+
+pub async fn handle_create_music(
+    State(state): State<crate::state::State>,
+    Json(request): Json<MusicWriteRequest>,
+) -> Result<(StatusCode, Json<SyncItemResponse>), AppError> {
+    let music = state.usecases.music.create(request.into()).await?;
+    Ok((StatusCode::CREATED, Json(SyncItemResponse::from(music))))
+}
+
+pub async fn handle_update_music(
+    State(state): State<crate::state::State>,
+    Path(music_id): Path<String>,
+    Json(request): Json<MusicWriteRequest>,
+) -> Result<Json<SyncItemResponse>, AppError> {
+    let music = state
+        .usecases
+        .music
+        .update(music_id, request.into())
+        .await?;
     Ok(Json(SyncItemResponse::from(music)))
 }
 

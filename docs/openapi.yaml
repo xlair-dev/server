@@ -144,6 +144,33 @@ paths:
         "500":
           description: Internal server error
   /admin/musics:
+    post:
+      tags:
+        - admin
+      summary: 楽曲と譜面を登録
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/adminMusicCreateRequest"
+      responses:
+        "201":
+          description: 登録された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "400":
+          description: Bad request - Invalid music or sheet data
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "500":
+          description: Internal server error
     get:
       tags:
         - admin
@@ -205,6 +232,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/musicWithSheets"
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "404":
+          description: Not found - Music not found
+        "500":
+          description: Internal server error
+    put:
+      tags:
+        - admin
+      summary: 楽曲と譜面を更新
+      security:
+        - userAuth: []
+      parameters:
+        - name: musicId
+          in: path
+          description: 楽曲のID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/adminMusicUpdateRequest"
+      responses:
+        "200":
+          description: 更新された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "400":
+          description: Bad request - Invalid music or sheet data
         "401":
           description: Unauthorized - Invalid access token
         "403":
@@ -732,6 +796,108 @@ components:
       required:
         - music
         - sheets
+    adminMusicCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        artist:
+          type: string
+        bpm:
+          type: number
+          format: float
+        genre:
+          type: string
+          enum:
+            - ORIGINAL
+        jacket:
+          type: string
+        isTest:
+          type: boolean
+        sheets:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/adminSheetCreateRequest"
+      required:
+        - title
+        - artist
+        - bpm
+        - genre
+        - jacket
+        - isTest
+        - sheets
+    adminMusicUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        artist:
+          type: string
+        bpm:
+          type: number
+          format: float
+        genre:
+          type: string
+          enum:
+            - ORIGINAL
+        jacket:
+          type: string
+        isTest:
+          type: boolean
+        sheets:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/adminSheetUpdateRequest"
+      required:
+        - title
+        - artist
+        - bpm
+        - genre
+        - jacket
+        - isTest
+        - sheets
+    adminSheetCreateRequest:
+      type: object
+      properties:
+        difficulty:
+          type: string
+          enum:
+            - easy
+            - normal
+            - hard
+        level:
+          type: number
+        notesDesigner:
+          type: string
+      required:
+        - difficulty
+        - level
+        - notesDesigner
+    adminSheetUpdateRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        difficulty:
+          type: string
+          enum:
+            - easy
+            - normal
+            - hard
+        level:
+          type: number
+        notesDesigner:
+          type: string
+      required:
+        - id
+        - difficulty
+        - level
+        - notesDesigner
     adminMusicListResponse:
       type: object
       properties:

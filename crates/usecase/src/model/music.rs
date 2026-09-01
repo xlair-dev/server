@@ -2,6 +2,25 @@ use chrono::{DateTime, Utc};
 use domain::entity::{difficulty::Difficulty, genre::Genre, music::Music, sheet::Sheet};
 
 #[derive(Debug)]
+pub struct MusicWriteInput {
+    pub title: String,
+    pub artist: String,
+    pub bpm: f32,
+    pub genre: String,
+    pub jacket: String,
+    pub is_test: bool,
+    pub sheets: Vec<SheetWriteInput>,
+}
+
+#[derive(Debug)]
+pub struct SheetWriteInput {
+    pub id: Option<String>,
+    pub difficulty: String,
+    pub level: f64,
+    pub notes_designer: String,
+}
+
+#[derive(Debug)]
 pub struct MusicDto {
     pub id: String,
     pub title: String,
