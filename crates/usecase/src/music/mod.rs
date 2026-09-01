@@ -2,16 +2,21 @@ use std::sync::Arc;
 
 use domain::repository::{
     Repositories,
-    music::{MusicListCursor, MusicRepository, MusicRepositoryError, MusicWithSheets},
+    music::{MusicListCursor, MusicRepositoryError, MusicWithSheets},
 };
 use thiserror::Error;
 
 use crate::model::music::MusicWithSheetsDto;
 
+mod read;
+mod write;
+
 #[derive(Debug, Error)]
 pub enum MusicUsecaseError {
     #[error(transparent)]
     MusicRepository(#[from] MusicRepositoryError),
+    #[error("Invalid music input: {0}")]
+    InvalidInput(String),
 }
 
 pub struct MusicUsecase<R: Repositories> {
@@ -21,39 +26,6 @@ pub struct MusicUsecase<R: Repositories> {
 impl<R: Repositories> MusicUsecase<R> {
     pub fn new(repositories: Arc<R>) -> Self {
         Self { repositories }
-    }
-
-    pub async fn list_all(&self) -> Result<Vec<MusicWithSheetsDto>, MusicUsecaseError> {
-        let musics = self.repositories.music().list_with_sheets().await?;
-        Ok(musics.into_iter().map(MusicWithSheetsDto::from).collect())
-    }
-
-    pub async fn list_page(
-        &self,
-        cursor: Option<MusicListCursor>,
-        limit: u64,
-    ) -> Result<MusicPageDto, MusicUsecaseError> {
-        let page = self
-            .repositories
-            .music()
-            .list_with_sheets_page(cursor, limit)
-            .await?;
-        Ok(MusicPageDto {
-            items: page.items.into_iter().map(Into::into).collect(),
-            next_cursor: page.next_cursor,
-        })
-    }
-
-    pub async fn find_by_id(
-        &self,
-        music_id: String,
-    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
-        let music = self
-            .repositories
-            .music()
-            .find_with_sheets(&music_id)
-            .await?;
-        Ok(music.into())
     }
 }
 
@@ -83,7 +55,7 @@ impl From<MusicWithSheets> for MusicWithSheetsDto {
 mod tests {
     use std::sync::Arc;
 
-    use chrono::Utc;
+    use chrono::{TimeZone, Utc};
     use domain::{
         entity::{difficulty::Difficulty, genre::Genre, level::Level, music::Music, sheet::Sheet},
         repository::{
@@ -95,6 +67,7 @@ mod tests {
     };
 
     use super::*;
+    use crate::model::music::{CreateMusicInput, MusicDataInput, SheetDataInput};
 
     #[tokio::test]
     async fn list_all_returns_entries() {
@@ -167,5 +140,78 @@ mod tests {
             .expect("should succeed");
         assert_eq!(result.music.id, "music-1");
         assert!(result.sheets.is_empty());
+    }
+
+    fn write_input() -> CreateMusicInput {
+        CreateMusicInput {
+            music: MusicDataInput {
+                title: "Song".to_owned(),
+                artist: "Artist".to_owned(),
+                bpm: 135.5,
+                genre: Genre::ORIGINAL,
+                jacket: "jacket.png".to_owned(),
+                registration_date: Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
+                is_test: false,
+            },
+            sheets: vec![
+                SheetDataInput {
+                    difficulty: Difficulty::Easy,
+                    level: 12.3,
+                    notes_designer: "Easy Designer".to_owned(),
+                },
+                SheetDataInput {
+                    difficulty: Difficulty::Normal,
+                    level: 13.0,
+                    notes_designer: "Normal Designer".to_owned(),
+                },
+                SheetDataInput {
+                    difficulty: Difficulty::Hard,
+                    level: 14.7,
+                    notes_designer: "Hard Designer".to_owned(),
+                },
+            ],
+        }
+    }
+
+    #[tokio::test]
+    async fn create_generates_ids_for_music_and_sheets() {
+        let mut music_repo = MockMusicRepository::new();
+        music_repo
+            .expect_insert_with_sheets()
+            .returning(|music| Box::pin(async move { Ok(music) }));
+
+        let repositories = MockRepositories {
+            user: MockUserRepository::new(),
+            record: MockRecordRepository::new(),
+            music: music_repo,
+        };
+        let usecase = MusicUsecase::new(Arc::new(repositories));
+
+        let result = usecase.create(write_input()).await.expect("should succeed");
+        assert!(uuid::Uuid::parse_str(&result.music.id).is_ok());
+        assert_eq!(result.sheets.len(), 3);
+        assert!(
+            result
+                .sheets
+                .iter()
+                .all(|sheet| uuid::Uuid::parse_str(&sheet.id).is_ok())
+        );
+    }
+
+    #[tokio::test]
+    async fn create_rejects_duplicate_difficulties() {
+        let repositories = MockRepositories {
+            user: MockUserRepository::new(),
+            record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
+        };
+        let usecase = MusicUsecase::new(Arc::new(repositories));
+        let mut input = write_input();
+        input.sheets[1].difficulty = Difficulty::Easy;
+
+        assert!(matches!(
+            usecase.create(input).await,
+            Err(MusicUsecaseError::InvalidInput(_))
+        ));
     }
 }

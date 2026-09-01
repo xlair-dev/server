@@ -1,6 +1,7 @@
 use axum::{
     Json,
     extract::{Path, Query, State},
+    http::StatusCode,
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
@@ -8,35 +9,24 @@ use domain::repository::music::MusicListCursor;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-use crate::{error::AppError, model::sync::SyncItemResponse};
+use crate::{
+    error::AppError,
+    model::{
+        admin::{
+            CreateMusicRequest, DbSynchronizationResponse, MusicListQuery, MusicListResponse,
+            UpdateMusicRequest,
+        },
+        sync::SyncItemResponse,
+    },
+};
 
 const DEFAULT_PAGE_LIMIT: u64 = 50;
 const MAX_PAGE_LIMIT: u64 = 100;
-
-#[derive(Deserialize)]
-pub struct MusicListQuery {
-    pub cursor: Option<String>,
-    pub limit: Option<u64>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MusicListResponse {
-    pub items: Vec<SyncItemResponse>,
-    pub next_cursor: Option<String>,
-}
 
 #[derive(Deserialize, Serialize)]
 struct CursorPayload {
     registration_date: String,
     id: String,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DbSynchronizationResponse {
-    pub updated_users: u64,
-    pub updated_ratings: u64,
 }
 
 pub async fn handle_list_musics(
@@ -62,7 +52,31 @@ pub async fn handle_get_music(
     State(state): State<crate::state::State>,
     Path(music_id): Path<String>,
 ) -> Result<Json<SyncItemResponse>, AppError> {
+    if uuid::Uuid::parse_str(&music_id).is_err() {
+        return Err(AppError::bad_request("music id is invalid"));
+    }
     let music = state.usecases.music.find_by_id(music_id).await?;
+    Ok(Json(SyncItemResponse::from(music)))
+}
+
+pub async fn handle_create_music(
+    State(state): State<crate::state::State>,
+    Json(request): Json<CreateMusicRequest>,
+) -> Result<(StatusCode, Json<SyncItemResponse>), AppError> {
+    let music = state.usecases.music.create(request.try_into()?).await?;
+    Ok((StatusCode::CREATED, Json(SyncItemResponse::from(music))))
+}
+
+pub async fn handle_update_music(
+    State(state): State<crate::state::State>,
+    Path(music_id): Path<String>,
+    Json(request): Json<UpdateMusicRequest>,
+) -> Result<Json<SyncItemResponse>, AppError> {
+    let music = state
+        .usecases
+        .music
+        .update(music_id, request.try_into()?)
+        .await?;
     Ok(Json(SyncItemResponse::from(music)))
 }
 

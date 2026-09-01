@@ -144,6 +144,44 @@ paths:
         "500":
           description: Internal server error
   /admin/musics:
+    post:
+      tags:
+        - admin
+      summary: 楽曲と譜面を登録
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/musicData"
+                - type: object
+                  properties:
+                    sheets:
+                      type: array
+                      minItems: 3
+                      maxItems: 3
+                      items:
+                        $ref: "#/components/schemas/sheetData"
+                  required:
+                    - sheets
+      responses:
+        "201":
+          description: 登録された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "400":
+          description: Bad request - Invalid music or sheet data
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "500":
+          description: Internal server error
     get:
       tags:
         - admin
@@ -205,6 +243,54 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/musicWithSheets"
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "404":
+          description: Not found - Music not found
+        "500":
+          description: Internal server error
+    post:
+      tags:
+        - admin
+      summary: 楽曲と譜面を更新
+      security:
+        - userAuth: []
+      parameters:
+        - name: musicId
+          in: path
+          description: 楽曲のID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/musicData"
+                - type: object
+                  properties:
+                    sheets:
+                      type: array
+                      minItems: 3
+                      maxItems: 3
+                      items:
+                        $ref: "#/components/schemas/sheet"
+                  required:
+                    - sheets
+      responses:
+        "200":
+          description: 更新された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "400":
+          description: Bad request - Invalid music or sheet data
         "401":
           description: Unauthorized - Invalid access token
         "403":
@@ -654,12 +740,9 @@ components:
         - clearType
         - playCount
         - updatedAt
-    music:
+    musicData:
       type: object
       properties:
-        id:
-          type: string
-          description: 楽曲のID
         title:
           type: string
           description: タイトル
@@ -672,6 +755,8 @@ components:
           description: BPM
         genre:
           type: string
+          enum:
+            - ORIGINAL
           description: ジャンル
         jacket:
           type: string
@@ -679,12 +764,11 @@ components:
         registrationDate:
           type: string
           format: date-time
-          description: 楽曲追加日
+          description: 運用上の楽曲登録日
         isTest:
           type: boolean
           description: テスト楽曲かどうか
       required:
-        - id
         - title
         - artist
         - bpm
@@ -692,15 +776,19 @@ components:
         - jacket
         - registrationDate
         - isTest
-    sheet:
+    music:
+      allOf:
+        - $ref: "#/components/schemas/musicData"
+        - type: object
+          properties:
+            id:
+              type: string
+              description: 楽曲のID
+          required:
+            - id
+    sheetData:
       type: object
       properties:
-        id:
-          type: string
-          description: 譜面のID
-        musicId:
-          type: string
-          description: 楽曲のID
         difficulty:
           type: string
           enum:
@@ -715,11 +803,34 @@ components:
           type: string
           description: 譜面のノーツデザイナー
       required:
-        - id
-        - musicId
         - difficulty
         - level
         - notesDesigner
+    sheetWithMusicId:
+      allOf:
+        - $ref: "#/components/schemas/sheetData"
+        - type: object
+          properties:
+            id:
+              type: string
+              description: 譜面のID
+            musicId:
+              type: string
+              description: 楽曲のID
+          required:
+            - id
+            - musicId
+    sheet:
+      allOf:
+        - $ref: "#/components/schemas/sheetData"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: 譜面のID
+          required:
+            - id
     musicWithSheets:
       type: object
       properties:
@@ -728,7 +839,7 @@ components:
         sheets:
           type: array
           items:
-            $ref: "#/components/schemas/sheet"
+            $ref: "#/components/schemas/sheetWithMusicId"
       required:
         - music
         - sheets

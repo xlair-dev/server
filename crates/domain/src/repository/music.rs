@@ -54,4 +54,14 @@ pub trait MusicRepository: Send + Sync {
         &self,
         music_id: &str,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
+
+    fn insert_with_sheets(
+        &self,
+        music: MusicWithSheets,
+    ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
+
+    fn update_with_sheets(
+        &self,
+        music: MusicWithSheets,
+    ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 }

@@ -6,7 +6,7 @@ use domain::repository::music::{
 use sea_orm::{ColumnTrait, Condition, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use tracing::{debug, error};
 
-use super::adapter;
+use super::read_adapter;
 use crate::entities;
 
 /// Collects every music alongside its sheets.
@@ -28,8 +28,8 @@ pub async fn list_with_sheets(db: &DbConn) -> Result<Vec<MusicWithSheets>, Music
 
     let mut musics = Vec::with_capacity(models.len());
     for (music_model, sheet_models) in models {
-        let music = adapter::convert_music(music_model)?;
-        let sheets = adapter::convert_sheets(sheet_models)?;
+        let music = read_adapter::convert_music(music_model)?;
+        let sheets = read_adapter::convert_sheets(sheet_models)?;
         musics.push(MusicWithSheets::new(music, sheets));
     }
 
@@ -88,8 +88,8 @@ pub async fn list_with_sheets_page(
 
     let mut items = Vec::with_capacity(models.len());
     for (music_model, sheet_models) in models {
-        let music = adapter::convert_music(music_model)?;
-        let sheets = adapter::convert_sheets(sheet_models)?;
+        let music = read_adapter::convert_music(music_model)?;
+        let sheets = read_adapter::convert_sheets(sheet_models)?;
         items.push(MusicWithSheets::new(music, sheets));
     }
 
@@ -119,7 +119,7 @@ pub async fn find_with_sheets(
     };
 
     Ok(MusicWithSheets::new(
-        adapter::convert_music(music_model)?,
-        adapter::convert_sheets(sheet_models)?,
+        read_adapter::convert_music(music_model)?,
+        read_adapter::convert_sheets(sheet_models)?,
     ))
 }
