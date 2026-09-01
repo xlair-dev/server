@@ -184,3 +184,55 @@ fn convert_difficulty(value: DbDifficulty) -> Difficulty {
         DbDifficulty::Hard => Difficulty::Hard,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::{TimeZone, Utc};
+    use domain::entity::{difficulty::Difficulty, genre::Genre, level::Level};
+    use sea_orm::ActiveValue;
+
+    use super::*;
+
+    fn music() -> Music {
+        Music::new(
+            "00000000-0000-0000-0000-000000000001".to_owned(),
+            "Song".to_owned(),
+            "Artist".to_owned(),
+            135.5,
+            Genre::ORIGINAL,
+            "jacket.png".to_owned(),
+            Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
+            false,
+        )
+    }
+
+    fn sheet() -> Sheet {
+        Sheet::new(
+            "00000000-0000-0000-0000-000000000002".to_owned(),
+            "00000000-0000-0000-0000-000000000001".to_owned(),
+            Difficulty::Hard,
+            Level::new(14, 7).unwrap(),
+            "Designer".to_owned(),
+        )
+    }
+
+    #[test]
+    fn insert_active_models_set_identity_fields() {
+        let music_model = music_active_model_for_insert(&music()).unwrap();
+        let sheet_model = sheet_active_model_for_insert(&sheet()).unwrap();
+
+        assert!(matches!(music_model.id, ActiveValue::Set(_)));
+        assert!(matches!(sheet_model.id, ActiveValue::Set(_)));
+        assert!(matches!(sheet_model.music_id, ActiveValue::Set(_)));
+    }
+
+    #[test]
+    fn update_active_models_keep_identity_fields_unchanged() {
+        let music_model = music_active_model_for_update(&music()).unwrap();
+        let sheet_model = sheet_active_model_for_update(&sheet()).unwrap();
+
+        assert!(matches!(music_model.id, ActiveValue::Unchanged(_)));
+        assert!(matches!(sheet_model.id, ActiveValue::Unchanged(_)));
+        assert!(matches!(sheet_model.music_id, ActiveValue::Unchanged(_)));
+    }
+}

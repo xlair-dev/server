@@ -132,7 +132,7 @@ fn build_music(
             "title, artist, jacket, and bpm must be valid".to_owned(),
         ));
     }
-    if input.genre != "ORIGINAL" {
+    if !matches!(input.genre, Genre::ORIGINAL) {
         return Err(MusicUsecaseError::InvalidInput(
             "genre is invalid".to_owned(),
         ));
@@ -146,29 +146,28 @@ fn build_music(
     let mut sheets = Vec::with_capacity(3);
     let mut seen = [false; 3];
     for sheet in sheets_input {
-        let difficulty = match sheet.data.difficulty.as_str() {
-            "easy" => {
+        let difficulty = match sheet.data.difficulty {
+            Difficulty::Easy => {
                 if seen[0] {
                     return invalid_sheet();
                 }
                 seen[0] = true;
                 Difficulty::Easy
             }
-            "normal" => {
+            Difficulty::Normal => {
                 if seen[1] {
                     return invalid_sheet();
                 }
                 seen[1] = true;
                 Difficulty::Normal
             }
-            "hard" => {
+            Difficulty::Hard => {
                 if seen[2] {
                     return invalid_sheet();
                 }
                 seen[2] = true;
                 Difficulty::Hard
             }
-            _ => return invalid_sheet(),
         };
         let level = level_from_value(sheet.data.level)?;
         let id = match (&existing, sheet.id) {
@@ -193,7 +192,7 @@ fn build_music(
             input.title,
             input.artist,
             input.bpm,
-            Genre::ORIGINAL,
+            input.genre,
             input.jacket,
             input.registration_date,
             input.is_test,
@@ -376,24 +375,24 @@ mod tests {
                 title: "Song".to_owned(),
                 artist: "Artist".to_owned(),
                 bpm: 135.5,
-                genre: "ORIGINAL".to_owned(),
+                genre: Genre::ORIGINAL,
                 jacket: "jacket.png".to_owned(),
                 registration_date: Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
                 is_test: false,
             },
             sheets: vec![
                 SheetDataInput {
-                    difficulty: "easy".to_owned(),
+                    difficulty: Difficulty::Easy,
                     level: 12.3,
                     notes_designer: "Easy Designer".to_owned(),
                 },
                 SheetDataInput {
-                    difficulty: "normal".to_owned(),
+                    difficulty: Difficulty::Normal,
                     level: 13.0,
                     notes_designer: "Normal Designer".to_owned(),
                 },
                 SheetDataInput {
-                    difficulty: "hard".to_owned(),
+                    difficulty: Difficulty::Hard,
                     level: 14.7,
                     notes_designer: "Hard Designer".to_owned(),
                 },
@@ -435,7 +434,7 @@ mod tests {
         };
         let usecase = MusicUsecase::new(Arc::new(repositories));
         let mut input = write_input();
-        input.sheets[1].difficulty = "easy".to_owned();
+        input.sheets[1].difficulty = Difficulty::Easy;
 
         assert!(matches!(
             usecase.create(input).await,

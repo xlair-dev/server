@@ -6,7 +6,7 @@ pub struct MusicDataInput {
     pub title: String,
     pub artist: String,
     pub bpm: f32,
-    pub genre: String,
+    pub genre: Genre,
     pub jacket: String,
     pub registration_date: DateTime<Utc>,
     pub is_test: bool,
@@ -14,7 +14,7 @@ pub struct MusicDataInput {
 
 #[derive(Debug)]
 pub struct SheetDataInput {
-    pub difficulty: String,
+    pub difficulty: Difficulty,
     pub level: f64,
     pub notes_designer: String,
 }
@@ -22,7 +22,7 @@ pub struct SheetDataInput {
 #[derive(Debug)]
 pub struct SheetInput {
     pub id: String,
-    pub difficulty: String,
+    pub difficulty: Difficulty,
     pub level: f64,
     pub notes_designer: String,
 }
