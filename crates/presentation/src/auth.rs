@@ -92,8 +92,8 @@ impl Authenticator {
         audience: String,
         dashboard_client_id: String,
     ) -> Self {
-        let issuer = issuer.trim_end_matches('/').to_owned();
-        let jwks_uri = format!("{issuer}/.well-known/jwks.json");
+        let issuer = format!("{}/", issuer.trim_end_matches('/'));
+        let jwks_uri = format!("{issuer}.well-known/jwks.json");
         Self {
             client,
             issuer,
@@ -230,7 +230,25 @@ fn principal_from_claims(
 
 #[cfg(test)]
 mod tests {
-    use super::{Claims, Principal, PrincipalKind, principal_from_claims};
+    use reqwest::Client;
+
+    use super::{Authenticator, Claims, Principal, PrincipalKind, principal_from_claims};
+
+    #[test]
+    fn normalizes_issuer_for_jwt_validation_and_jwks_lookup() {
+        let authenticator = Authenticator::new(
+            Client::new(),
+            "https://example.auth0.com".into(),
+            "https://api.example.com".into(),
+            "dashboard-client-id".into(),
+        );
+
+        assert_eq!(authenticator.issuer, "https://example.auth0.com/");
+        assert_eq!(
+            authenticator.jwks_uri,
+            "https://example.auth0.com/.well-known/jwks.json"
+        );
+    }
 
     #[test]
     fn converts_device_claims_to_device_principal() {
