@@ -267,6 +267,7 @@ mod tests {
     };
 
     use super::*;
+    use crate::model::music::SheetWriteInput;
 
     #[tokio::test]
     async fn list_all_returns_entries() {
@@ -339,5 +340,78 @@ mod tests {
             .expect("should succeed");
         assert_eq!(result.music.id, "music-1");
         assert!(result.sheets.is_empty());
+    }
+
+    fn write_input() -> MusicWriteInput {
+        MusicWriteInput {
+            title: "Song".to_owned(),
+            artist: "Artist".to_owned(),
+            bpm: 135.5,
+            genre: "ORIGINAL".to_owned(),
+            jacket: "jacket.png".to_owned(),
+            is_test: false,
+            sheets: vec![
+                SheetWriteInput {
+                    id: None,
+                    difficulty: "easy".to_owned(),
+                    level: 12.3,
+                    notes_designer: "Easy Designer".to_owned(),
+                },
+                SheetWriteInput {
+                    id: None,
+                    difficulty: "normal".to_owned(),
+                    level: 13.0,
+                    notes_designer: "Normal Designer".to_owned(),
+                },
+                SheetWriteInput {
+                    id: None,
+                    difficulty: "hard".to_owned(),
+                    level: 14.7,
+                    notes_designer: "Hard Designer".to_owned(),
+                },
+            ],
+        }
+    }
+
+    #[tokio::test]
+    async fn create_generates_ids_for_music_and_sheets() {
+        let mut music_repo = MockMusicRepository::new();
+        music_repo
+            .expect_insert_with_sheets()
+            .returning(|music| Box::pin(async move { Ok(music) }));
+
+        let repositories = MockRepositories {
+            user: MockUserRepository::new(),
+            record: MockRecordRepository::new(),
+            music: music_repo,
+        };
+        let usecase = MusicUsecase::new(Arc::new(repositories));
+
+        let result = usecase.create(write_input()).await.expect("should succeed");
+        assert!(uuid::Uuid::parse_str(&result.music.id).is_ok());
+        assert_eq!(result.sheets.len(), 3);
+        assert!(
+            result
+                .sheets
+                .iter()
+                .all(|sheet| uuid::Uuid::parse_str(&sheet.id).is_ok())
+        );
+    }
+
+    #[tokio::test]
+    async fn create_rejects_duplicate_difficulties() {
+        let repositories = MockRepositories {
+            user: MockUserRepository::new(),
+            record: MockRecordRepository::new(),
+            music: MockMusicRepository::new(),
+        };
+        let usecase = MusicUsecase::new(Arc::new(repositories));
+        let mut input = write_input();
+        input.sheets[1].difficulty = "easy".to_owned();
+
+        assert!(matches!(
+            usecase.create(input).await,
+            Err(MusicUsecaseError::InvalidInput(_))
+        ));
     }
 }
