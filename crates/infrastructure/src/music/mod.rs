@@ -1,5 +1,5 @@
-mod adapter;
 mod read;
+mod read_adapter;
 mod write;
 mod write_adapter;
 
