@@ -95,3 +95,31 @@ pub async fn list_with_sheets_page(
 
     Ok(MusicListPage { items, next_cursor })
 }
+
+/// Loads one music entry with all related sheets.
+pub async fn find_with_sheets(
+    db: &DbConn,
+    music_id: &str,
+) -> Result<MusicWithSheets, MusicRepositoryError> {
+    let id = uuid::Uuid::parse_str(music_id)
+        .map_err(|error| MusicRepositoryError::InternalError(AnyError::from(error)))?;
+    let result = entities::musics::Entity::find_by_id(id)
+        .find_with_related(entities::sheets::Entity)
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, music_id, "Failed to fetch music by id");
+            MusicRepositoryError::InternalError(AnyError::from(err))
+        })?
+        .into_iter()
+        .next();
+
+    let Some((music_model, sheet_models)) = result else {
+        return Err(MusicRepositoryError::NotFound(music_id.to_owned()));
+    };
+
+    Ok(MusicWithSheets::new(
+        adapter::convert_music(music_model)?,
+        adapter::convert_sheets(sheet_models)?,
+    ))
+}

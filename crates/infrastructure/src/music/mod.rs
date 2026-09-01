@@ -37,4 +37,13 @@ impl MusicRepository for MusicRepositoryImpl {
         debug!(limit, "Loading a page of music metadata via SeaORM");
         read::list_with_sheets_page(self.db.as_ref(), cursor, limit).await
     }
+
+    #[instrument(skip(self), fields(music_id = %music_id))]
+    async fn find_with_sheets(
+        &self,
+        music_id: &str,
+    ) -> Result<MusicWithSheets, MusicRepositoryError> {
+        debug!("Loading music metadata by id via SeaORM");
+        read::find_with_sheets(self.db.as_ref(), music_id).await
+    }
 }

@@ -8,6 +8,8 @@ use crate::entity::{music::Music, sheet::Sheet};
 
 #[derive(Debug, Error)]
 pub enum MusicRepositoryError {
+    #[error("Music not found: {0}")]
+    NotFound(String),
     #[error(transparent)]
     InternalError(#[from] anyhow::Error),
 }
@@ -47,4 +49,9 @@ pub trait MusicRepository: Send + Sync {
         cursor: Option<MusicListCursor>,
         limit: u64,
     ) -> impl Future<Output = Result<MusicListPage, MusicRepositoryError>> + Send;
+
+    fn find_with_sheets(
+        &self,
+        music_id: &str,
+    ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 }
