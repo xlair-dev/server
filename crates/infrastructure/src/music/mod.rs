@@ -1,6 +1,7 @@
 mod adapter;
 mod read;
 mod write;
+mod write_adapter;
 
 use std::sync::Arc;
 

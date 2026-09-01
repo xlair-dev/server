@@ -3,7 +3,7 @@ use domain::repository::music::{MusicRepositoryError, MusicWithSheets};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, QueryFilter, TransactionTrait};
 use tracing::error;
 
-use super::adapter::{
+use super::write_adapter::{
     music_active_model_for_insert, music_active_model_for_update, sheet_active_model_for_insert,
     sheet_active_model_for_update,
 };
