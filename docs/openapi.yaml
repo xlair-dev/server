@@ -761,6 +761,10 @@ components:
         jacket:
           type: string
           description: ジャケット画像。プロジェクトのルートからの相対パス、または xlair.dev/public/ からの絶対パス
+        registrationDate:
+          type: string
+          format: date-time
+          description: 運用上の楽曲登録日
         isTest:
           type: boolean
           description: テスト楽曲かどうか
@@ -770,6 +774,7 @@ components:
         - bpm
         - genre
         - jacket
+        - registrationDate
         - isTest
     music:
       allOf:
@@ -806,7 +811,7 @@ components:
         - difficulty
         - level
         - notesDesigner
-    sheet:
+    sheetWithMusicId:
       allOf:
         - $ref: "#/components/schemas/sheetData"
         - type: object
@@ -839,7 +844,7 @@ components:
         sheets:
           type: array
           items:
-            $ref: "#/components/schemas/sheet"
+            $ref: "#/components/schemas/sheetWithMusicId"
       required:
         - music
         - sheets

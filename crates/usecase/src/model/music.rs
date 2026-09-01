@@ -8,6 +8,7 @@ pub struct MusicWriteInput {
     pub bpm: f32,
     pub genre: String,
     pub jacket: String,
+    pub registration_date: DateTime<Utc>,
     pub is_test: bool,
     pub sheets: Vec<SheetWriteInput>,
 }

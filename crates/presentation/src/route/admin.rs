@@ -49,6 +49,7 @@ pub struct MusicWriteRequest {
     pub bpm: f32,
     pub genre: String,
     pub jacket: String,
+    pub registration_date: String,
     pub is_test: bool,
     pub sheets: Vec<SheetWriteRequest>,
 }
@@ -62,17 +63,23 @@ pub struct SheetWriteRequest {
     pub notes_designer: String,
 }
 
-impl From<MusicWriteRequest> for MusicWriteInput {
-    fn from(request: MusicWriteRequest) -> Self {
-        Self {
+impl TryFrom<MusicWriteRequest> for MusicWriteInput {
+    type Error = AppError;
+
+    fn try_from(request: MusicWriteRequest) -> Result<Self, Self::Error> {
+        let registration_date = DateTime::parse_from_rfc3339(&request.registration_date)
+            .map_err(|_| AppError::bad_request("registrationDate is invalid"))?
+            .with_timezone(&Utc);
+        Ok(Self {
             title: request.title,
             artist: request.artist,
             bpm: request.bpm,
             genre: request.genre,
             jacket: request.jacket,
+            registration_date,
             is_test: request.is_test,
             sheets: request.sheets.into_iter().map(Into::into).collect(),
-        }
+        })
     }
 }
 
@@ -118,7 +125,7 @@ pub async fn handle_create_music(
     State(state): State<crate::state::State>,
     Json(request): Json<MusicWriteRequest>,
 ) -> Result<(StatusCode, Json<SyncItemResponse>), AppError> {
-    let music = state.usecases.music.create(request.into()).await?;
+    let music = state.usecases.music.create(request.try_into()?).await?;
     Ok((StatusCode::CREATED, Json(SyncItemResponse::from(music))))
 }
 
@@ -130,7 +137,7 @@ pub async fn handle_update_music(
     let music = state
         .usecases
         .music
-        .update(music_id, request.into())
+        .update(music_id, request.try_into()?)
         .await?;
     Ok(Json(SyncItemResponse::from(music)))
 }

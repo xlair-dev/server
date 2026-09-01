@@ -66,7 +66,13 @@ impl<R: Repositories> MusicUsecase<R> {
         &self,
         input: MusicWriteInput,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
-        let music = build_music(input, uuid::Uuid::new_v4().to_string(), Utc::now(), None)?;
+        let registration_date = input.registration_date;
+        let music = build_music(
+            input,
+            uuid::Uuid::new_v4().to_string(),
+            registration_date,
+            None,
+        )?;
         let created = self.repositories.music().insert_with_sheets(music).await?;
         Ok(created.into())
     }
@@ -101,12 +107,8 @@ impl<R: Repositories> MusicUsecase<R> {
                 "sheet ids must match the existing sheets".to_owned(),
             ));
         }
-        let music = build_music(
-            input,
-            music_id,
-            *existing.music.registration_date(),
-            Some(existing),
-        )?;
+        let registration_date = input.registration_date;
+        let music = build_music(input, music_id, registration_date, Some(existing))?;
         let updated = self.repositories.music().update_with_sheets(music).await?;
         Ok(updated.into())
     }
@@ -349,6 +351,7 @@ mod tests {
             bpm: 135.5,
             genre: "ORIGINAL".to_owned(),
             jacket: "jacket.png".to_owned(),
+            registration_date: Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
             is_test: false,
             sheets: vec![
                 SheetWriteInput {
