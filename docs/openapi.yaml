@@ -155,7 +155,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/adminMusicCreateRequest"
+              allOf:
+                - $ref: "#/components/schemas/musicData"
+                - type: object
+                  properties:
+                    sheets:
+                      type: array
+                      minItems: 3
+                      maxItems: 3
+                      items:
+                        $ref: "#/components/schemas/sheetData"
+                  required:
+                    - sheets
       responses:
         "201":
           description: 登録された楽曲と譜面
@@ -259,7 +270,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/adminMusicUpdateRequest"
+              allOf:
+                - $ref: "#/components/schemas/musicData"
+                - type: object
+                  properties:
+                    sheets:
+                      type: array
+                      minItems: 3
+                      maxItems: 3
+                      items:
+                        $ref: "#/components/schemas/sheetWithId"
+                  required:
+                    - sheets
       responses:
         "200":
           description: 更新された楽曲と譜面
@@ -718,12 +740,9 @@ components:
         - clearType
         - playCount
         - updatedAt
-    music:
+    musicData:
       type: object
       properties:
-        id:
-          type: string
-          description: 楽曲のID
         title:
           type: string
           description: タイトル
@@ -736,35 +755,40 @@ components:
           description: BPM
         genre:
           type: string
+          enum:
+            - ORIGINAL
           description: ジャンル
         jacket:
           type: string
           description: ジャケット画像。プロジェクトのルートからの相対パス、または xlair.dev/public/ からの絶対パス
-        registrationDate:
-          type: string
-          format: date-time
-          description: 楽曲追加日
         isTest:
           type: boolean
           description: テスト楽曲かどうか
       required:
-        - id
         - title
         - artist
         - bpm
         - genre
         - jacket
-        - registrationDate
         - isTest
-    sheet:
+    music:
+      allOf:
+        - $ref: "#/components/schemas/musicData"
+        - type: object
+          properties:
+            id:
+              type: string
+              description: 楽曲のID
+            registrationDate:
+              type: string
+              format: date-time
+              description: 楽曲追加日
+          required:
+            - id
+            - registrationDate
+    sheetData:
       type: object
       properties:
-        id:
-          type: string
-          description: 譜面のID
-        musicId:
-          type: string
-          description: 楽曲のID
         difficulty:
           type: string
           enum:
@@ -779,11 +803,34 @@ components:
           type: string
           description: 譜面のノーツデザイナー
       required:
-        - id
-        - musicId
         - difficulty
         - level
         - notesDesigner
+    sheet:
+      allOf:
+        - $ref: "#/components/schemas/sheetData"
+        - type: object
+          properties:
+            id:
+              type: string
+              description: 譜面のID
+            musicId:
+              type: string
+              description: 楽曲のID
+          required:
+            - id
+            - musicId
+    sheetWithId:
+      allOf:
+        - $ref: "#/components/schemas/sheetData"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: 譜面のID
+          required:
+            - id
     musicWithSheets:
       type: object
       properties:
@@ -796,108 +843,6 @@ components:
       required:
         - music
         - sheets
-    adminMusicCreateRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        artist:
-          type: string
-        bpm:
-          type: number
-          format: float
-        genre:
-          type: string
-          enum:
-            - ORIGINAL
-        jacket:
-          type: string
-        isTest:
-          type: boolean
-        sheets:
-          type: array
-          minItems: 3
-          maxItems: 3
-          items:
-            $ref: "#/components/schemas/adminSheetCreateRequest"
-      required:
-        - title
-        - artist
-        - bpm
-        - genre
-        - jacket
-        - isTest
-        - sheets
-    adminMusicUpdateRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        artist:
-          type: string
-        bpm:
-          type: number
-          format: float
-        genre:
-          type: string
-          enum:
-            - ORIGINAL
-        jacket:
-          type: string
-        isTest:
-          type: boolean
-        sheets:
-          type: array
-          minItems: 3
-          maxItems: 3
-          items:
-            $ref: "#/components/schemas/adminSheetUpdateRequest"
-      required:
-        - title
-        - artist
-        - bpm
-        - genre
-        - jacket
-        - isTest
-        - sheets
-    adminSheetCreateRequest:
-      type: object
-      properties:
-        difficulty:
-          type: string
-          enum:
-            - easy
-            - normal
-            - hard
-        level:
-          type: number
-        notesDesigner:
-          type: string
-      required:
-        - difficulty
-        - level
-        - notesDesigner
-    adminSheetUpdateRequest:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        difficulty:
-          type: string
-          enum:
-            - easy
-            - normal
-            - hard
-        level:
-          type: number
-        notesDesigner:
-          type: string
-      required:
-        - id
-        - difficulty
-        - level
-        - notesDesigner
     adminMusicListResponse:
       type: object
       properties:
