@@ -70,6 +70,10 @@ impl From<UserUsecaseError> for AppError {
 impl From<MusicRepositoryError> for AppError {
     fn from(error: MusicRepositoryError) -> Self {
         match error {
+            MusicRepositoryError::NotFound(id) => AppError {
+                status_code: axum::http::StatusCode::NOT_FOUND,
+                message: format!("Music not found: {id}"),
+            },
             MusicRepositoryError::InternalError(err) => AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 message: err.to_string(),

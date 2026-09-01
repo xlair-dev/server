@@ -183,6 +183,36 @@ paths:
           description: Forbidden - The authenticated user is not an administrator
         "500":
           description: Internal server error
+  /admin/musics/{musicId}:
+    get:
+      tags:
+        - admin
+      summary: 楽曲と譜面の詳細を取得
+      security:
+        - userAuth: []
+      parameters:
+        - name: musicId
+          in: path
+          description: 楽曲のID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 楽曲と譜面の詳細
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "404":
+          description: Not found - Music not found
+        "500":
+          description: Internal server error
   /users/{userId}/credits/increment:
     post:
       tags:

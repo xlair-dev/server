@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Query, State},
+    extract::{Path, Query, State},
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
@@ -56,6 +56,14 @@ pub async fn handle_list_musics(
     let items = page.items.into_iter().map(SyncItemResponse::from).collect();
 
     Ok(Json(MusicListResponse { items, next_cursor }))
+}
+
+pub async fn handle_get_music(
+    State(state): State<crate::state::State>,
+    Path(music_id): Path<String>,
+) -> Result<Json<SyncItemResponse>, AppError> {
+    let music = state.usecases.music.find_by_id(music_id).await?;
+    Ok(Json(SyncItemResponse::from(music)))
 }
 
 fn encode_cursor(cursor: MusicListCursor) -> Result<String, AppError> {
