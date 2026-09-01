@@ -251,7 +251,7 @@ paths:
           description: Not found - Music not found
         "500":
           description: Internal server error
-    put:
+    post:
       tags:
         - admin
       summary: 楽曲と譜面を更新

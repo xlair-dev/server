@@ -50,7 +50,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         )
         .route(
             "/musics/{musicId}",
-            get(admin::handle_get_music).put(admin::handle_update_music),
+            get(admin::handle_get_music).post(admin::handle_update_music),
         )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
 
@@ -93,7 +93,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin().parse::<HeaderValue>().unwrap())
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
-        .allow_headers([header::CONTENT_TYPE]);
+        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
 
     Router::new()
         .merge(private_routes)
