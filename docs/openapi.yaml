@@ -784,13 +784,8 @@ components:
             id:
               type: string
               description: 楽曲のID
-            registrationDate:
-              type: string
-              format: date-time
-              description: 楽曲追加日
           required:
             - id
-            - registrationDate
     sheetData:
       type: object
       properties:
