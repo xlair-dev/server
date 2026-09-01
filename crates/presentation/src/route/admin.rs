@@ -8,7 +8,9 @@ use chrono::{DateTime, Utc};
 use domain::repository::music::MusicListCursor;
 use serde::{Deserialize, Serialize};
 use tracing::info;
-use usecase::model::music::{MusicWriteInput, SheetWriteInput};
+use usecase::model::music::{
+    CreateMusicInput, MusicDataInput, SheetDataInput, SheetInput, UpdateMusicInput,
+};
 
 use crate::{error::AppError, model::sync::SyncItemResponse};
 
@@ -63,34 +65,83 @@ pub struct SheetWriteRequest {
     pub notes_designer: String,
 }
 
-impl TryFrom<MusicWriteRequest> for MusicWriteInput {
+impl MusicWriteRequest {
+    fn parse_music_data(self) -> Result<(MusicDataInput, Vec<SheetWriteRequest>), AppError> {
+        let registration_date = DateTime::parse_from_rfc3339(&self.registration_date)
+            .map_err(|_| AppError::bad_request("registrationDate is invalid"))?
+            .with_timezone(&Utc);
+        Ok((
+            MusicDataInput {
+                title: self.title,
+                artist: self.artist,
+                bpm: self.bpm,
+                genre: self.genre,
+                jacket: self.jacket,
+                registration_date,
+                is_test: self.is_test,
+            },
+            self.sheets,
+        ))
+    }
+}
+
+impl TryFrom<MusicWriteRequest> for CreateMusicInput {
     type Error = AppError;
 
     fn try_from(request: MusicWriteRequest) -> Result<Self, Self::Error> {
-        let registration_date = DateTime::parse_from_rfc3339(&request.registration_date)
-            .map_err(|_| AppError::bad_request("registrationDate is invalid"))?
-            .with_timezone(&Utc);
+        let (music, sheets) = request.parse_music_data()?;
         Ok(Self {
-            title: request.title,
-            artist: request.artist,
-            bpm: request.bpm,
-            genre: request.genre,
-            jacket: request.jacket,
-            registration_date,
-            is_test: request.is_test,
-            sheets: request.sheets.into_iter().map(Into::into).collect(),
+            music,
+            sheets: sheets
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
         })
     }
 }
 
-impl From<SheetWriteRequest> for SheetWriteInput {
-    fn from(request: SheetWriteRequest) -> Self {
-        Self {
-            id: request.id,
+impl TryFrom<MusicWriteRequest> for UpdateMusicInput {
+    type Error = AppError;
+
+    fn try_from(request: MusicWriteRequest) -> Result<Self, Self::Error> {
+        let (music, sheets) = request.parse_music_data()?;
+        Ok(Self {
+            music,
+            sheets: sheets
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+impl TryFrom<SheetWriteRequest> for SheetDataInput {
+    type Error = AppError;
+
+    fn try_from(request: SheetWriteRequest) -> Result<Self, Self::Error> {
+        if request.id.is_some() {
+            return Err(AppError::bad_request("sheet id is not allowed on create"));
+        }
+        Ok(Self {
             difficulty: request.difficulty,
             level: request.level,
             notes_designer: request.notes_designer,
-        }
+        })
+    }
+}
+
+impl TryFrom<SheetWriteRequest> for SheetInput {
+    type Error = AppError;
+
+    fn try_from(request: SheetWriteRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: request
+                .id
+                .ok_or_else(|| AppError::bad_request("sheet id is required on update"))?,
+            difficulty: request.difficulty,
+            level: request.level,
+            notes_designer: request.notes_designer,
+        })
     }
 }
 

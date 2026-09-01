@@ -1,6 +1,5 @@
 use std::{collections::HashSet, sync::Arc};
 
-use chrono::Utc;
 use domain::{
     entity::{difficulty::Difficulty, genre::Genre, level::Level, music::Music, sheet::Sheet},
     repository::{
@@ -10,7 +9,10 @@ use domain::{
 };
 use thiserror::Error;
 
-use crate::model::music::{MusicWithSheetsDto, MusicWriteInput};
+use crate::model::music::{
+    CreateMusicInput, MusicDataInput, MusicWithSheetsDto, SheetDataInput, SheetInput,
+    UpdateMusicInput,
+};
 
 #[derive(Debug, Error)]
 pub enum MusicUsecaseError {
@@ -64,13 +66,12 @@ impl<R: Repositories> MusicUsecase<R> {
 
     pub async fn create(
         &self,
-        input: MusicWriteInput,
+        input: CreateMusicInput,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
-        let registration_date = input.registration_date;
         let music = build_music(
-            input,
+            input.music,
             uuid::Uuid::new_v4().to_string(),
-            registration_date,
+            input.sheets.into_iter().map(Into::into).collect(),
             None,
         )?;
         let created = self.repositories.music().insert_with_sheets(music).await?;
@@ -80,7 +81,7 @@ impl<R: Repositories> MusicUsecase<R> {
     pub async fn update(
         &self,
         music_id: String,
-        input: MusicWriteInput,
+        input: UpdateMusicInput,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
         if uuid::Uuid::parse_str(&music_id).is_err() {
             return Err(MusicUsecaseError::InvalidInput(
@@ -97,27 +98,28 @@ impl<R: Repositories> MusicUsecase<R> {
             .iter()
             .map(|sheet| sheet.id().as_str())
             .collect();
-        let requested_sheet_ids: HashSet<&str> = input
-            .sheets
-            .iter()
-            .filter_map(|sheet| sheet.id.as_deref())
-            .collect();
+        let requested_sheet_ids: HashSet<&str> =
+            input.sheets.iter().map(|sheet| sheet.id.as_str()).collect();
         if existing_sheet_ids != requested_sheet_ids {
             return Err(MusicUsecaseError::InvalidInput(
                 "sheet ids must match the existing sheets".to_owned(),
             ));
         }
-        let registration_date = input.registration_date;
-        let music = build_music(input, music_id, registration_date, Some(existing))?;
+        let music = build_music(
+            input.music,
+            music_id,
+            input.sheets.into_iter().map(Into::into).collect(),
+            Some(existing),
+        )?;
         let updated = self.repositories.music().update_with_sheets(music).await?;
         Ok(updated.into())
     }
 }
 
 fn build_music(
-    input: MusicWriteInput,
+    input: MusicDataInput,
     music_id: String,
-    registration_date: chrono::DateTime<Utc>,
+    sheets_input: Vec<SheetBuildInput>,
     existing: Option<MusicWithSheets>,
 ) -> Result<MusicWithSheets, MusicUsecaseError> {
     if input.title.trim().is_empty()
@@ -135,7 +137,7 @@ fn build_music(
             "genre is invalid".to_owned(),
         ));
     }
-    if input.sheets.len() != 3 {
+    if sheets_input.len() != 3 {
         return Err(MusicUsecaseError::InvalidInput(
             "exactly one sheet for each difficulty is required".to_owned(),
         ));
@@ -143,8 +145,8 @@ fn build_music(
 
     let mut sheets = Vec::with_capacity(3);
     let mut seen = [false; 3];
-    for sheet in input.sheets {
-        let difficulty = match sheet.difficulty.as_str() {
+    for sheet in sheets_input {
+        let difficulty = match sheet.data.difficulty.as_str() {
             "easy" => {
                 if seen[0] {
                     return invalid_sheet();
@@ -168,7 +170,7 @@ fn build_music(
             }
             _ => return invalid_sheet(),
         };
-        let level = level_from_value(sheet.level)?;
+        let level = level_from_value(sheet.data.level)?;
         let id = match (&existing, sheet.id) {
             (None, None) => uuid::Uuid::new_v4().to_string(),
             (Some(_), Some(id)) if uuid::Uuid::parse_str(&id).is_ok() => id,
@@ -179,7 +181,7 @@ fn build_music(
             music_id.clone(),
             difficulty,
             level,
-            non_empty(sheet.notes_designer, "notesDesigner")?,
+            non_empty(sheet.data.notes_designer, "notesDesigner")?,
         ));
     }
     if seen != [true; 3] {
@@ -193,11 +195,35 @@ fn build_music(
             input.bpm,
             Genre::ORIGINAL,
             input.jacket,
-            registration_date,
+            input.registration_date,
             input.is_test,
         ),
         sheets,
     ))
+}
+
+struct SheetBuildInput {
+    id: Option<String>,
+    data: SheetDataInput,
+}
+
+impl From<SheetDataInput> for SheetBuildInput {
+    fn from(data: SheetDataInput) -> Self {
+        Self { id: None, data }
+    }
+}
+
+impl From<SheetInput> for SheetBuildInput {
+    fn from(value: SheetInput) -> Self {
+        Self {
+            id: Some(value.id),
+            data: SheetDataInput {
+                difficulty: value.difficulty,
+                level: value.level,
+                notes_designer: value.notes_designer,
+            },
+        }
+    }
 }
 
 fn invalid_sheet<T>() -> Result<T, MusicUsecaseError> {
@@ -257,7 +283,7 @@ impl From<MusicWithSheets> for MusicWithSheetsDto {
 mod tests {
     use std::sync::Arc;
 
-    use chrono::Utc;
+    use chrono::{TimeZone, Utc};
     use domain::{
         entity::{difficulty::Difficulty, genre::Genre, level::Level, music::Music, sheet::Sheet},
         repository::{
@@ -269,7 +295,7 @@ mod tests {
     };
 
     use super::*;
-    use crate::model::music::SheetWriteInput;
+    use crate::model::music::{CreateMusicInput, MusicDataInput, SheetDataInput};
 
     #[tokio::test]
     async fn list_all_returns_entries() {
@@ -344,30 +370,29 @@ mod tests {
         assert!(result.sheets.is_empty());
     }
 
-    fn write_input() -> MusicWriteInput {
-        MusicWriteInput {
-            title: "Song".to_owned(),
-            artist: "Artist".to_owned(),
-            bpm: 135.5,
-            genre: "ORIGINAL".to_owned(),
-            jacket: "jacket.png".to_owned(),
-            registration_date: Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
-            is_test: false,
+    fn write_input() -> CreateMusicInput {
+        CreateMusicInput {
+            music: MusicDataInput {
+                title: "Song".to_owned(),
+                artist: "Artist".to_owned(),
+                bpm: 135.5,
+                genre: "ORIGINAL".to_owned(),
+                jacket: "jacket.png".to_owned(),
+                registration_date: Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
+                is_test: false,
+            },
             sheets: vec![
-                SheetWriteInput {
-                    id: None,
+                SheetDataInput {
                     difficulty: "easy".to_owned(),
                     level: 12.3,
                     notes_designer: "Easy Designer".to_owned(),
                 },
-                SheetWriteInput {
-                    id: None,
+                SheetDataInput {
                     difficulty: "normal".to_owned(),
                     level: 13.0,
                     notes_designer: "Normal Designer".to_owned(),
                 },
-                SheetWriteInput {
-                    id: None,
+                SheetDataInput {
                     difficulty: "hard".to_owned(),
                     level: 14.7,
                     notes_designer: "Hard Designer".to_owned(),
