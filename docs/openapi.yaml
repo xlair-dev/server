@@ -279,7 +279,7 @@ paths:
                       minItems: 3
                       maxItems: 3
                       items:
-                        $ref: "#/components/schemas/sheetWithId"
+                        $ref: "#/components/schemas/sheet"
                   required:
                     - sheets
       responses:
@@ -825,7 +825,7 @@ components:
           required:
             - id
             - musicId
-    sheetWithId:
+    sheet:
       allOf:
         - $ref: "#/components/schemas/sheetData"
         - type: object
