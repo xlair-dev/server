@@ -6,13 +6,96 @@ use domain::{
     entity::{difficulty::Difficulty, genre::Genre, level::Level, music::Music, sheet::Sheet},
     repository::music::MusicRepositoryError,
 };
-use sea_orm::prelude::Decimal;
+use sea_orm::{
+    ActiveValue,
+    prelude::{Decimal, Uuid},
+};
 use tracing::warn;
 
 use crate::entities::{
-    musics::Model as MusicModel, sea_orm_active_enums::Difficulty as DbDifficulty,
-    sheets::Model as SheetModel,
+    musics::{ActiveModel as MusicActiveModel, Model as MusicModel},
+    sea_orm_active_enums::Difficulty as DbDifficulty,
+    sheets::{ActiveModel as SheetActiveModel, Model as SheetModel},
 };
+
+pub fn music_active_model_for_insert(
+    music: &Music,
+) -> Result<MusicActiveModel, MusicRepositoryError> {
+    music_active_model(music, ActiveValue::Set(parse_uuid(music.id())?))
+}
+
+pub fn music_active_model_for_update(
+    music: &Music,
+) -> Result<MusicActiveModel, MusicRepositoryError> {
+    music_active_model(music, ActiveValue::Unchanged(parse_uuid(music.id())?))
+}
+
+fn music_active_model(
+    music: &Music,
+    id: ActiveValue<Uuid>,
+) -> Result<MusicActiveModel, MusicRepositoryError> {
+    Ok(MusicActiveModel {
+        id,
+        title: ActiveValue::Set(music.title().to_owned()),
+        artist: ActiveValue::Set(music.artist().to_owned()),
+        bpm: ActiveValue::Set(decimal(*music.bpm())?),
+        genre: ActiveValue::Set(0),
+        jacket: ActiveValue::Set(music.jacket_image_url().to_owned()),
+        registration_date: ActiveValue::Set((*music.registration_date()).into()),
+        is_test: ActiveValue::Set(*music.is_test()),
+    })
+}
+
+pub fn sheet_active_model_for_insert(
+    sheet: &Sheet,
+) -> Result<SheetActiveModel, MusicRepositoryError> {
+    sheet_active_model(
+        sheet,
+        ActiveValue::Set(parse_uuid(sheet.id())?),
+        ActiveValue::Set(parse_uuid(sheet.music_id())?),
+    )
+}
+
+pub fn sheet_active_model_for_update(
+    sheet: &Sheet,
+) -> Result<SheetActiveModel, MusicRepositoryError> {
+    sheet_active_model(
+        sheet,
+        ActiveValue::Unchanged(parse_uuid(sheet.id())?),
+        ActiveValue::Unchanged(parse_uuid(sheet.music_id())?),
+    )
+}
+
+fn sheet_active_model(
+    sheet: &Sheet,
+    id: ActiveValue<Uuid>,
+    music_id: ActiveValue<Uuid>,
+) -> Result<SheetActiveModel, MusicRepositoryError> {
+    let level = sheet.level().components();
+    let difficulty = match sheet.difficulty() {
+        Difficulty::Easy => DbDifficulty::Easy,
+        Difficulty::Normal => DbDifficulty::Normal,
+        Difficulty::Hard => DbDifficulty::Hard,
+    };
+    Ok(SheetActiveModel {
+        id,
+        music_id,
+        difficulty: ActiveValue::Set(difficulty),
+        level: ActiveValue::Set((level.0 * 10 + level.1) as i32),
+        notes_designer: ActiveValue::Set(sheet.notes_designer().to_owned()),
+    })
+}
+
+fn decimal(value: f32) -> Result<Decimal, MusicRepositoryError> {
+    value.to_string().parse().map_err(|error| {
+        MusicRepositoryError::InternalError(AnyError::msg(format!("invalid BPM: {error}")))
+    })
+}
+
+fn parse_uuid(value: &str) -> Result<Uuid, MusicRepositoryError> {
+    Uuid::parse_str(value)
+        .map_err(|error| MusicRepositoryError::InternalError(AnyError::from(error)))
+}
 
 pub fn convert_music(model: MusicModel) -> Result<Music, MusicRepositoryError> {
     let bpm = convert_bpm(model.bpm)?;
