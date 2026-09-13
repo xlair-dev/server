@@ -14,6 +14,7 @@ impl MigrationTrait for Migration {
                  ALTER TYPE difficulty RENAME VALUE 'hard' TO 'master';",
             )
             .await
+            .map(|_| ())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
@@ -25,5 +26,6 @@ impl MigrationTrait for Migration {
                  ALTER TYPE difficulty RENAME VALUE 'master' TO 'hard';",
             )
             .await
+            .map(|_| ())
     }
 }
