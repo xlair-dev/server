@@ -91,7 +91,3 @@ pub fn r2_secret_access_key() -> String {
 pub fn r2_public_base_url() -> String {
     env::var("R2_PUBLIC_BASE_URL").expect("R2_PUBLIC_BASE_URL must be set")
 }
-
-pub fn r2_upload_secret() -> String {
-    env::var("R2_UPLOAD_SECRET").expect("R2_UPLOAD_SECRET must be set")
-}

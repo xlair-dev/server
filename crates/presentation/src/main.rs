@@ -19,7 +19,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::r2_access_key_id(),
         env::r2_secret_access_key(),
         env::r2_public_base_url(),
-        env::r2_upload_secret(),
     )
     .await;
     let state = State::new(config, repositories).with_jacket_storage(jacket_storage);

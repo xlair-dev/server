@@ -1,5 +1,6 @@
 use axum::{
     Router,
+    extract::DefaultBodyLimit,
     http::{HeaderValue, Method, header},
     middleware,
     routing::{get, patch, post},
@@ -54,18 +55,12 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
     let admin_routes = admin_routes
+        .route("/jackets", post(admin::handle_upload_jacket))
         .route(
-            "/jackets/upload-url",
-            post(admin::handle_create_jacket_upload_url),
+            "/jackets/{jacketId}",
+            axum::routing::delete(admin::handle_delete_jacket),
         )
-        .route(
-            "/jackets/{uploadId}/finalize",
-            post(admin::handle_finalize_jacket_upload),
-        )
-        .route(
-            "/jackets/{uploadId}",
-            axum::routing::delete(admin::handle_delete_jacket_upload),
-        );
+        .layer(DefaultBodyLimit::max(6 * 1024 * 1024));
 
     let private_routes = Router::new()
         .nest("/users", users)

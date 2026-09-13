@@ -299,90 +299,60 @@ paths:
           description: Not found - Music not found
         "500":
           description: Internal server error
-  /admin/jackets/upload-url:
+  /admin/jackets:
     post:
       tags:
         - admin
-      summary: 楽曲ジャケットのアップロード URL を発行
+      summary: 楽曲ジャケットをアップロード
       security:
         - userAuth: []
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: "#/components/schemas/jacketUploadRequest"
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JPEG、PNG、または WebP の画像（5 MiB 以下）
       responses:
         "200":
-          description: R2へのアップロード URL
+          description: アップロードされたジャケット
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/jacketUploadResponse"
         "400":
-          description: Bad request - Invalid content type
+          description: Bad request - Invalid jacket image
         "401":
           description: Unauthorized - Invalid access token
         "403":
           description: Forbidden - The authenticated user is not an administrator
         "500":
           description: Internal server error
-  /admin/jackets/{uploadId}/finalize:
-    post:
-      tags:
-        - admin
-      summary: 楽曲ジャケットのアップロードを確定
-      security:
-        - userAuth: []
-      parameters:
-        - name: uploadId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/jacketFinalizeRequest"
-      responses:
-        "204":
-          description: アップロードが検証済み
-        "400":
-          description: Bad request - Invalid upload
-        "401":
-          description: Unauthorized - Invalid access token
-        "403":
-          description: Forbidden - The authenticated user is not an administrator
-        "500":
-          description: Internal server error
-  /admin/jackets/{uploadId}:
+  /admin/jackets/{jacketId}:
     delete:
       tags:
         - admin
-      summary: 未確定の楽曲ジャケットを削除
+      summary: 楽曲ジャケットを削除
       security:
         - userAuth: []
       parameters:
-        - name: uploadId
+        - name: jacketId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/jacketFinalizeRequest"
       responses:
         "204":
-          description: 未確定アップロードを削除
+          description: ジャケットを削除
         "400":
-          description: Bad request - Invalid upload
+          description: Bad request - Invalid jacket ID
         "401":
           description: Unauthorized - Invalid access token
         "403":
@@ -830,56 +800,20 @@ components:
         - clearType
         - playCount
         - updatedAt
-    jacketUploadRequest:
-      type: object
-      properties:
-        contentType:
-          type: string
-          enum:
-            - image/jpeg
-            - image/png
-            - image/webp
-          description: アップロードする画像の MIME タイプ
-      required:
-        - contentType
     jacketUploadResponse:
       type: object
       properties:
-        uploadId:
+        jacketId:
           type: string
           format: uuid
-          description: 未確定アップロードの ID
-        uploadUrl:
-          type: string
-          format: uri
-          description: R2 への期限付き PUT URL
+          description: ジャケットの ID
         jacketUrl:
           type: string
           format: uri
           description: 楽曲に設定する公開 URL
-        cleanupToken:
-          type: string
-          description: 未確定アップロードの cleanup 用トークン
       required:
-        - uploadId
-        - uploadUrl
+        - jacketId
         - jacketUrl
-        - cleanupToken
-    jacketFinalizeRequest:
-      type: object
-      properties:
-        contentType:
-          type: string
-          enum:
-            - image/jpeg
-            - image/png
-            - image/webp
-        cleanupToken:
-          type: string
-          description: 未確定アップロードの cleanup 用トークン
-      required:
-        - contentType
-        - cleanupToken
     musicData:
       type: object
       properties:
