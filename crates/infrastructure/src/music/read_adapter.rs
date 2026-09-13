@@ -63,9 +63,13 @@ fn convert_bpm(bpm: Decimal) -> Result<f32, MusicRepositoryError> {
 fn convert_genre(value: i32) -> Result<Genre, MusicRepositoryError> {
     match value {
         0 => Ok(Genre::ORIGINAL),
+        1 => Ok(Genre::EXTERNAL),
+        2 => Ok(Genre::OTHER),
         other => {
-            warn!(value = other, "Unknown genre value; defaulting to ORIGINAL");
-            Ok(Genre::ORIGINAL)
+            warn!(value = other, "Unknown genre value returned from database");
+            Err(MusicRepositoryError::InternalError(anyhow!(
+                "unknown genre value: {other}"
+            )))
         }
     }
 }

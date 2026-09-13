@@ -176,11 +176,6 @@ fn build_music(
             "title, artist, and bpm must be valid".to_owned(),
         ));
     }
-    if !matches!(input.genre, Genre::ORIGINAL) {
-        return Err(MusicUsecaseError::InvalidInput(
-            "genre is invalid".to_owned(),
-        ));
-    }
     if sheets_input.len() != 3 {
         return Err(MusicUsecaseError::InvalidInput(
             "exactly one sheet for each difficulty is required".to_owned(),

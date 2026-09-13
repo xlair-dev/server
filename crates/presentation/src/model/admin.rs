@@ -79,6 +79,8 @@ impl MusicMetadataRequest {
             .with_timezone(&Utc);
         let genre = match request.genre.as_str() {
             "ORIGINAL" => Genre::ORIGINAL,
+            "EXTERNAL" => Genre::EXTERNAL,
+            "OTHER" => Genre::OTHER,
             _ => return Err(AppError::bad_request("genre is invalid")),
         };
         Ok(MusicDataInput {

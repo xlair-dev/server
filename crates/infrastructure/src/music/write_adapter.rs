@@ -45,7 +45,11 @@ fn music_active_model(
         title: ActiveValue::Set(music.title().to_owned()),
         artist: ActiveValue::Set(music.artist().to_owned()),
         bpm: ActiveValue::Set(decimal(*music.bpm())?),
-        genre: ActiveValue::Set(0),
+        genre: ActiveValue::Set(match music.genre() {
+            domain::entity::genre::Genre::ORIGINAL => 0,
+            domain::entity::genre::Genre::EXTERNAL => 1,
+            domain::entity::genre::Genre::OTHER => 2,
+        }),
         jacket: ActiveValue::Set(music.jacket_image_url().clone()),
         registration_date: ActiveValue::Set((*music.registration_date()).into()),
         is_test: ActiveValue::Set(*music.is_test()),
