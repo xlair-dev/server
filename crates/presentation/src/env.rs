@@ -12,7 +12,7 @@ pub fn app_port() -> String {
 pub fn allowed_origin() -> String {
     #[cfg(test)]
     {
-        return env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "http://localhost:3000".to_owned());
+        env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "http://localhost:3000".to_owned())
     }
 
     #[cfg(not(test))]
