@@ -9,9 +9,8 @@ pub fn app_port() -> String {
     env::var("APP_PORT").unwrap_or_else(|_| "8080".into())
 }
 
-/// allowed cors origin
 pub fn allowed_origin() -> String {
-    env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "".into())
+    env::var("ALLOWED_ORIGIN").expect("ALLOWED_ORIGIN must be set")
 }
 
 pub fn auth0_issuer() -> String {
