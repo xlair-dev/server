@@ -183,6 +183,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), axum::http::StatusCode::OK);
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let body: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["status"], "ok");
+        assert!(body["timestamp"].as_str().is_some());
     }
 
     #[tokio::test]
