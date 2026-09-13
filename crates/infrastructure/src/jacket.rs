@@ -1,6 +1,7 @@
 use std::{future::Future, pin::Pin};
 
 use aws_sdk_s3::{Client, primitives::ByteStream};
+use sha2::{Digest, Sha256};
 use usecase::jacket::{JacketStorage as JacketStoragePort, JacketUpload};
 
 #[derive(Clone)]
@@ -38,12 +39,13 @@ impl R2JacketStorage {
         }
     }
 
-    fn key(music_id: &str) -> String {
-        format!("jackets/{music_id}.png")
+    fn key(music_id: &str, jacket: &JacketUpload) -> String {
+        let hash = Sha256::digest(&jacket.bytes);
+        format!("jackets/{music_id}/{hash:x}.png")
     }
 
     async fn upload_impl(&self, music_id: &str, jacket: JacketUpload) -> anyhow::Result<String> {
-        let key = Self::key(music_id);
+        let key = Self::key(music_id, &jacket);
         self.client
             .put_object()
             .bucket(&self.bucket)
@@ -56,11 +58,16 @@ impl R2JacketStorage {
         Ok(format!("{}/{}", self.public_base_url, key))
     }
 
-    async fn delete_impl(&self, music_id: &str) -> anyhow::Result<()> {
+    async fn delete_impl(&self, jacket_url: &str) -> anyhow::Result<()> {
+        let prefix = format!("{}/", self.public_base_url);
+        let key = jacket_url
+            .strip_prefix(&prefix)
+            .filter(|key| key.starts_with("jackets/") && key.ends_with(".png"))
+            .ok_or_else(|| anyhow::anyhow!("invalid jacket URL: {jacket_url}"))?;
         self.client
             .delete_object()
             .bucket(&self.bucket)
-            .key(Self::key(music_id))
+            .key(key)
             .send()
             .await?;
         Ok(())
@@ -78,8 +85,8 @@ impl JacketStoragePort for R2JacketStorage {
 
     fn delete<'a>(
         &'a self,
-        music_id: &'a str,
+        jacket_url: &'a str,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>> {
-        Box::pin(self.delete_impl(music_id))
+        Box::pin(self.delete_impl(jacket_url))
     }
 }

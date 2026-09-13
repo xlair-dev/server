@@ -7,6 +7,7 @@ use domain::{
         music::{MusicRepository, MusicWithSheets},
     },
 };
+use tracing::warn;
 
 use super::{MusicUsecase, MusicUsecaseError};
 use crate::{
@@ -25,20 +26,46 @@ impl<R: Repositories> MusicUsecase<R> {
         jacket: JacketUpload,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
         validate_music_id(&music_id)?;
-        self.repositories
+        let existing = self
+            .repositories
             .music()
             .find_with_sheets(&music_id)
             .await?;
+        let previous_jacket_url = existing.music.jacket_image_url().clone();
         let jacket_url = storage
             .upload(&music_id, jacket)
             .await
             .map_err(MusicUsecaseError::JacketStorage)?;
-        self.repositories
+        let updated = match self
+            .repositories
             .music()
-            .update_jacket(&music_id, Some(jacket_url))
+            .update_jacket(&music_id, Some(jacket_url.clone()))
             .await
-            .map(Into::into)
-            .map_err(Into::into)
+        {
+            Ok(updated) => updated,
+            Err(error) => {
+                if let Err(cleanup_error) = storage.delete(&jacket_url).await {
+                    warn!(
+                        error = %cleanup_error,
+                        jacket_url = %jacket_url,
+                        "Failed to clean up jacket after music update failure"
+                    );
+                }
+                return Err(error.into());
+            }
+        };
+        if previous_jacket_url.as_deref() != Some(jacket_url.as_str()) {
+            if let Some(previous_jacket_url) = previous_jacket_url {
+                if let Err(error) = storage.delete(&previous_jacket_url).await {
+                    warn!(
+                        error = %error,
+                        jacket_url = %previous_jacket_url,
+                        "Failed to clean up previous jacket"
+                    );
+                }
+            }
+        }
+        Ok(updated.into())
     }
 
     pub async fn delete_jacket(
@@ -52,9 +79,9 @@ impl<R: Repositories> MusicUsecase<R> {
             .music()
             .find_with_sheets(&music_id)
             .await?;
-        if music.music.jacket_image_url().is_some() {
+        if let Some(jacket_url) = music.music.jacket_image_url() {
             storage
-                .delete(&music_id)
+                .delete(jacket_url)
                 .await
                 .map_err(MusicUsecaseError::JacketStorage)?;
             return self
