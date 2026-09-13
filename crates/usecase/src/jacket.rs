@@ -1,8 +1,10 @@
-use std::{future::Future, pin::Pin};
+use std::{future::Future, io::Cursor, pin::Pin};
 
+use image::{ImageFormat, ImageReader};
 use thiserror::Error;
 
 pub const MAX_JACKET_SIZE: usize = 5 * 1024 * 1024;
+const JACKET_CONTENT_TYPE: &str = "image/png";
 
 #[derive(Debug, Error)]
 pub enum JacketUploadError {
@@ -32,19 +34,22 @@ impl JacketUpload {
             return Err(JacketUploadError::TooLarge);
         }
 
-        let valid = match content_type.as_str() {
-            "image/jpeg" => bytes.starts_with(&[0xff, 0xd8, 0xff]),
-            "image/png" => bytes.starts_with(b"\x89PNG\r\n\x1a\n"),
-            "image/webp" => bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP",
-            _ => false,
-        };
-        if !valid {
-            return Err(JacketUploadError::InvalidImage);
+        let image = ImageReader::new(Cursor::new(bytes))
+            .with_guessed_format()
+            .map_err(|_| JacketUploadError::InvalidImage)?
+            .decode()
+            .map_err(|_| JacketUploadError::InvalidImage)?;
+        let mut normalized = Cursor::new(Vec::new());
+        image
+            .write_to(&mut normalized, ImageFormat::Png)
+            .map_err(|_| JacketUploadError::InvalidImage)?;
+        if normalized.get_ref().len() > MAX_JACKET_SIZE {
+            return Err(JacketUploadError::TooLarge);
         }
 
         Ok(Self {
-            content_type,
-            bytes,
+            content_type: JACKET_CONTENT_TYPE.to_owned(),
+            bytes: normalized.into_inner(),
         })
     }
 }
@@ -65,4 +70,30 @@ pub trait JacketStorage: Send + Sync {
         &'a self,
         music_id: &'a str,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_supported_images_to_png() {
+        let mut source = Cursor::new(Vec::new());
+        image::DynamicImage::new_rgb8(1, 1)
+            .write_to(&mut source, ImageFormat::Jpeg)
+            .unwrap();
+
+        let jacket = JacketUpload::new("image/jpeg".to_owned(), source.into_inner()).unwrap();
+
+        assert_eq!(jacket.content_type, "image/png");
+        assert!(jacket.bytes.starts_with(b"\x89PNG\r\n\x1a\n"));
+    }
+
+    #[test]
+    fn rejects_invalid_image_data() {
+        let error =
+            JacketUpload::new("image/png".to_owned(), b"not an image".to_vec()).unwrap_err();
+
+        assert!(matches!(error, JacketUploadError::InvalidImage));
+    }
 }

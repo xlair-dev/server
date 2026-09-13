@@ -28,6 +28,11 @@ impl<R: Repositories> MusicUsecase<R> {
         music_id: String,
         input: CreateMusicInput,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        if uuid::Uuid::parse_str(&music_id).is_err() {
+            return Err(MusicUsecaseError::InvalidInput(
+                "music id is invalid".to_owned(),
+            ));
+        }
         let music = build_music(
             input.music,
             music_id,

@@ -38,20 +38,8 @@ impl R2JacketStorage {
         }
     }
 
-    fn extension(content_type: &str) -> anyhow::Result<&'static str> {
-        match content_type {
-            "image/jpeg" => Ok("jpg"),
-            "image/png" => Ok("png"),
-            "image/webp" => Ok("webp"),
-            _ => anyhow::bail!("unsupported jacket content type"),
-        }
-    }
-
-    fn key(music_id: &str, content_type: &str) -> anyhow::Result<String> {
-        Ok(format!(
-            "jackets/{music_id}.{}",
-            Self::extension(content_type)?
-        ))
+    fn key(music_id: &str) -> String {
+        format!("jackets/{music_id}.png")
     }
 
     async fn upload_impl(
@@ -59,7 +47,7 @@ impl R2JacketStorage {
         music_id: &str,
         jacket: JacketUpload,
     ) -> anyhow::Result<UploadedJacket> {
-        let key = Self::key(music_id, &jacket.content_type)?;
+        let key = Self::key(music_id);
         self.client
             .put_object()
             .bucket(&self.bucket)

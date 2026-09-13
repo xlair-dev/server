@@ -7,7 +7,7 @@ use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
 use domain::repository::music::MusicListCursor;
 use serde::{Deserialize, Serialize};
-use tracing::info;
+use tracing::{info, instrument};
 use usecase::jacket::{JacketUpload, JacketUploadError};
 
 use crate::{
@@ -23,16 +23,20 @@ use crate::{
 
 const DEFAULT_PAGE_LIMIT: u64 = 50;
 const MAX_PAGE_LIMIT: u64 = 100;
+
+type AppResult<T> = Result<T, AppError>;
+
 #[derive(Deserialize, Serialize)]
 struct CursorPayload {
     registration_date: String,
     id: String,
 }
 
+#[instrument(skip(state, query))]
 pub async fn handle_list_musics(
     State(state): State<crate::state::State>,
     Query(query): Query<MusicListQuery>,
-) -> Result<Json<MusicListResponse>, AppError> {
+) -> AppResult<Json<MusicListResponse>> {
     let limit = query.limit.unwrap_or(DEFAULT_PAGE_LIMIT);
     if !(1..=MAX_PAGE_LIMIT).contains(&limit) {
         return Err(AppError::bad_request(format!(
@@ -45,13 +49,15 @@ pub async fn handle_list_musics(
     let next_cursor = page.next_cursor.map(encode_cursor).transpose()?;
     let items = page.items.into_iter().map(SyncItemResponse::from).collect();
 
+    info!(limit, "Admin music list retrieved");
     Ok(Json(MusicListResponse { items, next_cursor }))
 }
 
+#[instrument(skip(state), fields(music_id = %music_id))]
 pub async fn handle_get_music(
     State(state): State<crate::state::State>,
     Path(music_id): Path<String>,
-) -> Result<Json<SyncItemResponse>, AppError> {
+) -> AppResult<Json<SyncItemResponse>> {
     if uuid::Uuid::parse_str(&music_id).is_err() {
         return Err(AppError::bad_request("music id is invalid"));
     }
@@ -59,10 +65,11 @@ pub async fn handle_get_music(
     Ok(Json(SyncItemResponse::from(music)))
 }
 
+#[instrument(skip(state, multipart))]
 pub async fn handle_create_music(
     State(state): State<crate::state::State>,
     multipart: Multipart,
-) -> Result<(StatusCode, Json<SyncItemResponse>), AppError> {
+) -> AppResult<(StatusCode, Json<SyncItemResponse>)> {
     let (request, jacket) = parse_music_multipart(multipart).await?;
     let mut request: CreateMusicRequest =
         serde_json::from_str(&request).map_err(|_| AppError::bad_request("request is invalid"))?;
@@ -93,14 +100,16 @@ pub async fn handle_create_music(
             return Err(error.into());
         }
     };
+    info!(music_id = %music_id, "Admin music created");
     Ok((StatusCode::CREATED, Json(SyncItemResponse::from(music))))
 }
 
+#[instrument(skip(state, multipart), fields(music_id = %music_id))]
 pub async fn handle_update_music(
     State(state): State<crate::state::State>,
     Path(music_id): Path<String>,
     multipart: Multipart,
-) -> Result<Json<SyncItemResponse>, AppError> {
+) -> AppResult<Json<SyncItemResponse>> {
     if uuid::Uuid::parse_str(&music_id).is_err() {
         return Err(AppError::bad_request("music id is invalid"));
     }
@@ -113,8 +122,9 @@ pub async fn handle_update_music(
     let music = state
         .usecases
         .music
-        .update(music_id, request.try_into()?)
+        .update(music_id.clone(), request.try_into()?)
         .await?;
+    info!(music_id = %music_id, "Admin music updated");
     Ok(Json(SyncItemResponse::from(music)))
 }
 
@@ -235,9 +245,10 @@ fn decode_cursor(value: &str) -> Result<MusicListCursor, AppError> {
     })
 }
 
+#[instrument(skip(state))]
 pub async fn handle_db_synchronization(
     State(state): State<crate::state::State>,
-) -> Result<Json<DbSynchronizationResponse>, AppError> {
+) -> AppResult<Json<DbSynchronizationResponse>> {
     let result = state.usecases.user.synchronize_db().await?;
     info!(
         updated_users = result.updated_users,

@@ -728,7 +728,7 @@ components:
         jacket:
           type: string
           format: binary
-          description: JPEG、PNG、または WebP の画像（5 MiB 以下）
+          description: JPEG、PNG、または WebP の画像（5 MiB 以下）。server 内で PNG に正規化して保存する。
       required:
         - request
     musicData:
