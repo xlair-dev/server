@@ -18,6 +18,15 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
+            .exec_stmt(
+                Query::update()
+                    .table(Musics::Table)
+                    .value(Musics::Jacket, "")
+                    .and_where(Expr::col(Musics::Jacket).is_null())
+                    .to_owned(),
+            )
+            .await?;
+        manager
             .alter_table(
                 Table::alter()
                     .table(Musics::Table)

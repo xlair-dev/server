@@ -1,7 +1,8 @@
 use axum::{
     Json,
-    extract::{Multipart, Path, Query, State},
-    http::StatusCode,
+    body::Bytes,
+    extract::{Path, Query, State},
+    http::{HeaderMap, StatusCode, header},
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
@@ -97,17 +98,23 @@ pub async fn handle_update_music(
     Ok(Json(SyncItemResponse::from(music)))
 }
 
-#[instrument(skip(state, multipart), fields(music_id = %music_id))]
+#[instrument(skip(state, headers, body), fields(music_id = %music_id))]
 pub async fn handle_upload_jacket(
     State(state): State<crate::state::State>,
     Path(music_id): Path<String>,
-    multipart: Multipart,
+    headers: HeaderMap,
+    body: Bytes,
 ) -> AppResult<Json<SyncItemResponse>> {
     if uuid::Uuid::parse_str(&music_id).is_err() {
         return Err(AppError::bad_request("music id is invalid"));
     }
     state.usecases.music.find_by_id(music_id.clone()).await?;
-    let jacket = parse_jacket_multipart(multipart).await?;
+    let content_type = headers
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| AppError::bad_request("jacket content type is required"))?;
+    let jacket =
+        JacketUpload::new(content_type.to_owned(), body.to_vec()).map_err(map_jacket_error)?;
     let jacket_url = upload_jacket(&state, &music_id, jacket).await?;
     let music = state
         .usecases
@@ -116,33 +123,6 @@ pub async fn handle_upload_jacket(
         .await?;
     info!(music_id = %music_id, "Admin music jacket uploaded");
     Ok(Json(SyncItemResponse::from(music)))
-}
-
-async fn parse_jacket_multipart(mut multipart: Multipart) -> Result<JacketUpload, AppError> {
-    let mut jacket = None;
-    while let Some(field) = multipart
-        .next_field()
-        .await
-        .map_err(|_| AppError::bad_request("multipart request is invalid"))?
-    {
-        match field.name() {
-            Some("jacket") if jacket.is_none() => {
-                let content_type = field
-                    .content_type()
-                    .ok_or_else(|| AppError::bad_request("jacket content type is required"))?
-                    .to_owned();
-                let bytes = field
-                    .bytes()
-                    .await
-                    .map_err(|_| AppError::bad_request("jacket file is invalid"))?
-                    .to_vec();
-                jacket = Some(JacketUpload::new(content_type, bytes).map_err(map_jacket_error)?);
-            }
-            Some("jacket") => return Err(AppError::bad_request("jacket is duplicated")),
-            _ => return Err(AppError::bad_request("multipart field is invalid")),
-        }
-    }
-    jacket.ok_or_else(|| AppError::bad_request("jacket is required"))
 }
 
 fn map_jacket_error(error: JacketUploadError) -> AppError {
