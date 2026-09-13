@@ -4,8 +4,6 @@ server は Cloudflare R2 に jacket 画像を保存する。
 
 R2 に `assets` バケットを作成し、公開 URL を設定する。API サーバーの `.env` に次を追加する。
 
-`<account-id>` は Cloudflare Dashboard の Account ID であり、バケット名ではない。
-
 ```env
 R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 R2_BUCKET=assets
