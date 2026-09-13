@@ -197,14 +197,14 @@ async fn upload_jacket(
             "jacket storage is not configured".to_owned(),
         )
     })?;
-    let upload = storage.upload(music_id, jacket).await.map_err(|error| {
+    let url = storage.upload(music_id, jacket).await.map_err(|error| {
         tracing::error!(error = ?error, "Failed to upload jacket");
         AppError::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Internal server error".to_owned(),
         )
     })?;
-    Ok(upload.url)
+    Ok(url)
 }
 
 async fn cleanup_jacket(state: &crate::state::State, music_id: &str, should_cleanup: bool) {

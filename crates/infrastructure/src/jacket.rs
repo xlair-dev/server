@@ -1,7 +1,7 @@
 use std::{future::Future, pin::Pin};
 
 use aws_sdk_s3::{Client, primitives::ByteStream};
-use usecase::jacket::{JacketStorage as JacketStoragePort, JacketUpload, UploadedJacket};
+use usecase::jacket::{JacketStorage as JacketStoragePort, JacketUpload};
 
 #[derive(Clone)]
 pub struct R2JacketStorage {
@@ -42,24 +42,18 @@ impl R2JacketStorage {
         format!("jackets/{music_id}.png")
     }
 
-    async fn upload_impl(
-        &self,
-        music_id: &str,
-        jacket: JacketUpload,
-    ) -> anyhow::Result<UploadedJacket> {
+    async fn upload_impl(&self, music_id: &str, jacket: JacketUpload) -> anyhow::Result<String> {
         let key = Self::key(music_id);
         self.client
             .put_object()
             .bucket(&self.bucket)
             .key(&key)
-            .content_type(&jacket.content_type)
+            .content_type("image/png")
             .body(ByteStream::from(jacket.bytes))
             .send()
             .await?;
 
-        Ok(UploadedJacket {
-            url: format!("{}/{}", self.public_base_url, key),
-        })
+        Ok(format!("{}/{}", self.public_base_url, key))
     }
 
     async fn delete_impl(&self, music_id: &str) -> anyhow::Result<()> {
@@ -78,7 +72,7 @@ impl JacketStoragePort for R2JacketStorage {
         &'a self,
         music_id: &'a str,
         jacket: JacketUpload,
-    ) -> Pin<Box<dyn Future<Output = anyhow::Result<UploadedJacket>> + Send + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = anyhow::Result<String>> + Send + 'a>> {
         Box::pin(self.upload_impl(music_id, jacket))
     }
 

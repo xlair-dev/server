@@ -6,7 +6,6 @@ use thiserror::Error;
 pub const MAX_JACKET_SIZE: usize = 5 * 1024 * 1024;
 const MAX_JACKET_DIMENSION: u32 = 4096;
 const MAX_JACKET_ALLOCATION: u64 = 64 * 1024 * 1024;
-const JACKET_CONTENT_TYPE: &str = "image/png";
 
 #[derive(Debug, Error)]
 pub enum JacketUploadError {
@@ -20,7 +19,6 @@ pub enum JacketUploadError {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct JacketUpload {
-    pub content_type: String,
     pub bytes: Vec<u8>,
 }
 
@@ -56,15 +54,9 @@ impl JacketUpload {
         }
 
         Ok(Self {
-            content_type: JACKET_CONTENT_TYPE.to_owned(),
             bytes: normalized.into_inner(),
         })
     }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct UploadedJacket {
-    pub url: String,
 }
 
 pub trait JacketStorage: Send + Sync {
@@ -72,7 +64,7 @@ pub trait JacketStorage: Send + Sync {
         &'a self,
         music_id: &'a str,
         jacket: JacketUpload,
-    ) -> Pin<Box<dyn Future<Output = anyhow::Result<UploadedJacket>> + Send + 'a>>;
+    ) -> Pin<Box<dyn Future<Output = anyhow::Result<String>> + Send + 'a>>;
 
     fn delete<'a>(
         &'a self,
@@ -93,7 +85,6 @@ mod tests {
 
         let jacket = JacketUpload::new("image/jpeg".to_owned(), source.into_inner()).unwrap();
 
-        assert_eq!(jacket.content_type, "image/png");
         assert!(jacket.bytes.starts_with(b"\x89PNG\r\n\x1a\n"));
     }
 

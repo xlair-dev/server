@@ -726,7 +726,7 @@ components:
         - updatedAt
     createMusicMultipartRequest:
       type: object
-      description: metadata フィールドには createMusicMetadata の JSON 文字列を指定する。
+      description: metadata フィールドには createMusicMetadata の JSON オブジェクトを指定する。
       properties:
         metadata:
           $ref: "#/components/schemas/createMusicMetadata"
@@ -739,7 +739,7 @@ components:
         - jacket
     updateMusicMultipartRequest:
       type: object
-      description: metadata フィールドには updateMusicMetadata の JSON 文字列を指定する。
+      description: metadata フィールドには updateMusicMetadata の JSON オブジェクトを指定する。
       properties:
         metadata:
           $ref: "#/components/schemas/updateMusicMetadata"
@@ -827,7 +827,7 @@ components:
           description: ジャンル
         jacket:
           type: string
-          description: ジャケット画像。プロジェクトのルートからの相対パス、または xlair.dev/public/ からの絶対パス
+          description: ジャケット画像の公開 URL
         registrationDate:
           type: string
           format: date-time
