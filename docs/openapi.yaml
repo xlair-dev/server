@@ -741,6 +741,8 @@ components:
         - rating
         - xp
         - credits
+        - isPublic
+        - isAdmin
         - createdAt
     userPlayOption:
       type: object
@@ -786,9 +788,6 @@ components:
         id:
           type: string
           description: レコードのID
-        userId:
-          type: string
-          description: ユーザーのID
         sheetId:
           type: string
           description: 譜面のID
@@ -812,7 +811,6 @@ components:
           description: レコードの更新日時
       required:
         - id
-        - userId
         - sheetId
         - score
         - clearType

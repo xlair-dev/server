@@ -43,7 +43,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .route("/total-score", get(ranking::handle_get_total_ranking))
         .route("/rating", get(ranking::handle_get_rating_ranking))
         .route("/xp", get(ranking::handle_get_xp_ranking));
-    let health = Router::new().route("/", get(|| async { "OK" }));
+    let health = Router::new().route("/", get(handle_health));
     let admin_routes = Router::new()
         .route(
             "/musics",
@@ -109,6 +109,10 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)
+}
+
+async fn handle_health() -> axum::Json<crate::model::health::HealthCheckResponse> {
+    axum::Json(crate::model::health::HealthCheckResponse::new())
 }
 
 async fn not_found() -> crate::error::AppError {
@@ -179,6 +183,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), axum::http::StatusCode::OK);
+        let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let body: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["status"], "ok");
+        assert!(body["timestamp"].as_str().is_some());
     }
 
     #[tokio::test]
