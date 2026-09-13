@@ -70,6 +70,6 @@ pub trait MusicRepository: Send + Sync {
     fn update_jacket(
         &self,
         music_id: &str,
-        jacket_url: String,
+        jacket_url: Option<String>,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 }

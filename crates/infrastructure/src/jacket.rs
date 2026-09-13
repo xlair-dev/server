@@ -55,6 +55,16 @@ impl R2JacketStorage {
 
         Ok(format!("{}/{}", self.public_base_url, key))
     }
+
+    async fn delete_impl(&self, music_id: &str) -> anyhow::Result<()> {
+        self.client
+            .delete_object()
+            .bucket(&self.bucket)
+            .key(Self::key(music_id))
+            .send()
+            .await?;
+        Ok(())
+    }
 }
 
 impl JacketStoragePort for R2JacketStorage {
@@ -64,5 +74,12 @@ impl JacketStoragePort for R2JacketStorage {
         jacket: JacketUpload,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<String>> + Send + 'a>> {
         Box::pin(self.upload_impl(music_id, jacket))
+    }
+
+    fn delete<'a>(
+        &'a self,
+        music_id: &'a str,
+    ) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>> {
+        Box::pin(self.delete_impl(music_id))
     }
 }

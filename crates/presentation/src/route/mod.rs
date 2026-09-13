@@ -55,7 +55,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         )
         .route(
             "/musics/{musicId}/jacket",
-            post(admin::handle_upload_jacket),
+            post(admin::handle_upload_jacket).delete(admin::handle_delete_jacket),
         )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
     let admin_routes = admin_routes.layer(DefaultBodyLimit::max(6 * 1024 * 1024));

@@ -9,33 +9,63 @@ use domain::{
 };
 
 use super::{MusicUsecase, MusicUsecaseError};
-use crate::model::music::{
-    CreateMusicInput, MusicDataInput, MusicWithSheetsDto, SheetDataInput, SheetInput,
-    UpdateMusicInput,
+use crate::{
+    jacket::{JacketStorage, JacketUpload},
+    model::music::{
+        CreateMusicInput, MusicDataInput, MusicWithSheetsDto, SheetDataInput, SheetInput,
+        UpdateMusicInput,
+    },
 };
 
 impl<R: Repositories> MusicUsecase<R> {
-    pub async fn update_jacket(
+    pub async fn upload_jacket(
         &self,
+        storage: &dyn JacketStorage,
         music_id: String,
-        jacket_url: String,
+        jacket: JacketUpload,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
-        if uuid::Uuid::parse_str(&music_id).is_err() {
-            return Err(MusicUsecaseError::InvalidInput(
-                "music id is invalid".to_owned(),
-            ));
-        }
-        if jacket_url.trim().is_empty() {
-            return Err(MusicUsecaseError::InvalidInput(
-                "jacket URL must not be empty".to_owned(),
-            ));
-        }
-        let updated = self
+        validate_music_id(&music_id)?;
+        self.repositories
+            .music()
+            .find_with_sheets(&music_id)
+            .await?;
+        let jacket_url = storage
+            .upload(&music_id, jacket)
+            .await
+            .map_err(MusicUsecaseError::JacketStorage)?;
+        self.repositories
+            .music()
+            .update_jacket(&music_id, Some(jacket_url))
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn delete_jacket(
+        &self,
+        storage: &dyn JacketStorage,
+        music_id: String,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        validate_music_id(&music_id)?;
+        let music = self
             .repositories
             .music()
-            .update_jacket(&music_id, jacket_url)
+            .find_with_sheets(&music_id)
             .await?;
-        Ok(updated.into())
+        if music.music.jacket_image_url().is_some() {
+            storage
+                .delete(&music_id)
+                .await
+                .map_err(MusicUsecaseError::JacketStorage)?;
+            return self
+                .repositories
+                .music()
+                .update_jacket(&music_id, None)
+                .await
+                .map(Into::into)
+                .map_err(Into::into);
+        }
+        Ok(music.into())
     }
 
     pub async fn create(
@@ -89,6 +119,15 @@ impl<R: Repositories> MusicUsecase<R> {
         let updated = self.repositories.music().update_with_sheets(music).await?;
         Ok(updated.into())
     }
+}
+
+fn validate_music_id(music_id: &str) -> Result<(), MusicUsecaseError> {
+    if uuid::Uuid::parse_str(music_id).is_err() {
+        return Err(MusicUsecaseError::InvalidInput(
+            "music id is invalid".to_owned(),
+        ));
+    }
+    Ok(())
 }
 
 fn build_music(

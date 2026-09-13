@@ -27,11 +27,11 @@ pub fn music_active_model_for_update(
 
 pub fn music_active_model_for_jacket(
     music_id: &str,
-    jacket_url: String,
+    jacket_url: Option<String>,
 ) -> Result<MusicActiveModel, MusicRepositoryError> {
     Ok(MusicActiveModel {
         id: ActiveValue::Unchanged(parse_uuid(music_id)?),
-        jacket: ActiveValue::Set(Some(jacket_url)),
+        jacket: ActiveValue::Set(jacket_url),
         ..Default::default()
     })
 }

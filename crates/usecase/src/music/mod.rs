@@ -17,6 +17,8 @@ pub enum MusicUsecaseError {
     MusicRepository(#[from] MusicRepositoryError),
     #[error("Invalid music input: {0}")]
     InvalidInput(String),
+    #[error("jacket storage error")]
+    JacketStorage(#[source] anyhow::Error),
 }
 
 pub struct MusicUsecase<R: Repositories> {

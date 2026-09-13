@@ -86,7 +86,7 @@ pub async fn update_with_sheets(
 pub async fn update_jacket(
     db: &DbConn,
     music_id: &str,
-    jacket_url: String,
+    jacket_url: Option<String>,
 ) -> Result<MusicWithSheets, MusicRepositoryError> {
     music_active_model_for_jacket(music_id, jacket_url)?
         .update(db)

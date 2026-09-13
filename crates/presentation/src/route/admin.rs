@@ -105,21 +105,22 @@ pub async fn handle_upload_jacket(
     headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Json<SyncItemResponse>> {
-    if uuid::Uuid::parse_str(&music_id).is_err() {
-        return Err(AppError::bad_request("music id is invalid"));
-    }
-    state.usecases.music.find_by_id(music_id.clone()).await?;
     let content_type = headers
         .get(header::CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .ok_or_else(|| AppError::bad_request("jacket content type is required"))?;
     let jacket =
         JacketUpload::new(content_type.to_owned(), body.to_vec()).map_err(map_jacket_error)?;
-    let jacket_url = upload_jacket(&state, &music_id, jacket).await?;
+    let storage = state.jacket_storage.as_ref().ok_or_else(|| {
+        AppError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "jacket storage is not configured".to_owned(),
+        )
+    })?;
     let music = state
         .usecases
         .music
-        .update_jacket(music_id.clone(), jacket_url)
+        .upload_jacket(storage.as_ref(), music_id.clone(), jacket)
         .await?;
     info!(music_id = %music_id, "Admin music jacket uploaded");
     Ok(Json(SyncItemResponse::from(music)))
@@ -135,25 +136,24 @@ fn map_jacket_error(error: JacketUploadError) -> AppError {
     }
 }
 
-async fn upload_jacket(
-    state: &crate::state::State,
-    music_id: &str,
-    jacket: JacketUpload,
-) -> Result<String, AppError> {
+#[instrument(skip(state), fields(music_id = %music_id))]
+pub async fn handle_delete_jacket(
+    State(state): State<crate::state::State>,
+    Path(music_id): Path<String>,
+) -> AppResult<Json<SyncItemResponse>> {
     let storage = state.jacket_storage.as_ref().ok_or_else(|| {
         AppError::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "jacket storage is not configured".to_owned(),
         )
     })?;
-    let url = storage.upload(music_id, jacket).await.map_err(|error| {
-        tracing::error!(error = ?error, "Failed to upload jacket");
-        AppError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error".to_owned(),
-        )
-    })?;
-    Ok(url)
+    let music = state
+        .usecases
+        .music
+        .delete_jacket(storage.as_ref(), music_id.clone())
+        .await?;
+    info!(music_id = %music_id, "Admin music jacket deleted");
+    Ok(Json(SyncItemResponse::from(music)))
 }
 
 fn encode_cursor(cursor: MusicListCursor) -> Result<String, AppError> {

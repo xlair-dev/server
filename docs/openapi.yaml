@@ -324,6 +324,37 @@ paths:
           description: Not found - Music not found
         "500":
           description: Internal server error
+    delete:
+      tags:
+        - admin
+      summary: 楽曲のジャケット画像を削除
+      security:
+        - userAuth: []
+      parameters:
+        - name: musicId
+          in: path
+          description: 楽曲のID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: ジャケット画像が削除された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "400":
+          description: Bad request - Invalid music ID
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "404":
+          description: Not found - Music not found
+        "500":
+          description: Internal server error
   /users/{userId}/credits/increment:
     post:
       tags:
