@@ -117,8 +117,6 @@ async fn not_found() -> crate::error::AppError {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-
     use axum::{
         body::{self, Body},
         http::Request,
@@ -145,7 +143,6 @@ mod tests {
             "https://issuer.example.com".into(),
             "https://api.example.com".into(),
             "dashboard-client-id".into(),
-            HashSet::new(),
         );
         create_app(state, Some(authenticator))
     }

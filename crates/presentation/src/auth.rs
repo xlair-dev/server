@@ -1,5 +1,4 @@
 use std::{
-    collections::HashSet,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -64,7 +63,6 @@ pub struct Authenticator {
     issuer: String,
     audience: String,
     dashboard_client_id: String,
-    allowed_admin_subjects: HashSet<String>,
     jwks_uri: String,
     jwks: Arc<RwLock<Option<CachedJwks>>>,
 }
@@ -103,7 +101,6 @@ impl Authenticator {
         issuer: String,
         audience: String,
         dashboard_client_id: String,
-        allowed_admin_subjects: HashSet<String>,
     ) -> Self {
         let issuer = format!("{}/", issuer.trim_end_matches('/'));
         let jwks_uri = format!("{issuer}.well-known/jwks.json");
@@ -112,7 +109,6 @@ impl Authenticator {
             issuer,
             audience,
             dashboard_client_id,
-            allowed_admin_subjects,
             jwks_uri,
             jwks: Arc::new(RwLock::new(None)),
         }
@@ -134,11 +130,7 @@ impl Authenticator {
         let claims = decode::<Claims>(token, &decoding_key, &validation)
             .map_err(|_| AuthError::InvalidToken)?
             .claims;
-        principal_from_claims(
-            claims,
-            &self.dashboard_client_id,
-            &self.allowed_admin_subjects,
-        )
+        principal_from_claims(claims, &self.dashboard_client_id)
     }
 
     async fn find_jwk(&self, kid: Option<&str>) -> Result<jsonwebtoken::jwk::Jwk, AuthError> {
@@ -227,7 +219,6 @@ fn find_jwk<'a>(set: &'a JwkSet, kid: Option<&str>) -> Option<&'a jsonwebtoken::
 fn principal_from_claims(
     claims: Claims,
     dashboard_client_id: &str,
-    allowed_admin_subjects: &HashSet<String>,
 ) -> Result<Principal, AuthError> {
     if claims
         .permissions
@@ -242,9 +233,7 @@ fn principal_from_claims(
         return Ok(Principal::Device { client_id });
     }
 
-    if claims.azp.as_deref() == Some(dashboard_client_id)
-        && allowed_admin_subjects.contains(&claims.sub)
-    {
+    if claims.azp.as_deref() == Some(dashboard_client_id) {
         return Ok(Principal::Admin {
             subject: claims.sub,
         });
@@ -255,8 +244,6 @@ fn principal_from_claims(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-
     use reqwest::Client;
 
     use super::{Authenticator, Claims, Principal, PrincipalKind, principal_from_claims};
@@ -268,7 +255,6 @@ mod tests {
             "https://example.auth0.com".into(),
             "https://api.example.com".into(),
             "dashboard-client-id".into(),
-            HashSet::new(),
         );
 
         assert_eq!(authenticator.issuer, "https://example.auth0.com/");
@@ -287,7 +273,6 @@ mod tests {
                 permissions: vec!["device".into()],
             },
             "dashboard-client-id",
-            &HashSet::new(),
         )
         .unwrap();
 
@@ -308,7 +293,6 @@ mod tests {
                 permissions: vec![],
             },
             "dashboard-client-id",
-            &HashSet::from(["auth0|user-id".to_owned()]),
         )
         .unwrap();
 
@@ -329,7 +313,6 @@ mod tests {
                 permissions: vec!["device".into()],
             },
             "dashboard-client-id",
-            &HashSet::new(),
         );
 
         assert!(result.is_err());
@@ -344,22 +327,6 @@ mod tests {
                 permissions: vec!["admin".into()],
             },
             "dashboard-client-id",
-            &HashSet::from(["auth0|user-id".to_owned()]),
-        );
-
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn rejects_admin_subject_not_in_allowlist() {
-        let result = principal_from_claims(
-            Claims {
-                sub: "auth0|unlisted-user".into(),
-                azp: Some("dashboard-client-id".into()),
-                permissions: vec![],
-            },
-            "dashboard-client-id",
-            &HashSet::from(["auth0|allowed-user".to_owned()]),
         );
 
         assert!(result.is_err());
