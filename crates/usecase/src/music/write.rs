@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use domain::{
-    entity::{difficulty::Difficulty, genre::Genre, level::Level, music::Music, sheet::Sheet},
+    entity::{difficulty::Difficulty, level::Level, music::Music, sheet::Sheet},
     repository::{
         Repositories,
         music::{MusicRepository, MusicWithSheets},
@@ -174,11 +174,6 @@ fn build_music(
     {
         return Err(MusicUsecaseError::InvalidInput(
             "title, artist, and bpm must be valid".to_owned(),
-        ));
-    }
-    if !matches!(input.genre, Genre::ORIGINAL) {
-        return Err(MusicUsecaseError::InvalidInput(
-            "genre is invalid".to_owned(),
         ));
     }
     if sheets_input.len() != 3 {
