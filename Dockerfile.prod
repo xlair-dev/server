@@ -22,11 +22,14 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system app \
+    && useradd --system --gid app --home-dir /app --no-create-home app
 
-COPY --from=builder /workspace/bin/presentation /app/presentation
-COPY --from=builder /workspace/bin/migration /app/migrate
+COPY --from=builder --chown=app:app /workspace/bin/presentation /app/presentation
+COPY --from=builder --chown=app:app /workspace/bin/migration /app/migrate
 
 EXPOSE 8080
 ENV RUST_LOG="presentation=info,tower_http=warn"
+USER app
 ENTRYPOINT ["/app/presentation"]
