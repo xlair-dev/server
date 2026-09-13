@@ -41,7 +41,7 @@ impl R2JacketStorage {
 
     fn key(music_id: &str, jacket: &JacketUpload) -> String {
         let hash = Sha256::digest(&jacket.bytes);
-        format!("jackets/{music_id}/{hash:x}.png")
+        format!("jackets/{music_id}/{}.png", hex::encode(hash))
     }
 
     async fn upload_impl(&self, music_id: &str, jacket: JacketUpload) -> anyhow::Result<String> {

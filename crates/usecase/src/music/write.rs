@@ -54,16 +54,15 @@ impl<R: Repositories> MusicUsecase<R> {
                 return Err(error.into());
             }
         };
-        if previous_jacket_url.as_deref() != Some(jacket_url.as_str()) {
-            if let Some(previous_jacket_url) = previous_jacket_url {
-                if let Err(error) = storage.delete(&previous_jacket_url).await {
-                    warn!(
-                        error = %error,
-                        jacket_url = %previous_jacket_url,
-                        "Failed to clean up previous jacket"
-                    );
-                }
-            }
+        if previous_jacket_url.as_deref() != Some(jacket_url.as_str())
+            && let Some(previous_jacket_url) = previous_jacket_url
+            && let Err(error) = storage.delete(&previous_jacket_url).await
+        {
+            warn!(
+                error = %error,
+                jacket_url = %previous_jacket_url,
+                "Failed to clean up previous jacket"
+            );
         }
         Ok(updated.into())
     }

@@ -2100,6 +2100,7 @@ dependencies = [
  "bigdecimal",
  "chrono",
  "domain",
+ "hex",
  "sea-orm",
  "sha2 0.11.0",
  "thiserror",
