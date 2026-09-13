@@ -79,9 +79,9 @@ fn sheet_active_model(
 ) -> Result<SheetActiveModel, MusicRepositoryError> {
     let level = sheet.level().components();
     let difficulty = match sheet.difficulty() {
-        Difficulty::Easy => DbDifficulty::Easy,
-        Difficulty::Normal => DbDifficulty::Normal,
-        Difficulty::Hard => DbDifficulty::Hard,
+        Difficulty::Basic => DbDifficulty::Basic,
+        Difficulty::Advanced => DbDifficulty::Advanced,
+        Difficulty::Master => DbDifficulty::Master,
     };
     Ok(SheetActiveModel {
         id,
@@ -128,7 +128,7 @@ mod tests {
         Sheet::new(
             "00000000-0000-0000-0000-000000000002".to_owned(),
             "00000000-0000-0000-0000-000000000001".to_owned(),
-            Difficulty::Hard,
+            Difficulty::Master,
             Level::new(14, 7).unwrap(),
             "Designer".to_owned(),
         )

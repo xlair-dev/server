@@ -868,9 +868,9 @@ components:
         difficulty:
           type: string
           enum:
-            - easy
-            - normal
-            - hard
+            - basic
+            - advanced
+            - master
           description: 難易度の分類
         level:
           type: number

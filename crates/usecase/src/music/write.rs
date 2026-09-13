@@ -191,26 +191,26 @@ fn build_music(
     let mut seen = [false; 3];
     for sheet in sheets_input {
         let difficulty = match sheet.data.difficulty {
-            Difficulty::Easy => {
+            Difficulty::Basic => {
                 if seen[0] {
                     return invalid_sheet();
                 }
                 seen[0] = true;
-                Difficulty::Easy
+                Difficulty::Basic
             }
-            Difficulty::Normal => {
+            Difficulty::Advanced => {
                 if seen[1] {
                     return invalid_sheet();
                 }
                 seen[1] = true;
-                Difficulty::Normal
+                Difficulty::Advanced
             }
-            Difficulty::Hard => {
+            Difficulty::Master => {
                 if seen[2] {
                     return invalid_sheet();
                 }
                 seen[2] = true;
-                Difficulty::Hard
+                Difficulty::Master
             }
         };
         let level = level_from_value(sheet.data.level)?;

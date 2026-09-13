@@ -95,9 +95,9 @@ impl MusicMetadataRequest {
 
 fn parse_difficulty(value: &str) -> Result<Difficulty, AppError> {
     match value {
-        "easy" => Ok(Difficulty::Easy),
-        "normal" => Ok(Difficulty::Normal),
-        "hard" => Ok(Difficulty::Hard),
+        "basic" => Ok(Difficulty::Basic),
+        "advanced" => Ok(Difficulty::Advanced),
+        "master" => Ok(Difficulty::Master),
         _ => Err(AppError::bad_request("difficulty is invalid")),
     }
 }
