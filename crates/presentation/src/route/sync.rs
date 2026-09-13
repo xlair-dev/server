@@ -60,7 +60,7 @@ mod tests {
             let sheet = Sheet::new(
                 "sheet-1".to_owned(),
                 "music-1".to_owned(),
-                Difficulty::Hard,
+                Difficulty::Master,
                 Level::new(13, 7).expect("level"),
                 "Designer".to_owned(),
             );
@@ -82,7 +82,7 @@ mod tests {
         assert_eq!(first["music"]["id"], "music-1");
         assert_eq!(first["music"]["bpm"], 140.0);
         assert_eq!(first["sheets"].as_array().unwrap().len(), 1);
-        assert_eq!(first["sheets"][0]["difficulty"], "hard");
+        assert_eq!(first["sheets"][0]["difficulty"], "master");
         assert_eq!(first["sheets"][0]["level"], 13.7);
     }
 }

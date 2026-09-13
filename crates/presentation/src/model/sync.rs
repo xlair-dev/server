@@ -69,8 +69,8 @@ impl From<SheetDto> for SheetResponse {
 
 fn difficulty_to_string(difficulty: Difficulty) -> &'static str {
     match difficulty {
-        Difficulty::Easy => "easy",
-        Difficulty::Normal => "normal",
-        Difficulty::Hard => "hard",
+        Difficulty::Basic => "basic",
+        Difficulty::Advanced => "advanced",
+        Difficulty::Master => "master",
     }
 }

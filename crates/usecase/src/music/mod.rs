@@ -88,7 +88,7 @@ mod tests {
             let sheet = Sheet::new(
                 "sheet-1".to_owned(),
                 "music-1".to_owned(),
-                Difficulty::Easy,
+                Difficulty::Basic,
                 Level::new(12, 3).expect("level"),
                 "Designer".to_owned(),
             );
@@ -157,17 +157,17 @@ mod tests {
             },
             sheets: vec![
                 SheetDataInput {
-                    difficulty: Difficulty::Easy,
+                    difficulty: Difficulty::Basic,
                     level: 12.3,
                     notes_designer: "Easy Designer".to_owned(),
                 },
                 SheetDataInput {
-                    difficulty: Difficulty::Normal,
+                    difficulty: Difficulty::Advanced,
                     level: 13.0,
                     notes_designer: "Normal Designer".to_owned(),
                 },
                 SheetDataInput {
-                    difficulty: Difficulty::Hard,
+                    difficulty: Difficulty::Master,
                     level: 14.7,
                     notes_designer: "Hard Designer".to_owned(),
                 },
@@ -209,7 +209,7 @@ mod tests {
         };
         let usecase = MusicUsecase::new(Arc::new(repositories));
         let mut input = write_input();
-        input.sheets[1].difficulty = Difficulty::Easy;
+        input.sheets[1].difficulty = Difficulty::Basic;
 
         assert!(matches!(
             usecase.create(input).await,

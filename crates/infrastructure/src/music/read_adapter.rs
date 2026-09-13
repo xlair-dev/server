@@ -96,8 +96,8 @@ fn convert_level(raw_level: i32) -> Result<Level, MusicRepositoryError> {
 
 fn convert_difficulty(value: DbDifficulty) -> Difficulty {
     match value {
-        DbDifficulty::Easy => Difficulty::Easy,
-        DbDifficulty::Normal => Difficulty::Normal,
-        DbDifficulty::Hard => Difficulty::Hard,
+        DbDifficulty::Basic => Difficulty::Basic,
+        DbDifficulty::Advanced => Difficulty::Advanced,
+        DbDifficulty::Master => Difficulty::Master,
     }
 }
