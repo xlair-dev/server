@@ -29,7 +29,7 @@ pub struct DbSynchronizationResponse {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MusicDataRequest {
+pub struct MusicMetadataRequest {
     pub title: String,
     pub artist: String,
     pub bpm: f32,
@@ -42,7 +42,7 @@ pub struct MusicDataRequest {
 #[serde(rename_all = "camelCase")]
 pub struct CreateMusicRequest {
     #[serde(flatten)]
-    pub music: MusicDataRequest,
+    pub music: MusicMetadataRequest,
     pub sheets: Vec<SheetDataRequest>,
 }
 
@@ -50,7 +50,7 @@ pub struct CreateMusicRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateMusicRequest {
     #[serde(flatten)]
-    pub music: MusicDataRequest,
+    pub music: MusicMetadataRequest,
     pub sheets: Vec<SheetRequest>,
 }
 
@@ -71,7 +71,7 @@ pub struct SheetRequest {
     pub notes_designer: String,
 }
 
-impl MusicDataRequest {
+impl MusicMetadataRequest {
     fn try_into_input(self, jacket: String) -> Result<MusicDataInput, AppError> {
         let request = self;
         let registration_date = DateTime::parse_from_rfc3339(&request.registration_date)

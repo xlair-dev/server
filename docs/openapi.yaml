@@ -729,8 +729,7 @@ components:
       description: metadata フィールドには createMusicMetadata の JSON 文字列を指定する。
       properties:
         metadata:
-          type: string
-          description: 楽曲メタデータと譜面の JSON 文字列
+          $ref: "#/components/schemas/createMusicMetadata"
         jacket:
           type: string
           format: binary
@@ -743,8 +742,7 @@ components:
       description: metadata フィールドには updateMusicMetadata の JSON 文字列を指定する。
       properties:
         metadata:
-          type: string
-          description: 楽曲メタデータと譜面の JSON 文字列
+          $ref: "#/components/schemas/updateMusicMetadata"
         jacket:
           type: string
           format: binary
