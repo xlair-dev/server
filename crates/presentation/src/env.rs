@@ -10,6 +10,12 @@ pub fn app_port() -> String {
 }
 
 pub fn allowed_origin() -> String {
+    #[cfg(test)]
+    {
+        return env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "http://localhost:3000".to_owned());
+    }
+
+    #[cfg(not(test))]
     env::var("ALLOWED_ORIGIN").expect("ALLOWED_ORIGIN must be set")
 }
 
@@ -55,7 +61,15 @@ pub fn postgres_url() -> String {
     let db = env::var("POSTGRES_DB").expect("POSTGRES_DB must be set");
     let host = postgres_host();
     let port = postgres_port();
-    format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, db)
+    let mut url = url::Url::parse("postgres://localhost").expect("valid PostgreSQL URL base");
+    url.set_username(&user).expect("valid PostgreSQL username");
+    url.set_password(Some(&password))
+        .expect("valid PostgreSQL password");
+    url.set_host(Some(&host)).expect("valid PostgreSQL host");
+    url.set_port(Some(port.parse().expect("POSTGRES_PORT must be numeric")))
+        .expect("valid PostgreSQL port");
+    url.set_path(&db);
+    url.to_string()
 }
 
 pub fn r2_endpoint() -> String {
