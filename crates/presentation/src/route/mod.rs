@@ -53,6 +53,10 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             "/musics/{musicId}",
             get(admin::handle_get_music).post(admin::handle_update_music),
         )
+        .route(
+            "/musics/{musicId}/jacket",
+            post(admin::handle_upload_jacket),
+        )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
     let admin_routes = admin_routes.layer(DefaultBodyLimit::max(6 * 1024 * 1024));
 

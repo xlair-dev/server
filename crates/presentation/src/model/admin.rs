@@ -72,7 +72,7 @@ pub struct SheetRequest {
 }
 
 impl MusicMetadataRequest {
-    fn try_into_input(self, jacket: String) -> Result<MusicDataInput, AppError> {
+    fn try_into_input(self) -> Result<MusicDataInput, AppError> {
         let request = self;
         let registration_date = DateTime::parse_from_rfc3339(&request.registration_date)
             .map_err(|_| AppError::bad_request("registrationDate is invalid"))?
@@ -86,7 +86,7 @@ impl MusicMetadataRequest {
             artist: request.artist,
             bpm: request.bpm,
             genre,
-            jacket,
+            jacket: None,
             registration_date,
             is_test: request.is_test,
         })
@@ -128,9 +128,9 @@ impl TryFrom<SheetRequest> for SheetInput {
 }
 
 impl CreateMusicRequest {
-    pub fn try_into_with_jacket(self, jacket: String) -> Result<CreateMusicInput, AppError> {
+    pub fn try_into_input(self) -> Result<CreateMusicInput, AppError> {
         Ok(CreateMusicInput {
-            music: self.music.try_into_input(jacket)?,
+            music: self.music.try_into_input()?,
             sheets: self
                 .sheets
                 .into_iter()
@@ -145,7 +145,7 @@ impl TryFrom<UpdateMusicRequest> for UpdateMusicInput {
 
     fn try_from(request: UpdateMusicRequest) -> Result<Self, Self::Error> {
         Ok(Self {
-            music: request.music.try_into_input(String::new())?,
+            music: request.music.try_into_input()?,
             sheets: request
                 .sheets
                 .into_iter()

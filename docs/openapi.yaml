@@ -153,12 +153,9 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              $ref: "#/components/schemas/createMusicMultipartRequest"
-            encoding:
-              metadata:
-                contentType: application/json
+              $ref: "#/components/schemas/createMusicMetadata"
       responses:
         "201":
           description: 登録された楽曲と譜面
@@ -260,12 +257,9 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              $ref: "#/components/schemas/updateMusicMultipartRequest"
-            encoding:
-              metadata:
-                contentType: application/json
+              $ref: "#/components/schemas/updateMusicMetadata"
       responses:
         "200":
           description: 更新された楽曲と譜面
@@ -275,6 +269,51 @@ paths:
                 $ref: "#/components/schemas/musicWithSheets"
         "400":
           description: Bad request - Invalid music or sheet data
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "404":
+          description: Not found - Music not found
+        "500":
+          description: Internal server error
+  /admin/musics/{musicId}/jacket:
+    post:
+      tags:
+        - admin
+      summary: 楽曲のジャケット画像をアップロード
+      security:
+        - userAuth: []
+      parameters:
+        - name: musicId
+          in: path
+          description: 楽曲のID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                jacket:
+                  type: string
+                  format: binary
+                  description: JPEG、PNG、または WebP の画像（5 MiB 以下）。server 内で PNG に正規化して保存する。
+              required:
+                - jacket
+      responses:
+        "200":
+          description: ジャケット画像が更新された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "400":
+          description: Bad request - Invalid jacket image
         "401":
           description: Unauthorized - Invalid access token
         "403":
@@ -724,31 +763,6 @@ components:
         - clearType
         - playCount
         - updatedAt
-    createMusicMultipartRequest:
-      type: object
-      description: metadata フィールドには createMusicMetadata の JSON オブジェクトを指定する。
-      properties:
-        metadata:
-          $ref: "#/components/schemas/createMusicMetadata"
-        jacket:
-          type: string
-          format: binary
-          description: JPEG、PNG、または WebP の画像（5 MiB 以下）。server 内で PNG に正規化して保存する。
-      required:
-        - metadata
-        - jacket
-    updateMusicMultipartRequest:
-      type: object
-      description: metadata フィールドには updateMusicMetadata の JSON オブジェクトを指定する。
-      properties:
-        metadata:
-          $ref: "#/components/schemas/updateMusicMetadata"
-        jacket:
-          type: string
-          format: binary
-          description: JPEG、PNG、または WebP の画像（5 MiB 以下）。指定時は PNG に正規化して保存する。
-      required:
-        - metadata
     musicMetadata:
       type: object
       properties:
@@ -840,7 +854,6 @@ components:
         - artist
         - bpm
         - genre
-        - jacket
         - registrationDate
         - isTest
     music:

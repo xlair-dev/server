@@ -7,7 +7,7 @@ pub struct MusicDataInput {
     pub artist: String,
     pub bpm: f32,
     pub genre: Genre,
-    pub jacket: String,
+    pub jacket: Option<String>,
     pub registration_date: DateTime<Utc>,
     pub is_test: bool,
 }
@@ -46,7 +46,7 @@ pub struct MusicDto {
     pub artist: String,
     pub bpm: f32,
     pub genre: Genre,
-    pub jacket: String,
+    pub jacket: Option<String>,
     pub registration_date: DateTime<Utc>,
     pub is_test: bool,
 }
@@ -59,7 +59,7 @@ impl MusicDto {
         artist: String,
         bpm: f32,
         genre: Genre,
-        jacket: String,
+        jacket: Option<String>,
         registration_date: DateTime<Utc>,
         is_test: bool,
     ) -> Self {
@@ -84,7 +84,7 @@ impl From<Music> for MusicDto {
             value.artist().to_owned(),
             *value.bpm(),
             *value.genre(),
-            value.jacket_image_url().to_owned(),
+            value.jacket_image_url().clone(),
             value.registration_date().to_owned(),
             *value.is_test(),
         )

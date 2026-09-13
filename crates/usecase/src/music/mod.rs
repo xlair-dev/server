@@ -79,7 +79,7 @@ mod tests {
                 "Artist".to_owned(),
                 135.5,
                 Genre::ORIGINAL,
-                "jacket.png".to_owned(),
+                Some("jacket.png".to_owned()),
                 Utc::now(),
                 false,
             );
@@ -120,7 +120,7 @@ mod tests {
                     "Artist".to_owned(),
                     135.5,
                     Genre::ORIGINAL,
-                    "jacket.png".to_owned(),
+                    Some("jacket.png".to_owned()),
                     Utc::now(),
                     false,
                 );
@@ -149,7 +149,7 @@ mod tests {
                 artist: "Artist".to_owned(),
                 bpm: 135.5,
                 genre: Genre::ORIGINAL,
-                jacket: "jacket.png".to_owned(),
+                jacket: Some("jacket.png".to_owned()),
                 registration_date: Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
                 is_test: false,
             },

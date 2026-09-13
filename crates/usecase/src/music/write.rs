@@ -15,24 +15,34 @@ use crate::model::music::{
 };
 
 impl<R: Repositories> MusicUsecase<R> {
-    pub async fn create(
-        &self,
-        input: CreateMusicInput,
-    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
-        self.create_with_id(uuid::Uuid::new_v4().to_string(), input)
-            .await
-    }
-
-    pub async fn create_with_id(
+    pub async fn update_jacket(
         &self,
         music_id: String,
-        input: CreateMusicInput,
+        jacket_url: String,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
         if uuid::Uuid::parse_str(&music_id).is_err() {
             return Err(MusicUsecaseError::InvalidInput(
                 "music id is invalid".to_owned(),
             ));
         }
+        if jacket_url.trim().is_empty() {
+            return Err(MusicUsecaseError::InvalidInput(
+                "jacket URL must not be empty".to_owned(),
+            ));
+        }
+        let updated = self
+            .repositories
+            .music()
+            .update_jacket(&music_id, jacket_url)
+            .await?;
+        Ok(updated.into())
+    }
+
+    pub async fn create(
+        &self,
+        input: CreateMusicInput,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        let music_id = uuid::Uuid::new_v4().to_string();
         let music = build_music(
             input.music,
             music_id,
@@ -87,21 +97,18 @@ fn build_music(
     sheets_input: Vec<SheetBuildInput>,
     existing: Option<MusicWithSheets>,
 ) -> Result<MusicWithSheets, MusicUsecaseError> {
-    let jacket = if input.jacket.trim().is_empty() {
+    let jacket = input.jacket.or_else(|| {
         existing
             .as_ref()
-            .map(|music| music.music.jacket_image_url().to_owned())
-            .ok_or_else(|| MusicUsecaseError::InvalidInput("jacket must not be empty".to_owned()))?
-    } else {
-        input.jacket.clone()
-    };
+            .and_then(|music| music.music.jacket_image_url().clone())
+    });
     if input.title.trim().is_empty()
         || input.artist.trim().is_empty()
         || !input.bpm.is_finite()
         || input.bpm <= 0.0
     {
         return Err(MusicUsecaseError::InvalidInput(
-            "title, artist, jacket, and bpm must be valid".to_owned(),
+            "title, artist, and bpm must be valid".to_owned(),
         ));
     }
     if !matches!(input.genre, Genre::ORIGINAL) {

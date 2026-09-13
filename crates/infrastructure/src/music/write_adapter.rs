@@ -25,6 +25,17 @@ pub fn music_active_model_for_update(
     music_active_model(music, ActiveValue::Unchanged(parse_uuid(music.id())?))
 }
 
+pub fn music_active_model_for_jacket(
+    music_id: &str,
+    jacket_url: String,
+) -> Result<MusicActiveModel, MusicRepositoryError> {
+    Ok(MusicActiveModel {
+        id: ActiveValue::Unchanged(parse_uuid(music_id)?),
+        jacket: ActiveValue::Set(Some(jacket_url)),
+        ..Default::default()
+    })
+}
+
 fn music_active_model(
     music: &Music,
     id: ActiveValue<Uuid>,
@@ -35,7 +46,7 @@ fn music_active_model(
         artist: ActiveValue::Set(music.artist().to_owned()),
         bpm: ActiveValue::Set(decimal(*music.bpm())?),
         genre: ActiveValue::Set(0),
-        jacket: ActiveValue::Set(music.jacket_image_url().to_owned()),
+        jacket: ActiveValue::Set(music.jacket_image_url().clone()),
         registration_date: ActiveValue::Set((*music.registration_date()).into()),
         is_test: ActiveValue::Set(*music.is_test()),
     })
@@ -107,7 +118,7 @@ mod tests {
             "Artist".to_owned(),
             135.5,
             Genre::ORIGINAL,
-            "jacket.png".to_owned(),
+            Some("jacket.png".to_owned()),
             Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
             false,
         )
