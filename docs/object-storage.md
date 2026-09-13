@@ -2,6 +2,8 @@
 
 server は Cloudflare R2 に jacket 画像を保存する。
 
+オブジェクトは `jackets/{musicId}/{sha256}.png` として保存する。
+
 R2 に `assets` バケットを作成し、公開 URL を設定する。API サーバーの `.env` に次を追加する。
 
 ```env

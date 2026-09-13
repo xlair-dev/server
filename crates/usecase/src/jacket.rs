@@ -68,7 +68,7 @@ pub trait JacketStorage: Send + Sync {
 
     fn delete<'a>(
         &'a self,
-        music_id: &'a str,
+        jacket_url: &'a str,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>>;
 }
 
