@@ -17,7 +17,7 @@ tags:
   - name: common
     description: 共通の API
 servers:
-  - url: https://api.xlair.dev/v1
+  - url: https://api.xlair.dev
 paths:
   /users:
     post:
