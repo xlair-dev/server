@@ -19,6 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::r2_access_key_id(),
         env::r2_secret_access_key(),
         env::r2_public_base_url(),
+        env::r2_upload_secret(),
     )
     .await;
     let state = State::new(config, repositories).with_jacket_storage(jacket_storage);
@@ -27,6 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::auth0_issuer(),
         env::auth0_audience(),
         env::auth0_dashboard_client_id(),
+        env::auth0_admin_subjects(),
     );
 
     let app = create_app(state, Some(authenticator));

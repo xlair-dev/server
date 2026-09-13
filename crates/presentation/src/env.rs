@@ -1,4 +1,4 @@
-use std::env;
+use std::{collections::HashSet, env};
 
 pub fn host() -> String {
     env::var("HOST").expect("HOST must be set")
@@ -25,6 +25,20 @@ pub fn auth0_audience() -> String {
 /// Returns the Auth0 client ID trusted for GitHub-authenticated dashboard users.
 pub fn auth0_dashboard_client_id() -> String {
     env::var("AUTH0_DASHBOARD_CLIENT_ID").expect("AUTH0_DASHBOARD_CLIENT_ID must be set")
+}
+
+pub fn auth0_admin_subjects() -> HashSet<String> {
+    let value = env::var("AUTH0_ADMIN_SUBJECTS").expect("AUTH0_ADMIN_SUBJECTS must be set");
+    let subjects = value
+        .split(',')
+        .map(str::trim)
+        .filter(|subject| !subject.is_empty())
+        .map(ToOwned::to_owned)
+        .collect::<HashSet<_>>();
+    if subjects.is_empty() {
+        panic!("AUTH0_ADMIN_SUBJECTS must contain at least one subject");
+    }
+    subjects
 }
 
 pub fn postgres_host() -> String {
@@ -63,4 +77,8 @@ pub fn r2_secret_access_key() -> String {
 
 pub fn r2_public_base_url() -> String {
     env::var("R2_PUBLIC_BASE_URL").expect("R2_PUBLIC_BASE_URL must be set")
+}
+
+pub fn r2_upload_secret() -> String {
+    env::var("R2_UPLOAD_SECRET").expect("R2_UPLOAD_SECRET must be set")
 }

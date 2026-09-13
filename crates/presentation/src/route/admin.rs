@@ -86,15 +86,6 @@ pub async fn handle_create_jacket_upload_url(
     State(state): State<crate::state::State>,
     axum::Json(request): axum::Json<JacketUploadRequest>,
 ) -> Result<axum::Json<JacketUploadResponse>, AppError> {
-    let music_id = request
-        .music_id
-        .map(|value| {
-            uuid::Uuid::parse_str(&value)
-                .map(|_| value)
-                .map_err(|_| AppError::bad_request("musicId is invalid"))
-        })
-        .transpose()?
-        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     if !ALLOWED_JACKET_CONTENT_TYPES.contains(&request.content_type.as_str()) {
         return Err(AppError::bad_request(
             "contentType must be image/jpeg, image/png, or image/webp",
@@ -106,15 +97,22 @@ pub async fn handle_create_jacket_upload_url(
             "jacket storage is not configured".to_owned(),
         )
     })?;
-    let upload_id = music_id;
+    let upload_id = uuid::Uuid::new_v4().to_string();
     let upload = storage
         .create_upload_url(&upload_id, &request.content_type)
         .await
-        .map_err(|error| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+        .map_err(|error| {
+            tracing::error!(error = ?error, "Failed to create jacket upload URL");
+            AppError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal server error".to_owned(),
+            )
+        })?;
     Ok(axum::Json(JacketUploadResponse {
         upload_url: upload.upload_url,
         jacket_url: upload.jacket_url,
         upload_id: upload.upload_id,
+        cleanup_token: upload.cleanup_token,
     }))
 }
 
@@ -138,9 +136,12 @@ pub async fn handle_finalize_jacket_upload(
         )
     })?;
     storage
-        .validate_upload(&upload_id, &request.content_type)
+        .validate_upload(&upload_id, &request.content_type, &request.cleanup_token)
         .await
-        .map_err(|error| AppError::new(StatusCode::BAD_REQUEST, error.to_string()))?;
+        .map_err(|error| {
+            tracing::warn!(error = %error, "Jacket upload validation failed");
+            AppError::bad_request("uploaded jacket is invalid")
+        })?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -161,9 +162,15 @@ pub async fn handle_delete_jacket_upload(
         )
     })?;
     storage
-        .delete_upload(&upload_id, &request.content_type)
+        .delete_upload(&upload_id, &request.content_type, &request.cleanup_token)
         .await
-        .map_err(|error| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+        .map_err(|error| {
+            tracing::error!(error = ?error, "Failed to delete jacket upload");
+            AppError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal server error".to_owned(),
+            )
+        })?;
     Ok(StatusCode::NO_CONTENT)
 }
 

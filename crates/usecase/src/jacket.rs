@@ -5,6 +5,7 @@ pub struct JacketUpload {
     pub upload_url: String,
     pub jacket_url: String,
     pub upload_id: String,
+    pub cleanup_token: String,
 }
 
 pub trait JacketStorage: Send + Sync {
@@ -18,11 +19,13 @@ pub trait JacketStorage: Send + Sync {
         &'a self,
         upload_id: &'a str,
         content_type: &'a str,
+        cleanup_token: &'a str,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>>;
 
     fn delete_upload<'a>(
         &'a self,
         upload_id: &'a str,
         content_type: &'a str,
+        cleanup_token: &'a str,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>>;
 }

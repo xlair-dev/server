@@ -320,7 +320,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/jacketUploadResponse"
         "400":
-          description: Bad request - Invalid music ID or content type
+          description: Bad request - Invalid content type
         "401":
           description: Unauthorized - Invalid access token
         "403":
@@ -833,10 +833,6 @@ components:
     jacketUploadRequest:
       type: object
       properties:
-        musicId:
-          type: string
-          format: uuid
-          description: 編集対象の楽曲 ID。新規登録時は省略する
         contentType:
           type: string
           enum:
@@ -861,10 +857,14 @@ components:
           type: string
           format: uri
           description: 楽曲に設定する公開 URL
+        cleanupToken:
+          type: string
+          description: 未確定アップロードの cleanup 用トークン
       required:
         - uploadId
         - uploadUrl
         - jacketUrl
+        - cleanupToken
     jacketFinalizeRequest:
       type: object
       properties:
@@ -874,8 +874,12 @@ components:
             - image/jpeg
             - image/png
             - image/webp
+        cleanupToken:
+          type: string
+          description: 未確定アップロードの cleanup 用トークン
       required:
         - contentType
+        - cleanupToken
     musicData:
       type: object
       properties:

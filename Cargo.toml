@@ -19,6 +19,7 @@ chrono = { version = "0.4.39", features = ["serde", "clock"] }
 domain = { path = "crates/domain" }
 dotenvy = "0.15.7"
 getset = "0.1.4"
+hmac = "0.12.1"
 infrastructure = { path = "crates/infrastructure" }
 jsonwebtoken = "9.3.1"
 mockall = "0.13.1"
@@ -40,6 +41,7 @@ sea-orm-migration = { version = "1.1.0", features = [
     "with-chrono",
     "with-uuid",
 ] }
+sha2 = "0.10.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0.11"
