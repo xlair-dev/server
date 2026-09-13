@@ -13,8 +13,9 @@ use crate::{
     error::AppError,
     model::{
         admin::{
-            CreateMusicRequest, DbSynchronizationResponse, JacketUploadRequest,
-            JacketUploadResponse, MusicListQuery, MusicListResponse, UpdateMusicRequest,
+            CreateMusicRequest, DbSynchronizationResponse, JacketFinalizeRequest,
+            JacketUploadRequest, JacketUploadResponse, MusicListQuery, MusicListResponse,
+            UpdateMusicRequest,
         },
         sync::SyncItemResponse,
     },
@@ -105,21 +106,65 @@ pub async fn handle_create_jacket_upload_url(
             "jacket storage is not configured".to_owned(),
         )
     })?;
-    let extension = match request.content_type.as_str() {
-        "image/jpeg" => "jpg",
-        "image/png" => "png",
-        "image/webp" => "webp",
-        _ => unreachable!(),
-    };
-    let key = format!("jackets/{music_id}.{extension}");
-    let (upload_url, jacket_url) = storage
-        .create_upload_url(&key, &request.content_type)
+    let upload_id = music_id;
+    let upload = storage
+        .create_upload_url(&upload_id, &request.content_type)
         .await
         .map_err(|error| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
     Ok(axum::Json(JacketUploadResponse {
-        upload_url,
-        jacket_url,
+        upload_url: upload.upload_url,
+        jacket_url: upload.jacket_url,
+        upload_id: upload.upload_id,
     }))
+}
+
+pub async fn handle_finalize_jacket_upload(
+    State(state): State<crate::state::State>,
+    Path(upload_id): Path<String>,
+    axum::Json(request): axum::Json<JacketFinalizeRequest>,
+) -> Result<StatusCode, AppError> {
+    if uuid::Uuid::parse_str(&upload_id).is_err() {
+        return Err(AppError::bad_request("uploadId is invalid"));
+    }
+    if !ALLOWED_JACKET_CONTENT_TYPES.contains(&request.content_type.as_str()) {
+        return Err(AppError::bad_request(
+            "contentType must be image/jpeg, image/png, or image/webp",
+        ));
+    }
+    let storage = state.jacket_storage.as_ref().ok_or_else(|| {
+        AppError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "jacket storage is not configured".to_owned(),
+        )
+    })?;
+    storage
+        .validate_upload(&upload_id, &request.content_type)
+        .await
+        .map_err(|error| AppError::new(StatusCode::BAD_REQUEST, error.to_string()))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn handle_delete_jacket_upload(
+    State(state): State<crate::state::State>,
+    Path(upload_id): Path<String>,
+    axum::Json(request): axum::Json<JacketFinalizeRequest>,
+) -> Result<StatusCode, AppError> {
+    if uuid::Uuid::parse_str(&upload_id).is_err()
+        || !ALLOWED_JACKET_CONTENT_TYPES.contains(&request.content_type.as_str())
+    {
+        return Err(AppError::bad_request("jacket upload is invalid"));
+    }
+    let storage = state.jacket_storage.as_ref().ok_or_else(|| {
+        AppError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "jacket storage is not configured".to_owned(),
+        )
+    })?;
+    storage
+        .delete_upload(&upload_id, &request.content_type)
+        .await
+        .map_err(|error| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 fn encode_cursor(cursor: MusicListCursor) -> Result<String, AppError> {

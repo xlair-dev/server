@@ -65,8 +65,15 @@ pub struct JacketUploadRequest {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JacketUploadResponse {
+    pub upload_id: String,
     pub upload_url: String,
     pub jacket_url: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JacketFinalizeRequest {
+    pub content_type: String,
 }
 
 #[derive(Deserialize)]

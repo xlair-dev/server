@@ -53,10 +53,19 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             get(admin::handle_get_music).post(admin::handle_update_music),
         )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
-    let admin_routes = admin_routes.route(
-        "/jackets/upload-url",
-        post(admin::handle_create_jacket_upload_url),
-    );
+    let admin_routes = admin_routes
+        .route(
+            "/jackets/upload-url",
+            post(admin::handle_create_jacket_upload_url),
+        )
+        .route(
+            "/jackets/{uploadId}/finalize",
+            post(admin::handle_finalize_jacket_upload),
+        )
+        .route(
+            "/jackets/{uploadId}",
+            axum::routing::delete(admin::handle_delete_jacket_upload),
+        );
 
     let private_routes = Router::new()
         .nest("/users", users)
@@ -96,7 +105,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
 
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin().parse::<HeaderValue>().unwrap())
-        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
 
     Router::new()

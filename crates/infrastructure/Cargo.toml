@@ -13,6 +13,7 @@ domain.workspace = true
 sea-orm.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+usecase.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

@@ -306,7 +306,6 @@ paths:
       summary: 楽曲ジャケットのアップロード URL を発行
       security:
         - userAuth: []
-      parameters:
       requestBody:
         required: true
         content:
@@ -322,6 +321,68 @@ paths:
                 $ref: "#/components/schemas/jacketUploadResponse"
         "400":
           description: Bad request - Invalid music ID or content type
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "500":
+          description: Internal server error
+  /admin/jackets/{uploadId}/finalize:
+    post:
+      tags:
+        - admin
+      summary: 楽曲ジャケットのアップロードを確定
+      security:
+        - userAuth: []
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/jacketFinalizeRequest"
+      responses:
+        "204":
+          description: アップロードが検証済み
+        "400":
+          description: Bad request - Invalid upload
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "500":
+          description: Internal server error
+  /admin/jackets/{uploadId}:
+    delete:
+      tags:
+        - admin
+      summary: 未確定の楽曲ジャケットを削除
+      security:
+        - userAuth: []
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/jacketFinalizeRequest"
+      responses:
+        "204":
+          description: 未確定アップロードを削除
+        "400":
+          description: Bad request - Invalid upload
         "401":
           description: Unauthorized - Invalid access token
         "403":
@@ -788,6 +849,10 @@ components:
     jacketUploadResponse:
       type: object
       properties:
+        uploadId:
+          type: string
+          format: uuid
+          description: 未確定アップロードの ID
         uploadUrl:
           type: string
           format: uri
@@ -797,8 +862,20 @@ components:
           format: uri
           description: 楽曲に設定する公開 URL
       required:
+        - uploadId
         - uploadUrl
         - jacketUrl
+    jacketFinalizeRequest:
+      type: object
+      properties:
+        contentType:
+          type: string
+          enum:
+            - image/jpeg
+            - image/png
+            - image/webp
+      required:
+        - contentType
     musicData:
       type: object
       properties:
