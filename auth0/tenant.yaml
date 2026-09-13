@@ -33,13 +33,13 @@ clients:
       - authorization_code
     callbacks:
       - http://localhost:3000/auth/callback
-      - http://dash.stg.xlair.dev/auth/callback
+      - https://dash.stg.xlair.dev/auth/callback
     allowed_logout_urls:
       - http://localhost:3000
-      - http://dash.stg.xlair.dev
+      - https://dash.stg.xlair.dev
     web_origins:
       - http://localhost:3000
-      - http://dash.stg.xlair.dev
+      - https://dash.stg.xlair.dev
   - name: XLAIR Device
     app_type: non_interactive
     oidc_conformant: true
