@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use domain::{
-    entity::{difficulty::Difficulty, genre::Genre, level::Level, music::Music, sheet::Sheet},
+    entity::{difficulty::Difficulty, level::Level, music::Music, sheet::Sheet},
     repository::{
         Repositories,
         music::{MusicRepository, MusicWithSheets},
