@@ -8,6 +8,8 @@ use crate::entity::{music::Music, sheet::Sheet};
 
 #[derive(Debug, Error)]
 pub enum MusicRepositoryError {
+    #[error("Invalid music page limit: {0}")]
+    InvalidLimit(u64),
     #[error("Music not found: {0}")]
     NotFound(String),
     #[error(transparent)]
@@ -63,5 +65,11 @@ pub trait MusicRepository: Send + Sync {
     fn update_with_sheets(
         &self,
         music: MusicWithSheets,
+    ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
+
+    fn update_jacket(
+        &self,
+        music_id: &str,
+        jacket_url: Option<String>,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 }

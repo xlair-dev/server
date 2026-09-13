@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use crate::config::Config;
 
-// TODO: Use real implementations when available
 #[cfg(not(test))]
 pub type RepositoriesImpl = infrastructure::RepositoriesImpl;
 
@@ -13,12 +12,25 @@ pub type RepositoriesImpl = domain::repository::MockRepositories;
 pub struct State {
     pub usecases: Arc<usecase::Usecases<RepositoriesImpl>>,
     pub config: Config,
+    pub jacket_storage: Option<Arc<dyn usecase::jacket::JacketStorage>>,
 }
 
 impl State {
     pub fn new(config: Config, repositories: RepositoriesImpl) -> Self {
         let repositories = Arc::new(repositories);
         let usecases = Arc::new(usecase::Usecases::new(repositories));
-        Self { usecases, config }
+        Self {
+            usecases,
+            config,
+            jacket_storage: None,
+        }
+    }
+
+    pub fn with_jacket_storage(
+        mut self,
+        jacket_storage: impl usecase::jacket::JacketStorage + 'static,
+    ) -> Self {
+        self.jacket_storage = Some(Arc::new(jacket_storage));
+        self
     }
 }

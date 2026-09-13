@@ -18,6 +18,7 @@ pub async fn list_with_sheets(db: &DbConn) -> Result<Vec<MusicWithSheets>, Music
     debug!("Querying musics with related sheets");
     let models = entities::musics::Entity::find()
         .order_by_asc(entities::musics::Column::RegistrationDate)
+        .order_by_asc(entities::musics::Column::Id)
         .find_with_related(entities::sheets::Entity)
         .all(db)
         .await
@@ -42,6 +43,9 @@ pub async fn list_with_sheets_page(
     cursor: Option<MusicListCursor>,
     limit: u64,
 ) -> Result<MusicListPage, MusicRepositoryError> {
+    if limit == 0 {
+        return Err(MusicRepositoryError::InvalidLimit(limit));
+    }
     debug!(
         limit,
         has_cursor = cursor.is_some(),
@@ -78,13 +82,19 @@ pub async fn list_with_sheets_page(
         })?;
 
     let next_cursor = if models.len() > limit as usize {
-        models.pop().map(|(model, _)| MusicListCursor {
-            registration_date: model.registration_date.with_timezone(&Utc),
-            id: model.id.to_string(),
-        })
+        models
+            .get(limit as usize - 1)
+            .map(|(model, _)| MusicListCursor {
+                registration_date: model.registration_date.with_timezone(&Utc),
+                id: model.id.to_string(),
+            })
     } else {
         None
     };
+
+    if next_cursor.is_some() {
+        models.truncate(limit as usize);
+    }
 
     let mut items = Vec::with_capacity(models.len());
     for (music_model, sheet_models) in models {

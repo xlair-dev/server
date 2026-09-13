@@ -64,4 +64,13 @@ impl MusicRepository for MusicRepositoryImpl {
     ) -> Result<MusicWithSheets, MusicRepositoryError> {
         write::update_with_sheets(self.db.as_ref(), music).await
     }
+
+    #[instrument(skip(self), fields(music_id = %music_id))]
+    async fn update_jacket(
+        &self,
+        music_id: &str,
+        jacket_url: Option<String>,
+    ) -> Result<MusicWithSheets, MusicRepositoryError> {
+        write::update_jacket(self.db.as_ref(), music_id, jacket_url).await
+    }
 }

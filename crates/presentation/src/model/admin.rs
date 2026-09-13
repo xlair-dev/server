@@ -29,12 +29,11 @@ pub struct DbSynchronizationResponse {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MusicDataRequest {
+pub struct MusicMetadataRequest {
     pub title: String,
     pub artist: String,
     pub bpm: f32,
     pub genre: String,
-    pub jacket: String,
     pub registration_date: String,
     pub is_test: bool,
 }
@@ -43,7 +42,7 @@ pub struct MusicDataRequest {
 #[serde(rename_all = "camelCase")]
 pub struct CreateMusicRequest {
     #[serde(flatten)]
-    pub music: MusicDataRequest,
+    pub music: MusicMetadataRequest,
     pub sheets: Vec<SheetDataRequest>,
 }
 
@@ -51,7 +50,7 @@ pub struct CreateMusicRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateMusicRequest {
     #[serde(flatten)]
-    pub music: MusicDataRequest,
+    pub music: MusicMetadataRequest,
     pub sheets: Vec<SheetRequest>,
 }
 
@@ -72,10 +71,9 @@ pub struct SheetRequest {
     pub notes_designer: String,
 }
 
-impl TryFrom<MusicDataRequest> for MusicDataInput {
-    type Error = AppError;
-
-    fn try_from(request: MusicDataRequest) -> Result<Self, Self::Error> {
+impl MusicMetadataRequest {
+    fn try_into_input(self) -> Result<MusicDataInput, AppError> {
+        let request = self;
         let registration_date = DateTime::parse_from_rfc3339(&request.registration_date)
             .map_err(|_| AppError::bad_request("registrationDate is invalid"))?
             .with_timezone(&Utc);
@@ -83,12 +81,12 @@ impl TryFrom<MusicDataRequest> for MusicDataInput {
             "ORIGINAL" => Genre::ORIGINAL,
             _ => return Err(AppError::bad_request("genre is invalid")),
         };
-        Ok(Self {
+        Ok(MusicDataInput {
             title: request.title,
             artist: request.artist,
             bpm: request.bpm,
             genre,
-            jacket: request.jacket,
+            jacket: None,
             registration_date,
             is_test: request.is_test,
         })
@@ -129,13 +127,11 @@ impl TryFrom<SheetRequest> for SheetInput {
     }
 }
 
-impl TryFrom<CreateMusicRequest> for CreateMusicInput {
-    type Error = AppError;
-
-    fn try_from(request: CreateMusicRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            music: request.music.try_into()?,
-            sheets: request
+impl CreateMusicRequest {
+    pub fn try_into_input(self) -> Result<CreateMusicInput, AppError> {
+        Ok(CreateMusicInput {
+            music: self.music.try_into_input()?,
+            sheets: self
                 .sheets
                 .into_iter()
                 .map(TryInto::try_into)
@@ -149,7 +145,7 @@ impl TryFrom<UpdateMusicRequest> for UpdateMusicInput {
 
     fn try_from(request: UpdateMusicRequest) -> Result<Self, Self::Error> {
         Ok(Self {
-            music: request.music.try_into()?,
+            music: request.music.try_into_input()?,
             sheets: request
                 .sheets
                 .into_iter()

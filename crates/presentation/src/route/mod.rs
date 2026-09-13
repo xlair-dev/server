@@ -1,5 +1,6 @@
 use axum::{
     Router,
+    extract::DefaultBodyLimit,
     http::{HeaderValue, Method, header},
     middleware,
     routing::{get, patch, post},
@@ -52,7 +53,12 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             "/musics/{musicId}",
             get(admin::handle_get_music).post(admin::handle_update_music),
         )
+        .route(
+            "/musics/{musicId}/jacket",
+            post(admin::handle_upload_jacket).delete(admin::handle_delete_jacket),
+        )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
+    let admin_routes = admin_routes.layer(DefaultBodyLimit::max(6 * 1024 * 1024));
 
     let private_routes = Router::new()
         .nest("/users", users)
@@ -92,7 +98,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
 
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin().parse::<HeaderValue>().unwrap())
-        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
 
     Router::new()
@@ -111,6 +117,8 @@ async fn not_found() -> crate::error::AppError {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use axum::{
         body::{self, Body},
         http::Request,
@@ -137,6 +145,7 @@ mod tests {
             "https://issuer.example.com".into(),
             "https://api.example.com".into(),
             "dashboard-client-id".into(),
+            HashSet::new(),
         );
         create_app(state, Some(authenticator))
     }

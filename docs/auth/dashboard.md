@@ -24,7 +24,7 @@ dashboard の公開 URL が決まったら、Auth0 の Application に次を設�
 
 Auth0 の設定は [`auth0/tenant.yaml`](../../auth0/tenant.yaml) で管理する。URL は公開 URL 決定後に構成へ追加する。
 
-API サーバーは `azp` が `XLAIR Dashboard` の Client ID と一致するユーザートークンだけを `Admin` principal として扱う。Client ID は `AUTH0_DASHBOARD_CLIENT_ID` に設定する。
+API サーバーは `azp` が `XLAIR Dashboard` の Client ID と一致し、`sub` が `AUTH0_ADMIN_SUBJECTS` に含まれるユーザートークンだけを `Admin` principal として扱う。Client ID と許可する `sub` の一覧は環境変数に設定する。
 
 ## API の呼び出し
 

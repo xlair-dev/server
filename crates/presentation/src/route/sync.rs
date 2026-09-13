@@ -53,7 +53,7 @@ mod tests {
                 "Artist".to_owned(),
                 140.0,
                 Genre::ORIGINAL,
-                "jackets/song.png".to_owned(),
+                Some("jackets/song.png".to_owned()),
                 Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
                 false,
             );

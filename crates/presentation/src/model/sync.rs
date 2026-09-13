@@ -25,7 +25,7 @@ pub struct MusicResponse {
     pub artist: String,
     pub bpm: f32,
     pub genre: String,
-    pub jacket: String,
+    pub jacket: Option<String>,
     pub registration_date: String,
     pub is_test: bool,
 }

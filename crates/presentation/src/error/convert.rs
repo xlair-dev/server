@@ -21,7 +21,7 @@ impl From<UserRepositoryError> for AppError {
             },
             UserRepositoryError::InternalError(err) => AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                message: err.to_string(),
+                message: internal_error_message(err),
             },
         }
     }
@@ -40,7 +40,7 @@ impl From<RecordRepositoryError> for AppError {
             },
             RecordRepositoryError::InternalError(err) => AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                message: err.to_string(),
+                message: internal_error_message(err),
             },
         }
     }
@@ -61,7 +61,7 @@ impl From<UserUsecaseError> for AppError {
             UserUsecaseError::RecordRepositoryError(repo_error) => repo_error.into(),
             UserUsecaseError::InternalError(err) => AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                message: err.to_string(),
+                message: internal_error_message(err),
             },
         }
     }
@@ -70,16 +70,24 @@ impl From<UserUsecaseError> for AppError {
 impl From<MusicRepositoryError> for AppError {
     fn from(error: MusicRepositoryError) -> Self {
         match error {
+            MusicRepositoryError::InvalidLimit(limit) => {
+                AppError::bad_request(format!("limit must be greater than 0: {limit}"))
+            }
             MusicRepositoryError::NotFound(id) => AppError {
                 status_code: axum::http::StatusCode::NOT_FOUND,
                 message: format!("Music not found: {id}"),
             },
             MusicRepositoryError::InternalError(err) => AppError {
                 status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                message: err.to_string(),
+                message: internal_error_message(err),
             },
         }
     }
+}
+
+fn internal_error_message(error: anyhow::Error) -> String {
+    tracing::error!(error = ?error, "Internal application error");
+    "Internal server error".to_owned()
 }
 
 impl From<MusicUsecaseError> for AppError {
@@ -87,6 +95,13 @@ impl From<MusicUsecaseError> for AppError {
         match error {
             MusicUsecaseError::MusicRepository(err) => err.into(),
             MusicUsecaseError::InvalidInput(message) => AppError::bad_request(message),
+            MusicUsecaseError::JacketStorage(error) => {
+                tracing::error!(error = ?error, "Jacket storage operation failed");
+                AppError::new(
+                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal server error".to_owned(),
+                )
+            }
         }
     }
 }

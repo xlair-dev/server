@@ -12,7 +12,7 @@ pub struct Model {
     #[sea_orm(column_type = "Decimal(Some((6, 3)))")]
     pub bpm: Decimal,
     pub genre: i32,
-    pub jacket: String,
+    pub jacket: Option<String>,
     pub registration_date: DateTimeWithTimeZone,
     pub is_test: bool,
 }

@@ -9,19 +9,73 @@ use domain::{
 };
 
 use super::{MusicUsecase, MusicUsecaseError};
-use crate::model::music::{
-    CreateMusicInput, MusicDataInput, MusicWithSheetsDto, SheetDataInput, SheetInput,
-    UpdateMusicInput,
+use crate::{
+    jacket::{JacketStorage, JacketUpload},
+    model::music::{
+        CreateMusicInput, MusicDataInput, MusicWithSheetsDto, SheetDataInput, SheetInput,
+        UpdateMusicInput,
+    },
 };
 
 impl<R: Repositories> MusicUsecase<R> {
+    pub async fn upload_jacket(
+        &self,
+        storage: &dyn JacketStorage,
+        music_id: String,
+        jacket: JacketUpload,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        validate_music_id(&music_id)?;
+        self.repositories
+            .music()
+            .find_with_sheets(&music_id)
+            .await?;
+        let jacket_url = storage
+            .upload(&music_id, jacket)
+            .await
+            .map_err(MusicUsecaseError::JacketStorage)?;
+        self.repositories
+            .music()
+            .update_jacket(&music_id, Some(jacket_url))
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn delete_jacket(
+        &self,
+        storage: &dyn JacketStorage,
+        music_id: String,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        validate_music_id(&music_id)?;
+        let music = self
+            .repositories
+            .music()
+            .find_with_sheets(&music_id)
+            .await?;
+        if music.music.jacket_image_url().is_some() {
+            storage
+                .delete(&music_id)
+                .await
+                .map_err(MusicUsecaseError::JacketStorage)?;
+            return self
+                .repositories
+                .music()
+                .update_jacket(&music_id, None)
+                .await
+                .map(Into::into)
+                .map_err(Into::into);
+        }
+        Ok(music.into())
+    }
+
     pub async fn create(
         &self,
         input: CreateMusicInput,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        let music_id = uuid::Uuid::new_v4().to_string();
         let music = build_music(
             input.music,
-            uuid::Uuid::new_v4().to_string(),
+            music_id,
             input.sheets.into_iter().map(Into::into).collect(),
             None,
         )?;
@@ -67,20 +121,33 @@ impl<R: Repositories> MusicUsecase<R> {
     }
 }
 
+fn validate_music_id(music_id: &str) -> Result<(), MusicUsecaseError> {
+    if uuid::Uuid::parse_str(music_id).is_err() {
+        return Err(MusicUsecaseError::InvalidInput(
+            "music id is invalid".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
 fn build_music(
     input: MusicDataInput,
     music_id: String,
     sheets_input: Vec<SheetBuildInput>,
     existing: Option<MusicWithSheets>,
 ) -> Result<MusicWithSheets, MusicUsecaseError> {
+    let jacket = input.jacket.or_else(|| {
+        existing
+            .as_ref()
+            .and_then(|music| music.music.jacket_image_url().clone())
+    });
     if input.title.trim().is_empty()
         || input.artist.trim().is_empty()
-        || input.jacket.trim().is_empty()
         || !input.bpm.is_finite()
         || input.bpm <= 0.0
     {
         return Err(MusicUsecaseError::InvalidInput(
-            "title, artist, jacket, and bpm must be valid".to_owned(),
+            "title, artist, and bpm must be valid".to_owned(),
         ));
     }
     if !matches!(input.genre, Genre::ORIGINAL) {
@@ -144,7 +211,7 @@ fn build_music(
             input.artist,
             input.bpm,
             input.genre,
-            input.jacket,
+            jacket,
             input.registration_date,
             input.is_test,
         ),
@@ -192,7 +259,7 @@ fn non_empty(value: String, field: &str) -> Result<String, MusicUsecaseError> {
 }
 
 fn level_from_value(value: f64) -> Result<Level, MusicUsecaseError> {
-    if !value.is_finite() || value < 1.0 || value > 99.9 {
+    if !value.is_finite() || !(1.0..=99.9).contains(&value) {
         return Err(MusicUsecaseError::InvalidInput(
             "sheet level is invalid".to_owned(),
         ));

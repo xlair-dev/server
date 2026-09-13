@@ -4,6 +4,7 @@ use domain::repository::Repositories;
 use tracing::{error, info, instrument};
 
 pub mod entities;
+pub mod jacket;
 pub mod model;
 pub mod music;
 pub mod record;
