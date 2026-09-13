@@ -155,7 +155,10 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/musicMultipartRequest"
+              $ref: "#/components/schemas/createMusicMultipartRequest"
+            encoding:
+              metadata:
+                contentType: application/json
       responses:
         "201":
           description: 登録された楽曲と譜面
@@ -259,7 +262,10 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/musicMultipartRequest"
+              $ref: "#/components/schemas/updateMusicMultipartRequest"
+            encoding:
+              metadata:
+                contentType: application/json
       responses:
         "200":
           description: 更新された楽曲と譜面
@@ -718,19 +724,91 @@ components:
         - clearType
         - playCount
         - updatedAt
-    musicMultipartRequest:
+    createMusicMultipartRequest:
       type: object
-      description: request フィールドには登録または更新リクエストの JSON 文字列を指定する。
+      description: metadata フィールドには createMusicMetadata の JSON 文字列を指定する。
       properties:
-        request:
+        metadata:
           type: string
-          description: 楽曲と譜面の JSON 文字列
+          description: 楽曲メタデータと譜面の JSON 文字列
         jacket:
           type: string
           format: binary
           description: JPEG、PNG、または WebP の画像（5 MiB 以下）。server 内で PNG に正規化して保存する。
       required:
-        - request
+        - metadata
+        - jacket
+    updateMusicMultipartRequest:
+      type: object
+      description: metadata フィールドには updateMusicMetadata の JSON 文字列を指定する。
+      properties:
+        metadata:
+          type: string
+          description: 楽曲メタデータと譜面の JSON 文字列
+        jacket:
+          type: string
+          format: binary
+          description: JPEG、PNG、または WebP の画像（5 MiB 以下）。指定時は PNG に正規化して保存する。
+      required:
+        - metadata
+    musicMetadata:
+      type: object
+      properties:
+        title:
+          type: string
+          description: タイトル
+        artist:
+          type: string
+          description: アーティスト名
+        bpm:
+          type: number
+          format: float
+          description: BPM
+        genre:
+          type: string
+          enum:
+            - ORIGINAL
+          description: ジャンル
+        registrationDate:
+          type: string
+          format: date-time
+          description: 運用上の楽曲登録日
+        isTest:
+          type: boolean
+          description: テスト楽曲かどうか
+      required:
+        - title
+        - artist
+        - bpm
+        - genre
+        - registrationDate
+        - isTest
+    createMusicMetadata:
+      allOf:
+        - $ref: "#/components/schemas/musicMetadata"
+        - type: object
+          properties:
+            sheets:
+              type: array
+              minItems: 3
+              maxItems: 3
+              items:
+                $ref: "#/components/schemas/sheetData"
+          required:
+            - sheets
+    updateMusicMetadata:
+      allOf:
+        - $ref: "#/components/schemas/musicMetadata"
+        - type: object
+          properties:
+            sheets:
+              type: array
+              minItems: 3
+              maxItems: 3
+              items:
+                $ref: "#/components/schemas/sheet"
+          required:
+            - sheets
     musicData:
       type: object
       properties:

@@ -63,14 +63,12 @@ impl R2JacketStorage {
     }
 
     async fn delete_impl(&self, music_id: &str) -> anyhow::Result<()> {
-        for extension in ["jpg", "png", "webp"] {
-            self.client
-                .delete_object()
-                .bucket(&self.bucket)
-                .key(format!("jackets/{music_id}.{extension}"))
-                .send()
-                .await?;
-        }
+        self.client
+            .delete_object()
+            .bucket(&self.bucket)
+            .key(Self::key(music_id))
+            .send()
+            .await?;
         Ok(())
     }
 }

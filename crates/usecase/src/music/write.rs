@@ -87,9 +87,16 @@ fn build_music(
     sheets_input: Vec<SheetBuildInput>,
     existing: Option<MusicWithSheets>,
 ) -> Result<MusicWithSheets, MusicUsecaseError> {
+    let jacket = if input.jacket.trim().is_empty() {
+        existing
+            .as_ref()
+            .map(|music| music.music.jacket_image_url().to_owned())
+            .ok_or_else(|| MusicUsecaseError::InvalidInput("jacket must not be empty".to_owned()))?
+    } else {
+        input.jacket.clone()
+    };
     if input.title.trim().is_empty()
         || input.artist.trim().is_empty()
-        || input.jacket.trim().is_empty()
         || !input.bpm.is_finite()
         || input.bpm <= 0.0
     {
@@ -158,7 +165,7 @@ fn build_music(
             input.artist,
             input.bpm,
             input.genre,
-            input.jacket,
+            jacket,
             input.registration_date,
             input.is_test,
         ),

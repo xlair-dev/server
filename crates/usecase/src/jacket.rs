@@ -1,9 +1,11 @@
 use std::{future::Future, io::Cursor, pin::Pin};
 
-use image::{ImageFormat, ImageReader};
+use image::{ImageFormat, ImageReader, Limits};
 use thiserror::Error;
 
 pub const MAX_JACKET_SIZE: usize = 5 * 1024 * 1024;
+const MAX_JACKET_DIMENSION: u32 = 4096;
+const MAX_JACKET_ALLOCATION: u64 = 64 * 1024 * 1024;
 const JACKET_CONTENT_TYPE: &str = "image/png";
 
 #[derive(Debug, Error)]
@@ -34,7 +36,13 @@ impl JacketUpload {
             return Err(JacketUploadError::TooLarge);
         }
 
-        let image = ImageReader::new(Cursor::new(bytes))
+        let mut reader = ImageReader::new(Cursor::new(bytes));
+        let mut limits = Limits::default();
+        limits.max_image_width = Some(MAX_JACKET_DIMENSION);
+        limits.max_image_height = Some(MAX_JACKET_DIMENSION);
+        limits.max_alloc = Some(MAX_JACKET_ALLOCATION);
+        reader.limits(limits);
+        let image = reader
             .with_guessed_format()
             .map_err(|_| JacketUploadError::InvalidImage)?
             .decode()
