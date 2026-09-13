@@ -70,6 +70,9 @@ impl From<UserUsecaseError> for AppError {
 impl From<MusicRepositoryError> for AppError {
     fn from(error: MusicRepositoryError) -> Self {
         match error {
+            MusicRepositoryError::InvalidLimit(limit) => {
+                AppError::bad_request(format!("limit must be greater than 0: {limit}"))
+            }
             MusicRepositoryError::NotFound(id) => AppError {
                 status_code: axum::http::StatusCode::NOT_FOUND,
                 message: format!("Music not found: {id}"),

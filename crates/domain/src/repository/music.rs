@@ -8,6 +8,8 @@ use crate::entity::{music::Music, sheet::Sheet};
 
 #[derive(Debug, Error)]
 pub enum MusicRepositoryError {
+    #[error("Invalid music page limit: {0}")]
+    InvalidLimit(u64),
     #[error("Music not found: {0}")]
     NotFound(String),
     #[error(transparent)]

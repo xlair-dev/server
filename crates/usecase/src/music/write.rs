@@ -19,9 +19,18 @@ impl<R: Repositories> MusicUsecase<R> {
         &self,
         input: CreateMusicInput,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        self.create_with_id(uuid::Uuid::new_v4().to_string(), input)
+            .await
+    }
+
+    pub async fn create_with_id(
+        &self,
+        music_id: String,
+        input: CreateMusicInput,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
         let music = build_music(
             input.music,
-            uuid::Uuid::new_v4().to_string(),
+            music_id,
             input.sheets.into_iter().map(Into::into).collect(),
             None,
         )?;

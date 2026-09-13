@@ -54,13 +54,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             get(admin::handle_get_music).post(admin::handle_update_music),
         )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
-    let admin_routes = admin_routes
-        .route("/jackets", post(admin::handle_upload_jacket))
-        .route(
-            "/jackets/{jacketId}",
-            axum::routing::delete(admin::handle_delete_jacket),
-        )
-        .layer(DefaultBodyLimit::max(6 * 1024 * 1024));
+    let admin_routes = admin_routes.layer(DefaultBodyLimit::max(6 * 1024 * 1024));
 
     let private_routes = Router::new()
         .nest("/users", users)

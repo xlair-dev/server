@@ -14,8 +14,8 @@ use crate::{
     error::AppError,
     model::{
         admin::{
-            CreateMusicRequest, DbSynchronizationResponse, JacketUploadResponse, MusicListQuery,
-            MusicListResponse, UpdateMusicRequest,
+            CreateMusicRequest, DbSynchronizationResponse, MusicListQuery, MusicListResponse,
+            UpdateMusicRequest,
         },
         sync::SyncItemResponse,
     },
@@ -61,17 +61,55 @@ pub async fn handle_get_music(
 
 pub async fn handle_create_music(
     State(state): State<crate::state::State>,
-    Json(request): Json<CreateMusicRequest>,
+    multipart: Multipart,
 ) -> Result<(StatusCode, Json<SyncItemResponse>), AppError> {
-    let music = state.usecases.music.create(request.try_into()?).await?;
+    let (request, jacket) = parse_music_multipart(multipart).await?;
+    let mut request: CreateMusicRequest =
+        serde_json::from_str(&request).map_err(|_| AppError::bad_request("request is invalid"))?;
+    let music_id = uuid::Uuid::new_v4().to_string();
+    let jacket_uploaded = if let Some(jacket) = jacket {
+        let uploaded_url = upload_jacket(&state, &music_id, jacket).await?;
+        request.music.jacket = uploaded_url;
+        true
+    } else {
+        false
+    };
+    let input = match request.try_into() {
+        Ok(input) => input,
+        Err(error) => {
+            cleanup_jacket(&state, &music_id, jacket_uploaded).await;
+            return Err(error);
+        }
+    };
+    let music = match state
+        .usecases
+        .music
+        .create_with_id(music_id.clone(), input)
+        .await
+    {
+        Ok(music) => music,
+        Err(error) => {
+            cleanup_jacket(&state, &music_id, jacket_uploaded).await;
+            return Err(error.into());
+        }
+    };
     Ok((StatusCode::CREATED, Json(SyncItemResponse::from(music))))
 }
 
 pub async fn handle_update_music(
     State(state): State<crate::state::State>,
     Path(music_id): Path<String>,
-    Json(request): Json<UpdateMusicRequest>,
+    multipart: Multipart,
 ) -> Result<Json<SyncItemResponse>, AppError> {
+    if uuid::Uuid::parse_str(&music_id).is_err() {
+        return Err(AppError::bad_request("music id is invalid"));
+    }
+    let (request, jacket) = parse_music_multipart(multipart).await?;
+    let mut request: UpdateMusicRequest =
+        serde_json::from_str(&request).map_err(|_| AppError::bad_request("request is invalid"))?;
+    if let Some(jacket) = jacket {
+        request.music.jacket = upload_jacket(&state, &music_id, jacket).await?;
+    }
     let music = state
         .usecases
         .music
@@ -80,74 +118,89 @@ pub async fn handle_update_music(
     Ok(Json(SyncItemResponse::from(music)))
 }
 
-pub async fn handle_upload_jacket(
-    State(state): State<crate::state::State>,
+async fn parse_music_multipart(
     mut multipart: Multipart,
-) -> Result<axum::Json<JacketUploadResponse>, AppError> {
-    let field = multipart
+) -> Result<(String, Option<JacketUpload>), AppError> {
+    let mut request = None;
+    let mut jacket = None;
+    while let Some(field) = multipart
         .next_field()
         .await
-        .map_err(|_| AppError::bad_request("jacket file is invalid"))?
-        .ok_or_else(|| AppError::bad_request("jacket file is required"))?;
-    if field.name() != Some("file") {
-        return Err(AppError::bad_request("jacket file is required"));
+        .map_err(|_| AppError::bad_request("multipart request is invalid"))?
+    {
+        match field.name() {
+            Some("request") if request.is_none() => {
+                request = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|_| AppError::bad_request("request is invalid"))?,
+                );
+            }
+            Some("jacket") if jacket.is_none() => {
+                let content_type = field
+                    .content_type()
+                    .ok_or_else(|| AppError::bad_request("jacket content type is required"))?
+                    .to_owned();
+                let bytes = field
+                    .bytes()
+                    .await
+                    .map_err(|_| AppError::bad_request("jacket file is invalid"))?
+                    .to_vec();
+                jacket = Some(JacketUpload::new(content_type, bytes).map_err(map_jacket_error)?);
+            }
+            Some("request") => return Err(AppError::bad_request("request is duplicated")),
+            Some("jacket") => return Err(AppError::bad_request("jacket is duplicated")),
+            _ => return Err(AppError::bad_request("multipart field is invalid")),
+        }
     }
-    let content_type = field
-        .content_type()
-        .ok_or_else(|| AppError::bad_request("jacket content type is required"))?
-        .to_owned();
-    let bytes = field
-        .bytes()
-        .await
-        .map_err(|_| AppError::bad_request("jacket file is invalid"))?
-        .to_vec();
-    let jacket = JacketUpload::new(content_type, bytes).map_err(|error| match error {
+    let request = request.ok_or_else(|| AppError::bad_request("request is required"))?;
+    Ok((request, jacket))
+}
+
+fn map_jacket_error(error: JacketUploadError) -> AppError {
+    match error {
         JacketUploadError::UnsupportedContentType => {
             AppError::bad_request("jacket must be JPEG, PNG, or WebP")
         }
         JacketUploadError::TooLarge => AppError::bad_request("jacket exceeds 5 MiB"),
         JacketUploadError::InvalidImage => AppError::bad_request("jacket image is invalid"),
-    })?;
+    }
+}
+
+async fn upload_jacket(
+    state: &crate::state::State,
+    music_id: &str,
+    jacket: JacketUpload,
+) -> Result<String, AppError> {
     let storage = state.jacket_storage.as_ref().ok_or_else(|| {
         AppError::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "jacket storage is not configured".to_owned(),
         )
     })?;
-    let upload = storage.upload(jacket).await.map_err(|error| {
+    let upload = storage.upload(music_id, jacket).await.map_err(|error| {
         tracing::error!(error = ?error, "Failed to upload jacket");
         AppError::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Internal server error".to_owned(),
         )
     })?;
-    Ok(axum::Json(JacketUploadResponse {
-        jacket_id: upload.id,
-        jacket_url: upload.url,
-    }))
+    Ok(upload.url)
 }
 
-pub async fn handle_delete_jacket(
-    State(state): State<crate::state::State>,
-    Path(jacket_id): Path<String>,
-) -> Result<StatusCode, AppError> {
-    if uuid::Uuid::parse_str(&jacket_id).is_err() {
-        return Err(AppError::bad_request("jacket id is invalid"));
+async fn cleanup_jacket(state: &crate::state::State, music_id: &str, should_cleanup: bool) {
+    if !should_cleanup {
+        return;
     }
-    let storage = state.jacket_storage.as_ref().ok_or_else(|| {
-        AppError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "jacket storage is not configured".to_owned(),
-        )
-    })?;
-    storage.delete(&jacket_id).await.map_err(|error| {
+    let Some(storage) = state.jacket_storage.as_ref() else {
+        tracing::error!("Failed to clean up jacket: storage is not configured");
+        return;
+    };
+    let result = storage.delete(music_id).await;
+    if let Err(error) = result {
         tracing::error!(error = ?error, "Failed to delete jacket upload");
-        AppError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error".to_owned(),
-        )
-    })?;
-    Ok(StatusCode::NO_CONTENT)
+    }
 }
 
 fn encode_cursor(cursor: MusicListCursor) -> Result<String, AppError> {

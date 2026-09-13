@@ -153,20 +153,9 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              allOf:
-                - $ref: "#/components/schemas/musicData"
-                - type: object
-                  properties:
-                    sheets:
-                      type: array
-                      minItems: 3
-                      maxItems: 3
-                      items:
-                        $ref: "#/components/schemas/sheetData"
-                  required:
-                    - sheets
+              $ref: "#/components/schemas/musicMultipartRequest"
       responses:
         "201":
           description: 登録された楽曲と譜面
@@ -268,20 +257,9 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              allOf:
-                - $ref: "#/components/schemas/musicData"
-                - type: object
-                  properties:
-                    sheets:
-                      type: array
-                      minItems: 3
-                      maxItems: 3
-                      items:
-                        $ref: "#/components/schemas/sheet"
-                  required:
-                    - sheets
+              $ref: "#/components/schemas/musicMultipartRequest"
       responses:
         "200":
           description: 更新された楽曲と譜面
@@ -297,66 +275,6 @@ paths:
           description: Forbidden - The authenticated user is not an administrator
         "404":
           description: Not found - Music not found
-        "500":
-          description: Internal server error
-  /admin/jackets:
-    post:
-      tags:
-        - admin
-      summary: 楽曲ジャケットをアップロード
-      security:
-        - userAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - file
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: JPEG、PNG、または WebP の画像（5 MiB 以下）
-      responses:
-        "200":
-          description: アップロードされたジャケット
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/jacketUploadResponse"
-        "400":
-          description: Bad request - Invalid jacket image
-        "401":
-          description: Unauthorized - Invalid access token
-        "403":
-          description: Forbidden - The authenticated user is not an administrator
-        "500":
-          description: Internal server error
-  /admin/jackets/{jacketId}:
-    delete:
-      tags:
-        - admin
-      summary: 楽曲ジャケットを削除
-      security:
-        - userAuth: []
-      parameters:
-        - name: jacketId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "204":
-          description: ジャケットを削除
-        "400":
-          description: Bad request - Invalid jacket ID
-        "401":
-          description: Unauthorized - Invalid access token
-        "403":
-          description: Forbidden - The authenticated user is not an administrator
         "500":
           description: Internal server error
   /users/{userId}/credits/increment:
@@ -800,20 +718,19 @@ components:
         - clearType
         - playCount
         - updatedAt
-    jacketUploadResponse:
+    musicMultipartRequest:
       type: object
+      description: request フィールドには登録または更新リクエストの JSON 文字列を指定する。
       properties:
-        jacketId:
+        request:
           type: string
-          format: uuid
-          description: ジャケットの ID
-        jacketUrl:
+          description: 楽曲と譜面の JSON 文字列
+        jacket:
           type: string
-          format: uri
-          description: 楽曲に設定する公開 URL
+          format: binary
+          description: JPEG、PNG、または WebP の画像（5 MiB 以下）
       required:
-        - jacketId
-        - jacketUrl
+        - request
     musicData:
       type: object
       properties:

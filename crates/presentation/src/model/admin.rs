@@ -55,13 +55,6 @@ pub struct UpdateMusicRequest {
     pub sheets: Vec<SheetRequest>,
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct JacketUploadResponse {
-    pub jacket_id: String,
-    pub jacket_url: String,
-}
-
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SheetDataRequest {

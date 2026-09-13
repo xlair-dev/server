@@ -51,18 +51,18 @@ impl JacketUpload {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct UploadedJacket {
-    pub id: String,
     pub url: String,
 }
 
 pub trait JacketStorage: Send + Sync {
     fn upload<'a>(
         &'a self,
+        music_id: &'a str,
         jacket: JacketUpload,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<UploadedJacket>> + Send + 'a>>;
 
     fn delete<'a>(
         &'a self,
-        jacket_id: &'a str,
+        music_id: &'a str,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>>;
 }

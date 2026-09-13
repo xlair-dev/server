@@ -47,16 +47,19 @@ impl R2JacketStorage {
         }
     }
 
-    fn key(jacket_id: &str, content_type: &str) -> anyhow::Result<String> {
+    fn key(music_id: &str, content_type: &str) -> anyhow::Result<String> {
         Ok(format!(
-            "jackets/{jacket_id}.{}",
+            "jackets/{music_id}.{}",
             Self::extension(content_type)?
         ))
     }
 
-    async fn upload_impl(&self, jacket: JacketUpload) -> anyhow::Result<UploadedJacket> {
-        let jacket_id = uuid::Uuid::new_v4().to_string();
-        let key = Self::key(&jacket_id, &jacket.content_type)?;
+    async fn upload_impl(
+        &self,
+        music_id: &str,
+        jacket: JacketUpload,
+    ) -> anyhow::Result<UploadedJacket> {
+        let key = Self::key(music_id, &jacket.content_type)?;
         self.client
             .put_object()
             .bucket(&self.bucket)
@@ -67,17 +70,16 @@ impl R2JacketStorage {
             .await?;
 
         Ok(UploadedJacket {
-            id: jacket_id,
             url: format!("{}/{}", self.public_base_url, key),
         })
     }
 
-    async fn delete_impl(&self, jacket_id: &str) -> anyhow::Result<()> {
+    async fn delete_impl(&self, music_id: &str) -> anyhow::Result<()> {
         for extension in ["jpg", "png", "webp"] {
             self.client
                 .delete_object()
                 .bucket(&self.bucket)
-                .key(format!("jackets/{jacket_id}.{extension}"))
+                .key(format!("jackets/{music_id}.{extension}"))
                 .send()
                 .await?;
         }
@@ -88,15 +90,16 @@ impl R2JacketStorage {
 impl JacketStoragePort for R2JacketStorage {
     fn upload<'a>(
         &'a self,
+        music_id: &'a str,
         jacket: JacketUpload,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<UploadedJacket>> + Send + 'a>> {
-        Box::pin(self.upload_impl(jacket))
+        Box::pin(self.upload_impl(music_id, jacket))
     }
 
     fn delete<'a>(
         &'a self,
-        jacket_id: &'a str,
+        music_id: &'a str,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>> {
-        Box::pin(self.delete_impl(jacket_id))
+        Box::pin(self.delete_impl(music_id))
     }
 }
