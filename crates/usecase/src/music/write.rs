@@ -192,7 +192,7 @@ fn non_empty(value: String, field: &str) -> Result<String, MusicUsecaseError> {
 }
 
 fn level_from_value(value: f64) -> Result<Level, MusicUsecaseError> {
-    if !value.is_finite() || value < 1.0 || value > 99.9 {
+    if !value.is_finite() || !(1.0..=99.9).contains(&value) {
         return Err(MusicUsecaseError::InvalidInput(
             "sheet level is invalid".to_owned(),
         ));

@@ -112,15 +112,15 @@ fn convert_play_count(play_count: u32) -> Result<i32, RecordRepositoryError> {
 }
 
 pub fn convert_insert_error(err: DbErr, user_id: &str, sheet_id: &str) -> RecordRepositoryError {
-    let message = err.to_string();
-    if message.contains("fk_records_user") {
-        tracing::warn!(user_id = %user_id, "User not found for foreign key constraint");
-        return RecordRepositoryError::UserNotFound(user_id.to_owned());
-    }
-
-    if message.contains("fk_records_sheet") {
-        tracing::warn!(sheet_id = %sheet_id, "Sheet not found for foreign key constraint");
-        return RecordRepositoryError::SheetNotFound(sheet_id.to_owned());
+    if let Some(sea_orm::error::SqlErr::ForeignKeyConstraintViolation(name)) = err.sql_err() {
+        if name == "fk_records_user" {
+            tracing::warn!(user_id = %user_id, "User not found for foreign key constraint");
+            return RecordRepositoryError::UserNotFound(user_id.to_owned());
+        }
+        if name == "fk_records_sheet" {
+            tracing::warn!(sheet_id = %sheet_id, "Sheet not found for foreign key constraint");
+            return RecordRepositoryError::SheetNotFound(sheet_id.to_owned());
+        }
     }
 
     tracing::error!(error = %err, "Failed to insert record");

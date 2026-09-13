@@ -1,4 +1,8 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{
+    collections::HashSet,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header, jwk::JwkSet};
@@ -62,8 +66,15 @@ pub struct Authenticator {
     dashboard_client_id: String,
     allowed_admin_subjects: HashSet<String>,
     jwks_uri: String,
-    jwks: Arc<RwLock<Option<JwkSet>>>,
+    jwks: Arc<RwLock<Option<CachedJwks>>>,
 }
+
+struct CachedJwks {
+    fetched_at: Instant,
+    keys: JwkSet,
+}
+
+const JWKS_CACHE_TTL: Duration = Duration::from_secs(60 * 60);
 
 #[derive(Debug, Error)]
 pub enum AuthError {
@@ -136,14 +147,18 @@ impl Authenticator {
             .read()
             .await
             .as_ref()
-            .and_then(|set| find_jwk(set, kid))
+            .filter(|cache| cache.fetched_at.elapsed() < JWKS_CACHE_TTL)
+            .and_then(|cache| find_jwk(&cache.keys, kid))
         {
             return Ok(jwk.clone());
         }
 
         let jwks = self.fetch_jwks().await?;
         let jwk = find_jwk(&jwks, kid).ok_or(AuthError::InvalidToken)?.clone();
-        *self.jwks.write().await = Some(jwks);
+        *self.jwks.write().await = Some(CachedJwks {
+            fetched_at: Instant::now(),
+            keys: jwks,
+        });
         Ok(jwk)
     }
 
