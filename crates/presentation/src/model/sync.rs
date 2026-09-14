@@ -26,19 +26,27 @@ pub struct MusicResponse {
     pub bpm: f32,
     pub genre: String,
     pub jacket: Option<String>,
+    pub music: Option<String>,
     pub registration_date: String,
     pub is_test: bool,
 }
 
 impl From<MusicDto> for MusicResponse {
     fn from(value: MusicDto) -> Self {
+        let id = value.id.clone();
         Self {
             id: value.id,
             title: value.title,
             artist: value.artist,
             bpm: value.bpm,
             genre: value.genre.to_string(),
-            jacket: value.jacket,
+            jacket: value
+                .jacket_key
+                .clone()
+                .map(|key| format!("/musics/{}/jacket/{}", id, asset_name(&key))),
+            music: value
+                .music_key
+                .map(|key| format!("/musics/{}/audio/{}", id, asset_name(&key))),
             registration_date: value.registration_date.to_rfc3339(),
             is_test: value.is_test,
         }
@@ -53,18 +61,27 @@ pub struct SheetResponse {
     pub difficulty: String,
     pub level: f64,
     pub notes_designer: String,
+    pub src: Option<String>,
 }
 
 impl From<SheetDto> for SheetResponse {
     fn from(value: SheetDto) -> Self {
+        let id = value.id.clone();
         Self {
             id: value.id,
             music_id: value.music_id,
             difficulty: difficulty_to_string(value.difficulty).to_owned(),
             level: value.level_value,
             notes_designer: value.notes_designer,
+            src: value
+                .chart_key
+                .map(|key| format!("/sheets/{}/chart/{}", id, asset_name(&key))),
         }
     }
+}
+
+fn asset_name(key: &str) -> &str {
+    key.rsplit('/').next().unwrap_or(key)
 }
 
 fn difficulty_to_string(difficulty: Difficulty) -> &'static str {

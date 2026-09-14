@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use domain::repository::Repositories;
 
-pub mod jacket;
+pub mod asset;
 pub mod model;
 pub mod music;
 pub mod ranking;

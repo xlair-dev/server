@@ -88,7 +88,8 @@ impl MusicMetadataRequest {
             artist: request.artist,
             bpm: request.bpm,
             genre,
-            jacket: None,
+            jacket_key: None,
+            music_key: None,
             registration_date,
             is_test: request.is_test,
         })

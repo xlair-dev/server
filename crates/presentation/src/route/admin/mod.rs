@@ -1,15 +1,13 @@
 use axum::{
     Json,
-    body::Bytes,
     extract::{Path, Query, State},
-    http::{HeaderMap, StatusCode, header},
+    http::StatusCode,
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
 use domain::repository::music::MusicListCursor;
 use serde::{Deserialize, Serialize};
 use tracing::{info, instrument};
-use usecase::jacket::{JacketUpload, JacketUploadError};
 
 use crate::{
     error::AppError,
@@ -21,6 +19,8 @@ use crate::{
         sync::SyncItemResponse,
     },
 };
+
+pub mod asset;
 
 const DEFAULT_PAGE_LIMIT: u64 = 50;
 const MAX_PAGE_LIMIT: u64 = 100;
@@ -95,64 +95,6 @@ pub async fn handle_update_music(
         .update(music_id.clone(), request.try_into()?)
         .await?;
     info!(music_id = %music_id, "Admin music updated");
-    Ok(Json(SyncItemResponse::from(music)))
-}
-
-#[instrument(skip(state, headers, body), fields(music_id = %music_id))]
-pub async fn handle_upload_jacket(
-    State(state): State<crate::state::State>,
-    Path(music_id): Path<String>,
-    headers: HeaderMap,
-    body: Bytes,
-) -> AppResult<Json<SyncItemResponse>> {
-    let content_type = headers
-        .get(header::CONTENT_TYPE)
-        .and_then(|value| value.to_str().ok())
-        .ok_or_else(|| AppError::bad_request("jacket content type is required"))?;
-    let jacket =
-        JacketUpload::new(content_type.to_owned(), body.to_vec()).map_err(map_jacket_error)?;
-    let storage = state.jacket_storage.as_ref().ok_or_else(|| {
-        AppError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "jacket storage is not configured".to_owned(),
-        )
-    })?;
-    let music = state
-        .usecases
-        .music
-        .upload_jacket(storage.as_ref(), music_id.clone(), jacket)
-        .await?;
-    info!(music_id = %music_id, "Admin music jacket uploaded");
-    Ok(Json(SyncItemResponse::from(music)))
-}
-
-fn map_jacket_error(error: JacketUploadError) -> AppError {
-    match error {
-        JacketUploadError::UnsupportedContentType => {
-            AppError::bad_request("jacket must be JPEG, PNG, or WebP")
-        }
-        JacketUploadError::TooLarge => AppError::bad_request("jacket exceeds 5 MiB"),
-        JacketUploadError::InvalidImage => AppError::bad_request("jacket image is invalid"),
-    }
-}
-
-#[instrument(skip(state), fields(music_id = %music_id))]
-pub async fn handle_delete_jacket(
-    State(state): State<crate::state::State>,
-    Path(music_id): Path<String>,
-) -> AppResult<Json<SyncItemResponse>> {
-    let storage = state.jacket_storage.as_ref().ok_or_else(|| {
-        AppError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "jacket storage is not configured".to_owned(),
-        )
-    })?;
-    let music = state
-        .usecases
-        .music
-        .delete_jacket(storage.as_ref(), music_id.clone())
-        .await?;
-    info!(music_id = %music_id, "Admin music jacket deleted");
     Ok(Json(SyncItemResponse::from(music)))
 }
 

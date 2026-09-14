@@ -57,6 +57,11 @@ pub trait MusicRepository: Send + Sync {
         music_id: &str,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 
+    fn find_sheet(
+        &self,
+        sheet_id: &str,
+    ) -> impl Future<Output = Result<Sheet, MusicRepositoryError>> + Send;
+
     fn insert_with_sheets(
         &self,
         music: MusicWithSheets,
@@ -67,9 +72,21 @@ pub trait MusicRepository: Send + Sync {
         music: MusicWithSheets,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 
-    fn update_jacket(
+    fn update_jacket_key(
         &self,
         music_id: &str,
-        jacket_url: Option<String>,
+        jacket_key: Option<String>,
+    ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
+
+    fn update_music_key(
+        &self,
+        music_id: &str,
+        music_key: Option<String>,
+    ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
+
+    fn update_chart_key(
+        &self,
+        sheet_id: &str,
+        chart_key: Option<String>,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 }

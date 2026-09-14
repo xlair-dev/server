@@ -39,4 +39,17 @@ impl<R: Repositories> MusicUsecase<R> {
             .await?;
         Ok(music.into())
     }
+
+    pub async fn find_by_sheet_id(
+        &self,
+        sheet_id: String,
+    ) -> Result<Option<String>, MusicUsecaseError> {
+        Ok(self
+            .repositories
+            .music()
+            .find_sheet(&sheet_id)
+            .await?
+            .chart_key()
+            .clone())
+    }
 }
