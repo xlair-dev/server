@@ -10,6 +10,10 @@ on:
       - crates/migration/**
       - rust-toolchain.toml
       - .github/workflows/migration.yml
+      - .github/workflows/**
+      - Dockerfile.prod
+      - compose.yml
+      - compose.prod.yml
   pull_request:
     paths:
       - Cargo.lock
@@ -17,6 +21,10 @@ on:
       - crates/migration/**
       - rust-toolchain.toml
       - .github/workflows/migration.yml
+      - .github/workflows/**
+      - Dockerfile.prod
+      - compose.yml
+      - compose.prod.yml
 
 env:
   CARGO_TERM_COLOR: always
