@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::Error as AnyError;
-use bigdecimal::{Signed, ToPrimitive};
+use bigdecimal::ToPrimitive;
 use domain::{
     entity::record::Record,
     repository::record::{
@@ -12,11 +12,10 @@ use domain::{
     },
 };
 use sea_orm::{
-    ColumnTrait, DbConn, EntityTrait, FromQueryResult, JoinType, QueryFilter, QueryOrder,
-    QuerySelect, RelationTrait,
-    prelude::Uuid,
+    ColumnTrait, DbConn, EntityTrait, ExprTrait, FromQueryResult, JoinType, QueryFilter,
+    QueryOrder, QuerySelect, RelationTrait,
+    prelude::{Decimal, Uuid},
     sea_query::{Alias, Expr},
-    sqlx::types::BigDecimal,
 };
 use tracing::{debug, error, info, warn};
 
@@ -39,7 +38,7 @@ struct TotalScoreRow {
     #[sea_orm(column_name = "display_name")]
     display_name: String,
     #[sea_orm(column_name = "total_score")]
-    total_score: BigDecimal,
+    total_score: Decimal,
 }
 
 pub async fn records_by_user(
@@ -202,7 +201,7 @@ pub async fn sum_scores(db: &DbConn) -> Result<u64, RecordRepositoryError> {
                 .cast_as(Alias::new("numeric")),
             "sum",
         )
-        .into_tuple::<Option<BigDecimal>>()
+        .into_tuple::<Option<Decimal>>()
         .one(db)
         .await
         .map_err(|err| {
@@ -210,9 +209,9 @@ pub async fn sum_scores(db: &DbConn) -> Result<u64, RecordRepositoryError> {
             RecordRepositoryError::InternalError(AnyError::from(err))
         })?
         .flatten()
-        .unwrap_or_else(|| BigDecimal::from(0u8));
+        .unwrap_or(Decimal::ZERO);
 
-    if sum.is_negative() {
+    if sum.is_sign_negative() {
         let err = AnyError::msg("Database returned negative record score sum");
         error!("Record score sum returned negative value");
         return Err(RecordRepositoryError::InternalError(err));
@@ -323,7 +322,7 @@ pub async fn public_total_score_ranking(
 
     let mut result = Vec::with_capacity(rows.len());
     for row in rows {
-        if row.total_score.is_negative() {
+        if row.total_score.is_sign_negative() {
             let err = AnyError::msg("Negative total score encountered in ranking query");
             error!("Ranking query returned negative total score");
             return Err(RecordRepositoryError::InternalError(err));
@@ -351,24 +350,23 @@ pub async fn public_total_score_ranking(
 mod tests {
     use std::collections::BTreeMap;
 
-    use bigdecimal::BigDecimal;
     use sea_orm::{DatabaseBackend, MockDatabase, prelude::Uuid, sea_query::Value};
 
     use super::*;
 
     fn decimal_row(label: &str, value: Option<i64>) -> BTreeMap<String, Value> {
         let mapped_value = value
-            .map(|v| Value::BigDecimal(Some(Box::new(BigDecimal::from(v)))))
-            .unwrap_or(Value::BigDecimal(None));
+            .map(|v| Value::Decimal(Some(Decimal::from(v))))
+            .unwrap_or(Value::Decimal(None));
         BTreeMap::from([(label.to_owned(), mapped_value)])
     }
 
     fn sheet_row(user_id: Uuid, display_name: &str, score: i32) -> BTreeMap<String, Value> {
         BTreeMap::from([
-            ("user_id".to_owned(), Value::Uuid(Some(Box::new(user_id)))),
+            ("user_id".to_owned(), Value::Uuid(Some(user_id))),
             (
                 "display_name".to_owned(),
-                Value::String(Some(Box::new(display_name.to_owned()))),
+                Value::String(Some(display_name.to_owned())),
             ),
             ("score".to_owned(), Value::Int(Some(score))),
         ])
@@ -380,14 +378,14 @@ mod tests {
         total_score: i64,
     ) -> BTreeMap<String, Value> {
         BTreeMap::from([
-            ("user_id".to_owned(), Value::Uuid(Some(Box::new(user_id)))),
+            ("user_id".to_owned(), Value::Uuid(Some(user_id))),
             (
                 "display_name".to_owned(),
-                Value::String(Some(Box::new(display_name.to_owned()))),
+                Value::String(Some(display_name.to_owned())),
             ),
             (
                 "total_score".to_owned(),
-                Value::BigDecimal(Some(Box::new(BigDecimal::from(total_score)))),
+                Value::Decimal(Some(Decimal::from(total_score))),
             ),
         ])
     }
