@@ -14,6 +14,7 @@ use crate::{
 };
 
 pub mod admin;
+pub mod asset;
 pub mod ranking;
 pub mod statistics;
 pub mod sync;
@@ -57,12 +58,28 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             "/musics/{musicId}/jacket",
             post(admin::handle_upload_jacket).delete(admin::handle_delete_jacket),
         )
+        .route(
+            "/musics/{musicId}/audio",
+            post(admin::handle_upload_audio).delete(admin::handle_delete_audio),
+        )
+        .route(
+            "/sheets/{sheetId}/chart",
+            post(admin::handle_upload_chart).delete(admin::handle_delete_chart),
+        )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
-    let admin_routes = admin_routes.layer(DefaultBodyLimit::max(6 * 1024 * 1024));
+    let admin_routes = admin_routes.layer(DefaultBodyLimit::max(31 * 1024 * 1024));
 
     let private_routes = Router::new()
         .nest("/users", users)
-        .nest("/sync", sync_route);
+        .nest("/sync", sync_route)
+        .route(
+            "/musics/{musicId}/audio/{fileName}",
+            get(asset::handle_get_audio),
+        )
+        .route(
+            "/sheets/{sheetId}/chart/{fileName}",
+            get(asset::handle_get_chart),
+        );
     let private_routes = if let Some(authenticator) = authenticator.clone() {
         private_routes
             .layer(middleware::from_fn_with_state(
@@ -93,6 +110,10 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
 
     let public_routes = Router::new()
         .nest("/health", health)
+        .route(
+            "/musics/{musicId}/jacket/{fileName}",
+            get(asset::handle_get_jacket),
+        )
         .nest("/rankings", ranking_route)
         .nest("/statistics", statistics_route);
 

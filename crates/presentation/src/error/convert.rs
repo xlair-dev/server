@@ -95,8 +95,8 @@ impl From<MusicUsecaseError> for AppError {
         match error {
             MusicUsecaseError::MusicRepository(err) => err.into(),
             MusicUsecaseError::InvalidInput(message) => AppError::bad_request(message),
-            MusicUsecaseError::JacketStorage(error) => {
-                tracing::error!(error = ?error, "Jacket storage operation failed");
+            MusicUsecaseError::AssetStorage(error) => {
+                tracing::error!(error = ?error, "Asset storage operation failed");
                 AppError::new(
                     axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal server error".to_owned(),

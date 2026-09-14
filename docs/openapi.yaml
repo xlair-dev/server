@@ -377,6 +377,151 @@ paths:
           description: Not found - Music not found
         "500":
           description: Internal server error
+  /admin/musics/{musicId}/audio:
+    post:
+      tags: [admin]
+      summary: 楽曲の音源をアップロード
+      security:
+        - userAuth: []
+      parameters:
+        - $ref: "#/components/parameters/musicId"
+      requestBody:
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: 音源が更新された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "400": { description: Bad request - Invalid WAV file }
+        "401": { description: Unauthorized - Invalid access token }
+        "403": { description: Forbidden - The authenticated user is not an administrator }
+        "404": { description: Not found - Music not found }
+        "500": { description: Internal server error }
+    delete:
+      tags: [admin]
+      summary: 楽曲の音源を削除
+      security:
+        - userAuth: []
+      parameters:
+        - $ref: "#/components/parameters/musicId"
+      responses:
+        "200":
+          description: 音源が削除された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "401": { description: Unauthorized - Invalid access token }
+        "403": { description: Forbidden - The authenticated user is not an administrator }
+        "404": { description: Not found - Music not found }
+        "500": { description: Internal server error }
+  /admin/sheets/{sheetId}/chart:
+    post:
+      tags: [admin]
+      summary: 譜面ファイルをアップロード
+      security:
+        - userAuth: []
+      parameters:
+        - name: sheetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        "200":
+          description: 譜面ファイルが更新された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "400": { description: Bad request - Invalid SUS file name }
+        "401": { description: Unauthorized - Invalid access token }
+        "403": { description: Forbidden - The authenticated user is not an administrator }
+        "404": { description: Not found - Sheet not found }
+        "500": { description: Internal server error }
+    delete:
+      tags: [admin]
+      summary: 譜面ファイルを削除
+      security:
+        - userAuth: []
+      parameters:
+        - name: sheetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: 譜面ファイルが削除された楽曲と譜面
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/musicWithSheets"
+        "401": { description: Unauthorized - Invalid access token }
+        "403": { description: Forbidden - The authenticated user is not an administrator }
+        "404": { description: Not found - Sheet not found }
+        "500": { description: Internal server error }
+  /musics/{musicId}/jacket/{fileName}:
+    get:
+      tags: [asset]
+      summary: ジャケット画像を取得
+      parameters:
+        - $ref: "#/components/parameters/musicId"
+        - $ref: "#/components/parameters/assetFileName"
+      responses:
+        "200":
+          description: ジャケット画像
+          content:
+            image/png:
+              schema: { type: string, format: binary }
+        "404": { description: Not found - Jacket not found }
+  /musics/{musicId}/audio/{fileName}:
+    get:
+      tags: [asset]
+      summary: 楽曲の音源を取得
+      security:
+        - deviceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/musicId"
+        - $ref: "#/components/parameters/assetFileName"
+      responses:
+        "200":
+          description: WAV 音源
+          content:
+            audio/wav:
+              schema: { type: string, format: binary }
+        "401": { description: Unauthorized - Invalid access token }
+        "404": { description: Not found - Audio not found }
+  /sheets/{sheetId}/chart/{fileName}:
+    get:
+      tags: [asset]
+      summary: 譜面ファイルを取得
+      security:
+        - deviceAuth: []
+      parameters:
+        - name: sheetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/assetFileName"
+      responses:
+        "200":
+          description: SUS 譜面ファイル
+          content:
+            text/plain:
+              schema: { type: string, format: binary }
+        "401": { description: Unauthorized - Invalid access token }
+        "404": { description: Not found - Chart not found }
   /users/{userId}/credits/increment:
     post:
       tags:
@@ -658,6 +803,19 @@ paths:
         "500":
           description: Internal server error
 components:
+  parameters:
+    musicId:
+      name: musicId
+      in: path
+      required: true
+      description: 楽曲のID
+      schema: { type: string, format: uuid }
+    assetFileName:
+      name: fileName
+      in: path
+      required: true
+      description: content hash を含むファイル名
+      schema: { type: string }
   securitySchemes:
     userAuth:
       type: http
@@ -839,7 +997,11 @@ components:
         jacket:
           type: string
           nullable: true
-          description: ジャケット画像の公開 URL
+          description: ジャケット画像を取得する URL
+        music:
+          type: string
+          nullable: true
+          description: 音源を取得する URL
         registrationDate:
           type: string
           format: date-time
@@ -880,6 +1042,10 @@ components:
         notesDesigner:
           type: string
           description: 譜面のノーツデザイナー
+        src:
+          type: string
+          nullable: true
+          description: 譜面ファイルを取得する URL
       required:
         - difficulty
         - level

@@ -54,6 +54,7 @@ mod tests {
                 140.0,
                 Genre::ORIGINAL,
                 Some("jackets/song.png".to_owned()),
+                Some("musics/song.wav".to_owned()),
                 Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
                 false,
             );
@@ -63,6 +64,7 @@ mod tests {
                 Difficulty::Master,
                 Level::new(13, 7).expect("level"),
                 "Designer".to_owned(),
+                None,
             );
             Box::pin(async move { Ok(vec![MusicWithSheets::new(music, vec![sheet])]) })
         });

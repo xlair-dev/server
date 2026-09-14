@@ -13,6 +13,7 @@ pub struct Model {
     pub difficulty: Difficulty,
     pub level: i32,
     pub notes_designer: String,
+    pub chart_key: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

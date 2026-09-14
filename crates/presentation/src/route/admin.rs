@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 use domain::repository::music::MusicListCursor;
 use serde::{Deserialize, Serialize};
 use tracing::{info, instrument};
-use usecase::jacket::{JacketUpload, JacketUploadError};
+use usecase::asset::{AssetUpload, AssetUploadError};
 
 use crate::{
     error::AppError,
@@ -109,9 +109,8 @@ pub async fn handle_upload_jacket(
         .get(header::CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .ok_or_else(|| AppError::bad_request("jacket content type is required"))?;
-    let jacket =
-        JacketUpload::new(content_type.to_owned(), body.to_vec()).map_err(map_jacket_error)?;
-    let storage = state.jacket_storage.as_ref().ok_or_else(|| {
+    let jacket = AssetUpload::jacket(content_type, body.to_vec()).map_err(map_jacket_error)?;
+    let storage = state.asset_storage.as_ref().ok_or_else(|| {
         AppError::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "jacket storage is not configured".to_owned(),
@@ -126,13 +125,14 @@ pub async fn handle_upload_jacket(
     Ok(Json(SyncItemResponse::from(music)))
 }
 
-fn map_jacket_error(error: JacketUploadError) -> AppError {
+fn map_jacket_error(error: AssetUploadError) -> AppError {
     match error {
-        JacketUploadError::UnsupportedContentType => {
+        AssetUploadError::UnsupportedContentType => {
             AppError::bad_request("jacket must be JPEG, PNG, or WebP")
         }
-        JacketUploadError::TooLarge => AppError::bad_request("jacket exceeds 5 MiB"),
-        JacketUploadError::InvalidImage => AppError::bad_request("jacket image is invalid"),
+        AssetUploadError::TooLarge => AppError::bad_request("jacket exceeds 5 MiB"),
+        AssetUploadError::InvalidData => AppError::bad_request("jacket image is invalid"),
+        AssetUploadError::InvalidFileName => AppError::bad_request("jacket file name is invalid"),
     }
 }
 
@@ -141,7 +141,7 @@ pub async fn handle_delete_jacket(
     State(state): State<crate::state::State>,
     Path(music_id): Path<String>,
 ) -> AppResult<Json<SyncItemResponse>> {
-    let storage = state.jacket_storage.as_ref().ok_or_else(|| {
+    let storage = state.asset_storage.as_ref().ok_or_else(|| {
         AppError::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "jacket storage is not configured".to_owned(),
@@ -154,6 +154,120 @@ pub async fn handle_delete_jacket(
         .await?;
     info!(music_id = %music_id, "Admin music jacket deleted");
     Ok(Json(SyncItemResponse::from(music)))
+}
+
+#[instrument(skip(state, headers, body), fields(music_id = %music_id))]
+pub async fn handle_upload_audio(
+    State(state): State<crate::state::State>,
+    Path(music_id): Path<String>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> AppResult<Json<SyncItemResponse>> {
+    let content_type = headers
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| AppError::bad_request("audio content type is required"))?;
+    let audio = AssetUpload::audio(content_type, body.to_vec()).map_err(map_audio_error)?;
+    let storage = asset_storage(&state)?;
+    let music = state
+        .usecases
+        .music
+        .upload_audio(storage, music_id.clone(), audio)
+        .await?;
+    info!(music_id = %music_id, "Admin music audio uploaded");
+    Ok(Json(SyncItemResponse::from(music)))
+}
+
+#[instrument(skip(state), fields(music_id = %music_id))]
+pub async fn handle_delete_audio(
+    State(state): State<crate::state::State>,
+    Path(music_id): Path<String>,
+) -> AppResult<Json<SyncItemResponse>> {
+    let storage = asset_storage(&state)?;
+    let music = state
+        .usecases
+        .music
+        .delete_audio(storage, music_id.clone())
+        .await?;
+    info!(music_id = %music_id, "Admin music audio deleted");
+    Ok(Json(SyncItemResponse::from(music)))
+}
+
+#[instrument(skip(state, headers, body), fields(sheet_id = %sheet_id))]
+pub async fn handle_upload_chart(
+    State(state): State<crate::state::State>,
+    Path(sheet_id): Path<String>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> AppResult<Json<SyncItemResponse>> {
+    let file_name = chart_file_name(&headers)?;
+    let chart = AssetUpload::chart(file_name, body.to_vec()).map_err(map_chart_error)?;
+    let storage = asset_storage(&state)?;
+    let music = state
+        .usecases
+        .music
+        .upload_chart(storage, sheet_id.clone(), chart)
+        .await?;
+    info!(sheet_id = %sheet_id, "Admin sheet chart uploaded");
+    Ok(Json(SyncItemResponse::from(music)))
+}
+
+#[instrument(skip(state), fields(sheet_id = %sheet_id))]
+pub async fn handle_delete_chart(
+    State(state): State<crate::state::State>,
+    Path(sheet_id): Path<String>,
+) -> AppResult<Json<SyncItemResponse>> {
+    let storage = asset_storage(&state)?;
+    let music = state
+        .usecases
+        .music
+        .delete_chart(storage, sheet_id.clone())
+        .await?;
+    info!(sheet_id = %sheet_id, "Admin sheet chart deleted");
+    Ok(Json(SyncItemResponse::from(music)))
+}
+
+fn asset_storage(state: &crate::state::State) -> AppResult<&dyn usecase::asset::AssetStorage> {
+    state.asset_storage.as_deref().ok_or_else(|| {
+        AppError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Asset storage is not configured".to_owned(),
+        )
+    })
+}
+
+fn chart_file_name(headers: &HeaderMap) -> AppResult<&str> {
+    let value = headers
+        .get(header::CONTENT_DISPOSITION)
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| AppError::bad_request("chart file name is required"))?;
+    value
+        .split(';')
+        .find_map(|part| part.trim().strip_prefix("filename="))
+        .map(|file_name| file_name.trim_matches('"'))
+        .filter(|file_name| !file_name.contains('/') && !file_name.contains('\\'))
+        .ok_or_else(|| AppError::bad_request("chart file name is invalid"))
+}
+
+fn map_audio_error(error: AssetUploadError) -> AppError {
+    match error {
+        AssetUploadError::UnsupportedContentType => AppError::bad_request("audio must be WAV"),
+        AssetUploadError::TooLarge => AppError::bad_request("audio exceeds 30 MiB"),
+        AssetUploadError::InvalidData => AppError::bad_request("audio is invalid"),
+        AssetUploadError::InvalidFileName => AppError::bad_request("audio file name is invalid"),
+    }
+}
+
+fn map_chart_error(error: AssetUploadError) -> AppError {
+    match error {
+        AssetUploadError::TooLarge => AppError::bad_request("chart exceeds 5 MiB"),
+        AssetUploadError::InvalidFileName => {
+            AppError::bad_request("chart file name must end with .sus")
+        }
+        AssetUploadError::UnsupportedContentType | AssetUploadError::InvalidData => {
+            AppError::bad_request("chart is invalid")
+        }
+    }
 }
 
 fn encode_cursor(cursor: MusicListCursor) -> Result<String, AppError> {

@@ -4,8 +4,9 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, QueryFilter, T
 use tracing::error;
 
 use super::write_adapter::{
-    music_active_model_for_insert, music_active_model_for_jacket, music_active_model_for_update,
-    sheet_active_model_for_insert, sheet_active_model_for_update,
+    music_active_model_for_insert, music_active_model_for_jacket_key,
+    music_active_model_for_music_key, music_active_model_for_update,
+    sheet_active_model_for_chart_key, sheet_active_model_for_insert, sheet_active_model_for_update,
 };
 use crate::entities;
 
@@ -83,16 +84,38 @@ pub async fn update_with_sheets(
     Ok(music)
 }
 
-pub async fn update_jacket(
+pub async fn update_jacket_key(
     db: &DbConn,
     music_id: &str,
-    jacket_url: Option<String>,
+    jacket_key: Option<String>,
 ) -> Result<MusicWithSheets, MusicRepositoryError> {
-    music_active_model_for_jacket(music_id, jacket_url)?
+    music_active_model_for_jacket_key(music_id, jacket_key)?
         .update(db)
         .await
         .map_err(internal)?;
     super::read::find_with_sheets(db, music_id).await
+}
+
+pub async fn update_music_key(
+    db: &DbConn,
+    music_id: &str,
+    music_key: Option<String>,
+) -> Result<MusicWithSheets, MusicRepositoryError> {
+    music_active_model_for_music_key(music_id, music_key)?
+        .update(db)
+        .await
+        .map_err(internal)?;
+    super::read::find_with_sheets(db, music_id).await
+}
+
+pub async fn update_chart_key(
+    db: &DbConn,
+    sheet_id: &str,
+    chart_key: Option<String>,
+) -> Result<MusicWithSheets, MusicRepositoryError> {
+    let model = sheet_active_model_for_chart_key(sheet_id, chart_key)?;
+    let sheet = model.update(db).await.map_err(internal)?;
+    super::read::find_with_sheets(db, &sheet.music_id.to_string()).await
 }
 
 fn internal(error: sea_orm::DbErr) -> MusicRepositoryError {

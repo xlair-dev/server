@@ -7,7 +7,8 @@ pub struct MusicDataInput {
     pub artist: String,
     pub bpm: f32,
     pub genre: Genre,
-    pub jacket: Option<String>,
+    pub jacket_key: Option<String>,
+    pub music_key: Option<String>,
     pub registration_date: DateTime<Utc>,
     pub is_test: bool,
 }
@@ -46,7 +47,8 @@ pub struct MusicDto {
     pub artist: String,
     pub bpm: f32,
     pub genre: Genre,
-    pub jacket: Option<String>,
+    pub jacket_key: Option<String>,
+    pub music_key: Option<String>,
     pub registration_date: DateTime<Utc>,
     pub is_test: bool,
 }
@@ -59,7 +61,8 @@ impl MusicDto {
         artist: String,
         bpm: f32,
         genre: Genre,
-        jacket: Option<String>,
+        jacket_key: Option<String>,
+        music_key: Option<String>,
         registration_date: DateTime<Utc>,
         is_test: bool,
     ) -> Self {
@@ -69,7 +72,8 @@ impl MusicDto {
             artist,
             bpm,
             genre,
-            jacket,
+            jacket_key,
+            music_key,
             registration_date,
             is_test,
         }
@@ -84,7 +88,8 @@ impl From<Music> for MusicDto {
             value.artist().to_owned(),
             *value.bpm(),
             *value.genre(),
-            value.jacket_image_url().clone(),
+            value.jacket_key().clone(),
+            value.music_key().clone(),
             value.registration_date().to_owned(),
             *value.is_test(),
         )
@@ -98,6 +103,7 @@ pub struct SheetDto {
     pub difficulty: Difficulty,
     pub level_value: f64,
     pub notes_designer: String,
+    pub chart_key: Option<String>,
 }
 
 impl SheetDto {
@@ -107,6 +113,7 @@ impl SheetDto {
         difficulty: Difficulty,
         level_value: f64,
         notes_designer: String,
+        chart_key: Option<String>,
     ) -> Self {
         Self {
             id,
@@ -114,6 +121,7 @@ impl SheetDto {
             difficulty,
             level_value,
             notes_designer,
+            chart_key,
         }
     }
 }
@@ -126,6 +134,7 @@ impl From<Sheet> for SheetDto {
             *value.difficulty(),
             value.level().value(),
             value.notes_designer().to_owned(),
+            value.chart_key().clone(),
         )
     }
 }

@@ -25,7 +25,8 @@ pub fn convert_music(model: MusicModel) -> Result<Music, MusicRepositoryError> {
         model.artist,
         bpm,
         genre,
-        model.jacket,
+        model.jacket_key,
+        model.music_key,
         registration_date,
         model.is_test,
     ))
@@ -49,6 +50,7 @@ fn convert_sheet(model: SheetModel) -> Result<Sheet, MusicRepositoryError> {
         difficulty,
         level,
         model.notes_designer,
+        model.chart_key,
     ))
 }
 

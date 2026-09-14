@@ -49,6 +49,13 @@ impl MusicRepository for MusicRepositoryImpl {
         read::find_with_sheets(self.db.as_ref(), music_id).await
     }
 
+    async fn find_sheet(
+        &self,
+        sheet_id: &str,
+    ) -> Result<domain::entity::sheet::Sheet, MusicRepositoryError> {
+        read::find_sheet(self.db.as_ref(), sheet_id).await
+    }
+
     #[instrument(skip(self), fields(music_id = %music.music.id()))]
     async fn insert_with_sheets(
         &self,
@@ -66,11 +73,27 @@ impl MusicRepository for MusicRepositoryImpl {
     }
 
     #[instrument(skip(self), fields(music_id = %music_id))]
-    async fn update_jacket(
+    async fn update_jacket_key(
         &self,
         music_id: &str,
-        jacket_url: Option<String>,
+        jacket_key: Option<String>,
     ) -> Result<MusicWithSheets, MusicRepositoryError> {
-        write::update_jacket(self.db.as_ref(), music_id, jacket_url).await
+        write::update_jacket_key(self.db.as_ref(), music_id, jacket_key).await
+    }
+
+    async fn update_music_key(
+        &self,
+        music_id: &str,
+        music_key: Option<String>,
+    ) -> Result<MusicWithSheets, MusicRepositoryError> {
+        write::update_music_key(self.db.as_ref(), music_id, music_key).await
+    }
+
+    async fn update_chart_key(
+        &self,
+        sheet_id: &str,
+        chart_key: Option<String>,
+    ) -> Result<MusicWithSheets, MusicRepositoryError> {
+        write::update_chart_key(self.db.as_ref(), sheet_id, chart_key).await
     }
 }

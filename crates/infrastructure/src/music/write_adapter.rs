@@ -25,13 +25,35 @@ pub fn music_active_model_for_update(
     music_active_model(music, ActiveValue::Unchanged(parse_uuid(music.id())?))
 }
 
-pub fn music_active_model_for_jacket(
+pub fn music_active_model_for_jacket_key(
     music_id: &str,
-    jacket_url: Option<String>,
+    jacket_key: Option<String>,
 ) -> Result<MusicActiveModel, MusicRepositoryError> {
     Ok(MusicActiveModel {
         id: ActiveValue::Unchanged(parse_uuid(music_id)?),
-        jacket: ActiveValue::Set(jacket_url),
+        jacket_key: ActiveValue::Set(jacket_key),
+        ..Default::default()
+    })
+}
+
+pub fn music_active_model_for_music_key(
+    music_id: &str,
+    music_key: Option<String>,
+) -> Result<MusicActiveModel, MusicRepositoryError> {
+    Ok(MusicActiveModel {
+        id: ActiveValue::Unchanged(parse_uuid(music_id)?),
+        music_key: ActiveValue::Set(music_key),
+        ..Default::default()
+    })
+}
+
+pub fn sheet_active_model_for_chart_key(
+    sheet_id: &str,
+    chart_key: Option<String>,
+) -> Result<SheetActiveModel, MusicRepositoryError> {
+    Ok(SheetActiveModel {
+        id: ActiveValue::Unchanged(parse_uuid(sheet_id)?),
+        chart_key: ActiveValue::Set(chart_key),
         ..Default::default()
     })
 }
@@ -50,7 +72,8 @@ fn music_active_model(
             domain::entity::genre::Genre::EXTERNAL => 1,
             domain::entity::genre::Genre::OTHER => 2,
         }),
-        jacket: ActiveValue::Set(music.jacket_image_url().clone()),
+        jacket_key: ActiveValue::Set(music.jacket_key().clone()),
+        music_key: ActiveValue::Set(music.music_key().clone()),
         registration_date: ActiveValue::Set((*music.registration_date()).into()),
         is_test: ActiveValue::Set(*music.is_test()),
     })
@@ -93,6 +116,7 @@ fn sheet_active_model(
         difficulty: ActiveValue::Set(difficulty),
         level: ActiveValue::Set((level.0 * 10 + level.1) as i32),
         notes_designer: ActiveValue::Set(sheet.notes_designer().to_owned()),
+        chart_key: ActiveValue::Set(sheet.chart_key().clone()),
     })
 }
 
@@ -123,6 +147,7 @@ mod tests {
             135.5,
             Genre::ORIGINAL,
             Some("jacket.png".to_owned()),
+            Some("song.wav".to_owned()),
             Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
             false,
         )
@@ -135,6 +160,7 @@ mod tests {
             Difficulty::Master,
             Level::new(14, 7).unwrap(),
             "Designer".to_owned(),
+            None,
         )
     }
 

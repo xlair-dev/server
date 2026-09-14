@@ -14,6 +14,8 @@ pub struct Sheet {
     level: Level,
     #[getset(get = "pub")]
     notes_designer: String,
+    #[getset(get = "pub")]
+    chart_key: Option<String>,
 }
 
 impl Sheet {
@@ -23,6 +25,7 @@ impl Sheet {
         difficulty: Difficulty,
         level: Level,
         notes_designer: String,
+        chart_key: Option<String>,
     ) -> Self {
         Self {
             id,
@@ -30,6 +33,7 @@ impl Sheet {
             difficulty,
             level,
             notes_designer,
+            chart_key,
         }
     }
 }

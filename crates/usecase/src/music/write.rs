@@ -11,7 +11,7 @@ use tracing::warn;
 
 use super::{MusicUsecase, MusicUsecaseError};
 use crate::{
-    jacket::{JacketStorage, JacketUpload},
+    asset::{AssetKind, AssetStorage, AssetUpload},
     model::music::{
         CreateMusicInput, MusicDataInput, MusicWithSheetsDto, SheetDataInput, SheetInput,
         UpdateMusicInput,
@@ -21,9 +21,9 @@ use crate::{
 impl<R: Repositories> MusicUsecase<R> {
     pub async fn upload_jacket(
         &self,
-        storage: &dyn JacketStorage,
+        storage: &dyn AssetStorage,
         music_id: String,
-        jacket: JacketUpload,
+        jacket: AssetUpload,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
         validate_music_id(&music_id)?;
         let existing = self
@@ -31,15 +31,15 @@ impl<R: Repositories> MusicUsecase<R> {
             .music()
             .find_with_sheets(&music_id)
             .await?;
-        let previous_jacket_url = existing.music.jacket_image_url().clone();
+        let previous_jacket_url = existing.music.jacket_key().clone();
         let jacket_url = storage
-            .upload(&music_id, jacket)
+            .upload(AssetKind::Jacket, &music_id, jacket)
             .await
-            .map_err(MusicUsecaseError::JacketStorage)?;
+            .map_err(MusicUsecaseError::AssetStorage)?;
         let updated = match self
             .repositories
             .music()
-            .update_jacket(&music_id, Some(jacket_url.clone()))
+            .update_jacket_key(&music_id, Some(jacket_url.clone()))
             .await
         {
             Ok(updated) => updated,
@@ -69,7 +69,7 @@ impl<R: Repositories> MusicUsecase<R> {
 
     pub async fn delete_jacket(
         &self,
-        storage: &dyn JacketStorage,
+        storage: &dyn AssetStorage,
         music_id: String,
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
         validate_music_id(&music_id)?;
@@ -78,15 +78,15 @@ impl<R: Repositories> MusicUsecase<R> {
             .music()
             .find_with_sheets(&music_id)
             .await?;
-        if let Some(jacket_url) = music.music.jacket_image_url() {
+        if let Some(jacket_url) = music.music.jacket_key() {
             storage
                 .delete(jacket_url)
                 .await
-                .map_err(MusicUsecaseError::JacketStorage)?;
+                .map_err(MusicUsecaseError::AssetStorage)?;
             return self
                 .repositories
                 .music()
-                .update_jacket(&music_id, None)
+                .update_jacket_key(&music_id, None)
                 .await
                 .map(Into::into)
                 .map_err(Into::into);
@@ -145,6 +145,130 @@ impl<R: Repositories> MusicUsecase<R> {
         let updated = self.repositories.music().update_with_sheets(music).await?;
         Ok(updated.into())
     }
+
+    pub async fn upload_audio(
+        &self,
+        storage: &dyn AssetStorage,
+        music_id: String,
+        audio: AssetUpload,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        validate_music_id(&music_id)?;
+        let existing = self
+            .repositories
+            .music()
+            .find_with_sheets(&music_id)
+            .await?;
+        let previous_key = existing.music.music_key().clone();
+        let key = storage
+            .upload(AssetKind::Audio, &music_id, audio)
+            .await
+            .map_err(MusicUsecaseError::AssetStorage)?;
+        let updated = match self
+            .repositories
+            .music()
+            .update_music_key(&music_id, Some(key.clone()))
+            .await
+        {
+            Ok(updated) => updated,
+            Err(error) => {
+                let _ = storage.delete(&key).await;
+                return Err(error.into());
+            }
+        };
+        delete_previous(storage, previous_key, &key).await;
+        Ok(updated.into())
+    }
+
+    pub async fn upload_chart(
+        &self,
+        storage: &dyn AssetStorage,
+        sheet_id: String,
+        chart: AssetUpload,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        let sheet = self.repositories.music().find_sheet(&sheet_id).await?;
+        let previous_key = sheet.chart_key().clone();
+        let key = storage
+            .upload(AssetKind::Chart, &sheet_id, chart)
+            .await
+            .map_err(MusicUsecaseError::AssetStorage)?;
+        let updated = match self
+            .repositories
+            .music()
+            .update_chart_key(&sheet_id, Some(key.clone()))
+            .await
+        {
+            Ok(updated) => updated,
+            Err(error) => {
+                let _ = storage.delete(&key).await;
+                return Err(error.into());
+            }
+        };
+        delete_previous(storage, previous_key, &key).await;
+        Ok(updated.into())
+    }
+
+    pub async fn delete_audio(
+        &self,
+        storage: &dyn AssetStorage,
+        music_id: String,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        validate_music_id(&music_id)?;
+        let music = self
+            .repositories
+            .music()
+            .find_with_sheets(&music_id)
+            .await?;
+        if let Some(key) = music.music.music_key().clone() {
+            storage
+                .delete(&key)
+                .await
+                .map_err(MusicUsecaseError::AssetStorage)?;
+            return self
+                .repositories
+                .music()
+                .update_music_key(&music_id, None)
+                .await
+                .map(Into::into)
+                .map_err(Into::into);
+        }
+        Ok(music.into())
+    }
+
+    pub async fn delete_chart(
+        &self,
+        storage: &dyn AssetStorage,
+        sheet_id: String,
+    ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
+        let sheet = self.repositories.music().find_sheet(&sheet_id).await?;
+        if let Some(key) = sheet.chart_key().clone() {
+            storage
+                .delete(&key)
+                .await
+                .map_err(MusicUsecaseError::AssetStorage)?;
+            return self
+                .repositories
+                .music()
+                .update_chart_key(&sheet_id, None)
+                .await
+                .map(Into::into)
+                .map_err(Into::into);
+        }
+        Ok(self
+            .repositories
+            .music()
+            .find_with_sheets(&sheet.music_id().to_owned())
+            .await?
+            .into())
+    }
+}
+
+async fn delete_previous(storage: &dyn AssetStorage, previous_key: Option<String>, key: &str) {
+    if let Some(previous_key) = previous_key
+        && previous_key != key
+        && let Err(error) = storage.delete(&previous_key).await
+    {
+        tracing::warn!(error = ?error, asset_key = %previous_key, "Failed to clean up previous asset");
+    }
 }
 
 fn validate_music_id(music_id: &str) -> Result<(), MusicUsecaseError> {
@@ -162,10 +286,10 @@ fn build_music(
     sheets_input: Vec<SheetBuildInput>,
     existing: Option<MusicWithSheets>,
 ) -> Result<MusicWithSheets, MusicUsecaseError> {
-    let jacket = input.jacket.or_else(|| {
+    let jacket = input.jacket_key.or_else(|| {
         existing
             .as_ref()
-            .and_then(|music| music.music.jacket_image_url().clone())
+            .and_then(|music| music.music.jacket_key().clone())
     });
     if input.title.trim().is_empty()
         || input.artist.trim().is_empty()
@@ -215,11 +339,18 @@ fn build_music(
             _ => return invalid_sheet(),
         };
         sheets.push(Sheet::new(
-            id,
+            id.clone(),
             music_id.clone(),
             difficulty,
             level,
             non_empty(sheet.data.notes_designer, "notesDesigner")?,
+            existing.as_ref().and_then(|music| {
+                music
+                    .sheets
+                    .iter()
+                    .find(|existing_sheet| existing_sheet.id() == &id)
+                    .and_then(|sheet| sheet.chart_key().clone())
+            }),
         ));
     }
     if seen != [true; 3] {
@@ -233,6 +364,11 @@ fn build_music(
             input.bpm,
             input.genre,
             jacket,
+            input.music_key.or_else(|| {
+                existing
+                    .as_ref()
+                    .and_then(|music| music.music.music_key().clone())
+            }),
             input.registration_date,
             input.is_test,
         ),

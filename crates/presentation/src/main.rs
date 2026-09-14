@@ -13,15 +13,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repositories = infrastructure::RepositoriesImpl::new_default(&postgres_url).await?;
 
     let config = Config::default();
-    let jacket_storage = infrastructure::jacket::R2JacketStorage::new(
+    let asset_storage = infrastructure::asset::R2AssetStorage::new(
         env::r2_endpoint(),
         env::r2_bucket(),
         env::r2_access_key_id(),
         env::r2_secret_access_key(),
-        env::r2_public_base_url(),
     )
     .await;
-    let state = State::new(config, repositories).with_jacket_storage(jacket_storage);
+    let state = State::new(config, repositories).with_asset_storage(asset_storage);
     let authenticator = Authenticator::new(
         Client::new(),
         env::auth0_issuer(),

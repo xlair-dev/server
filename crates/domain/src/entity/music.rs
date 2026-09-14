@@ -16,7 +16,9 @@ pub struct Music {
     #[getset(get = "pub")]
     genre: Genre,
     #[getset(get = "pub")]
-    jacket_image_url: Option<String>,
+    jacket_key: Option<String>,
+    #[getset(get = "pub")]
+    music_key: Option<String>,
     #[getset(get = "pub")]
     registration_date: DateTime<Utc>,
     #[getset(get = "pub")]
@@ -31,7 +33,8 @@ impl Music {
         artist: String,
         bpm: f32,
         genre: Genre,
-        jacket_image_url: Option<String>,
+        jacket_key: Option<String>,
+        music_key: Option<String>,
         registration_date: DateTime<Utc>,
         is_test: bool,
     ) -> Self {
@@ -41,7 +44,8 @@ impl Music {
             artist,
             bpm,
             genre,
-            jacket_image_url,
+            jacket_key,
+            music_key,
             registration_date,
             is_test,
         }

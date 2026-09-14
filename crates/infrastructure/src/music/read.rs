@@ -133,3 +133,18 @@ pub async fn find_with_sheets(
         read_adapter::convert_sheets(sheet_models)?,
     ))
 }
+
+pub async fn find_sheet(
+    db: &DbConn,
+    sheet_id: &str,
+) -> Result<domain::entity::sheet::Sheet, MusicRepositoryError> {
+    let id = uuid::Uuid::parse_str(sheet_id)
+        .map_err(|_| MusicRepositoryError::NotFound(sheet_id.to_owned()))?;
+    let model = entities::sheets::Entity::find_by_id(id)
+        .one(db)
+        .await
+        .map_err(|err| MusicRepositoryError::InternalError(AnyError::from(err)))?
+        .ok_or_else(|| MusicRepositoryError::NotFound(sheet_id.to_owned()))?;
+    read_adapter::convert_sheets(vec![model])
+        .map(|mut sheets| sheets.pop().expect("one sheet was converted"))
+}
