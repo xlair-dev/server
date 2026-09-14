@@ -1,15 +1,16 @@
 use std::convert::TryFrom;
 
 use anyhow::Error as AnyError;
-use bigdecimal::{Signed, ToPrimitive};
+use bigdecimal::ToPrimitive;
 use domain::{
     entity::{user::User, user_play_option::UserPlayOption},
     repository::user::UserRepositoryError,
 };
 use sea_orm::{
-    ColumnTrait, DbConn, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
+    ColumnTrait, DbConn, EntityTrait, ExprTrait, PaginatorTrait, QueryFilter, QueryOrder,
+    QuerySelect,
+    prelude::Decimal,
     sea_query::{Alias, Expr},
-    sqlx::types::BigDecimal,
 };
 use tracing::{debug, error, info};
 
@@ -114,7 +115,7 @@ pub async fn sum_credits(db: &DbConn) -> Result<u64, UserRepositoryError> {
                 .cast_as(Alias::new("numeric")),
             "sum",
         )
-        .into_tuple::<Option<BigDecimal>>()
+        .into_tuple::<Option<Decimal>>()
         .one(db)
         .await
         .map_err(|err| {
@@ -122,9 +123,9 @@ pub async fn sum_credits(db: &DbConn) -> Result<u64, UserRepositoryError> {
             UserRepositoryError::InternalError(AnyError::from(err))
         })?
         .flatten()
-        .unwrap_or_else(|| BigDecimal::from(0u8));
+        .unwrap_or(Decimal::ZERO);
 
-    if sum.is_negative() {
+    if sum.is_sign_negative() {
         let err = AnyError::msg("Database returned negative user credit sum");
         error!("User credit sum returned negative value");
         return Err(UserRepositoryError::InternalError(err));
@@ -202,7 +203,6 @@ pub async fn public_users_by_xp(db: &DbConn, limit: u64) -> Result<Vec<User>, Us
 mod tests {
     use std::collections::BTreeMap;
 
-    use bigdecimal::BigDecimal;
     use chrono::{TimeZone, Utc};
     use sea_orm::{DatabaseBackend, MockDatabase, prelude::Uuid, sea_query::Value};
 
@@ -211,8 +211,8 @@ mod tests {
 
     fn decimal_row(label: &str, value: Option<i64>) -> BTreeMap<String, Value> {
         let mapped_value = value
-            .map(|v| Value::BigDecimal(Some(Box::new(BigDecimal::from(v)))))
-            .unwrap_or(Value::BigDecimal(None));
+            .map(|v| Value::Decimal(Some(Decimal::from(v))))
+            .unwrap_or(Value::Decimal(None));
         BTreeMap::from([(label.to_owned(), mapped_value)])
     }
 

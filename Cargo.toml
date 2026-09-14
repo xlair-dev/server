@@ -22,11 +22,11 @@ getset = "0.1.4"
 hex = "0.4.3"
 image = { version = "0.25.8", default-features = false, features = ["jpeg", "png", "webp"] }
 infrastructure = { path = "crates/infrastructure" }
-jsonwebtoken = "10.0.0"
+jsonwebtoken = "9.3.1"
 mockall = "0.15.0"
 presentation = { path = "crates/presentation" }
-reqwest = { version = "0.13.0", default-features = false, features = ["json", "rustls"] }
-sea-orm = { version = "1.1.16", features = [
+reqwest = { version = "0.12.23", default-features = false, features = ["json", "rustls-tls"] }
+sea-orm = { version = "2.0.0", features = [
     # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
     "sqlx-postgres",
     "runtime-tokio-rustls",
@@ -35,7 +35,7 @@ sea-orm = { version = "1.1.16", features = [
     "with-chrono",
     "with-uuid",
 ] }
-sea-orm-migration = { version = "1.1.0", features = [
+sea-orm-migration = { version = "2.0.0", features = [
     # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
     "sqlx-postgres",
     "runtime-tokio-rustls",
