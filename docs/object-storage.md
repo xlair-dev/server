@@ -25,6 +25,8 @@ R2_ACCESS_KEY_ID=<access-key-id>
 R2_SECRET_ACCESS_KEY=<secret-access-key>
 ```
 
+local では Compose が MinIO と `xlair-assets-local` バケットを起動時に準備する。`.env.dev.example` を使用する場合は、`R2_ENDPOINT` と認証情報を変更しない。
+
 `R2_ACCESS_KEY_ID` と `R2_SECRET_ACCESS_KEY` には、対象バケットへの読み書き権限を持つ R2 API トークンを使用する。
 
 ## API Token の発行

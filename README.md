@@ -4,13 +4,15 @@ API server for XLAIR
 
 ## ローカル開発
 
-通常の起動ではDBコンテナだけを起動します。マイグレーションは必要なときに明示的に実行してください。
+通常の起動では PostgreSQL とローカル S3 互換ストレージを起動します。マイグレーションは必要なときに明示的に実行してください。
 
 ```sh
 docker compose up -d
 docker compose --profile migration run --rm migrator up
 cargo run -p presentation
 ```
+
+ローカルストレージは MinIO で、`xlair-assets-local` バケットが自動作成されます。管理画面は `http://localhost:9001` で開けます。
 
 マイグレーションを追加した場合も、同じコマンドで未適用分だけが適用されます。開発用DBを作り直す場合に限り、次を実行してください。
 
