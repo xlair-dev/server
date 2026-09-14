@@ -1,4 +1,5 @@
 use anyhow::Error as AnyError;
+use chrono::Utc;
 use domain::{
     entity::{difficulty::Difficulty, music::Music, sheet::Sheet},
     repository::music::MusicRepositoryError,
@@ -31,6 +32,7 @@ pub fn music_active_model_for_jacket_key(
 ) -> Result<MusicActiveModel, MusicRepositoryError> {
     Ok(MusicActiveModel {
         id: ActiveValue::Unchanged(parse_uuid(music_id)?),
+        jacket_updated_at: ActiveValue::Set(jacket_key.as_ref().map(|_| Utc::now().into())),
         jacket_key: ActiveValue::Set(jacket_key),
         ..Default::default()
     })
@@ -42,6 +44,7 @@ pub fn music_active_model_for_music_key(
 ) -> Result<MusicActiveModel, MusicRepositoryError> {
     Ok(MusicActiveModel {
         id: ActiveValue::Unchanged(parse_uuid(music_id)?),
+        music_updated_at: ActiveValue::Set(music_key.as_ref().map(|_| Utc::now().into())),
         music_key: ActiveValue::Set(music_key),
         ..Default::default()
     })
@@ -53,6 +56,7 @@ pub fn sheet_active_model_for_chart_key(
 ) -> Result<SheetActiveModel, MusicRepositoryError> {
     Ok(SheetActiveModel {
         id: ActiveValue::Unchanged(parse_uuid(sheet_id)?),
+        chart_updated_at: ActiveValue::Set(chart_key.as_ref().map(|_| Utc::now().into())),
         chart_key: ActiveValue::Set(chart_key),
         ..Default::default()
     })
@@ -74,6 +78,8 @@ fn music_active_model(
         }),
         jacket_key: ActiveValue::Set(music.jacket_key().clone()),
         music_key: ActiveValue::Set(music.music_key().clone()),
+        jacket_updated_at: ActiveValue::Set(music.jacket_updated_at().map(Into::into)),
+        music_updated_at: ActiveValue::Set(music.music_updated_at().map(Into::into)),
         registration_date: ActiveValue::Set((*music.registration_date()).into()),
         is_test: ActiveValue::Set(*music.is_test()),
     })
@@ -117,6 +123,7 @@ fn sheet_active_model(
         level: ActiveValue::Set((level.0 * 10 + level.1) as i32),
         notes_designer: ActiveValue::Set(sheet.notes_designer().to_owned()),
         chart_key: ActiveValue::Set(sheet.chart_key().clone()),
+        chart_updated_at: ActiveValue::Set(sheet.chart_updated_at().map(Into::into)),
     })
 }
 

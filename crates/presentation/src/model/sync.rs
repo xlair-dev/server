@@ -27,6 +27,8 @@ pub struct MusicResponse {
     pub genre: String,
     pub jacket: Option<String>,
     pub music: Option<String>,
+    pub jacket_updated_at: Option<String>,
+    pub music_updated_at: Option<String>,
     pub registration_date: String,
     pub is_test: bool,
 }
@@ -47,6 +49,8 @@ impl From<MusicDto> for MusicResponse {
             music: value
                 .music_key
                 .map(|key| format!("/musics/{}/audio/{}", id, asset_name(&key))),
+            jacket_updated_at: value.jacket_updated_at.map(|value| value.to_rfc3339()),
+            music_updated_at: value.music_updated_at.map(|value| value.to_rfc3339()),
             registration_date: value.registration_date.to_rfc3339(),
             is_test: value.is_test,
         }
@@ -62,6 +66,7 @@ pub struct SheetResponse {
     pub level: f64,
     pub notes_designer: String,
     pub src: Option<String>,
+    pub chart_updated_at: Option<String>,
 }
 
 impl From<SheetDto> for SheetResponse {
@@ -76,6 +81,7 @@ impl From<SheetDto> for SheetResponse {
             src: value
                 .chart_key
                 .map(|key| format!("/sheets/{}/chart/{}", id, asset_name(&key))),
+            chart_updated_at: value.chart_updated_at.map(|value| value.to_rfc3339()),
         }
     }
 }

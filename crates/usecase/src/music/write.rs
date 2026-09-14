@@ -335,7 +335,7 @@ fn build_music(
             (Some(_), Some(id)) if uuid::Uuid::parse_str(&id).is_ok() => id,
             _ => return invalid_sheet(),
         };
-        sheets.push(Sheet::new(
+        let mut sheet = Sheet::new(
             id.clone(),
             music_id.clone(),
             difficulty,
@@ -348,29 +348,38 @@ fn build_music(
                     .find(|existing_sheet| existing_sheet.id() == &id)
                     .and_then(|sheet| sheet.chart_key().clone())
             }),
-        ));
+        );
+        if let Some(existing_sheet) = existing
+            .as_ref()
+            .and_then(|music| music.sheets.iter().find(|sheet| sheet.id() == &id))
+        {
+            sheet.set_chart_updated_at(*existing_sheet.chart_updated_at());
+        }
+        sheets.push(sheet);
     }
     if seen != [true; 3] {
         return invalid_sheet();
     }
-    Ok(MusicWithSheets::new(
-        Music::new(
-            music_id,
-            input.title,
-            input.artist,
-            input.bpm,
-            input.genre,
-            jacket,
-            input.music_key.or_else(|| {
-                existing
-                    .as_ref()
-                    .and_then(|music| music.music.music_key().clone())
-            }),
-            input.registration_date,
-            input.is_test,
-        ),
-        sheets,
-    ))
+    let mut music = Music::new(
+        music_id,
+        input.title,
+        input.artist,
+        input.bpm,
+        input.genre,
+        jacket,
+        input.music_key.or_else(|| {
+            existing
+                .as_ref()
+                .and_then(|music| music.music.music_key().clone())
+        }),
+        input.registration_date,
+        input.is_test,
+    );
+    if let Some(existing_music) = existing.as_ref().map(|music| &music.music) {
+        music.set_jacket_updated_at(*existing_music.jacket_updated_at());
+        music.set_music_updated_at(*existing_music.music_updated_at());
+    }
+    Ok(MusicWithSheets::new(music, sheets))
 }
 
 struct SheetBuildInput {

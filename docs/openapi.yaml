@@ -1024,6 +1024,16 @@ components:
             id:
               type: string
               description: 楽曲のID
+            jacketUpdatedAt:
+              type: string
+              format: date-time
+              nullable: true
+              description: ジャケットの最終アップロード日時
+            musicUpdatedAt:
+              type: string
+              format: date-time
+              nullable: true
+              description: 音源の最終アップロード日時
           required:
             - id
     sheetData:
@@ -1061,6 +1071,11 @@ components:
             musicId:
               type: string
               description: 楽曲のID
+            chartUpdatedAt:
+              type: string
+              format: date-time
+              nullable: true
+              description: 譜面ファイルの最終アップロード日時
           required:
             - id
             - musicId

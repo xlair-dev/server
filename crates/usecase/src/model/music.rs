@@ -48,7 +48,9 @@ pub struct MusicDto {
     pub bpm: f32,
     pub genre: Genre,
     pub jacket_key: Option<String>,
+    pub jacket_updated_at: Option<DateTime<Utc>>,
     pub music_key: Option<String>,
+    pub music_updated_at: Option<DateTime<Utc>>,
     pub registration_date: DateTime<Utc>,
     pub is_test: bool,
 }
@@ -62,7 +64,9 @@ impl MusicDto {
         bpm: f32,
         genre: Genre,
         jacket_key: Option<String>,
+        jacket_updated_at: Option<DateTime<Utc>>,
         music_key: Option<String>,
+        music_updated_at: Option<DateTime<Utc>>,
         registration_date: DateTime<Utc>,
         is_test: bool,
     ) -> Self {
@@ -73,7 +77,9 @@ impl MusicDto {
             bpm,
             genre,
             jacket_key,
+            jacket_updated_at,
             music_key,
+            music_updated_at,
             registration_date,
             is_test,
         }
@@ -89,7 +95,9 @@ impl From<Music> for MusicDto {
             *value.bpm(),
             *value.genre(),
             value.jacket_key().clone(),
+            value.jacket_updated_at().to_owned(),
             value.music_key().clone(),
+            value.music_updated_at().to_owned(),
             value.registration_date().to_owned(),
             *value.is_test(),
         )
@@ -104,6 +112,7 @@ pub struct SheetDto {
     pub level_value: f64,
     pub notes_designer: String,
     pub chart_key: Option<String>,
+    pub chart_updated_at: Option<DateTime<Utc>>,
 }
 
 impl SheetDto {
@@ -114,6 +123,7 @@ impl SheetDto {
         level_value: f64,
         notes_designer: String,
         chart_key: Option<String>,
+        chart_updated_at: Option<DateTime<Utc>>,
     ) -> Self {
         Self {
             id,
@@ -122,6 +132,7 @@ impl SheetDto {
             level_value,
             notes_designer,
             chart_key,
+            chart_updated_at,
         }
     }
 }
@@ -135,6 +146,7 @@ impl From<Sheet> for SheetDto {
             value.level().value(),
             value.notes_designer().to_owned(),
             value.chart_key().clone(),
+            value.chart_updated_at().to_owned(),
         )
     }
 }

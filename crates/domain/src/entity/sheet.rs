@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use getset::{Getters, Setters};
 
 use super::{difficulty::Difficulty, level::Level};
@@ -16,6 +17,8 @@ pub struct Sheet {
     notes_designer: String,
     #[getset(get = "pub")]
     chart_key: Option<String>,
+    #[getset(get = "pub", set = "pub")]
+    chart_updated_at: Option<DateTime<Utc>>,
 }
 
 impl Sheet {
@@ -34,6 +37,7 @@ impl Sheet {
             level,
             notes_designer,
             chart_key,
+            chart_updated_at: None,
         }
     }
 }

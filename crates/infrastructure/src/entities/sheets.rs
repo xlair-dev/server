@@ -14,6 +14,7 @@ pub struct Model {
     pub level: i32,
     pub notes_designer: String,
     pub chart_key: Option<String>,
+    pub chart_updated_at: Option<DateTimeWithTimeZone>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

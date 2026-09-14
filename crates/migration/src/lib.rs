@@ -9,6 +9,7 @@ mod m20251007_000006_add_music_registration_date_id_index;
 mod m20251007_000007_make_music_jacket_nullable;
 mod m20251007_000008_rename_difficulty_values;
 mod m20251007_000009_add_music_asset_keys;
+mod m20251007_000010_add_asset_updated_at;
 
 pub struct Migrator;
 
@@ -25,6 +26,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251007_000007_make_music_jacket_nullable::Migration),
             Box::new(m20251007_000008_rename_difficulty_values::Migration),
             Box::new(m20251007_000009_add_music_asset_keys::Migration),
+            Box::new(m20251007_000010_add_asset_updated_at::Migration),
         ]
     }
 }

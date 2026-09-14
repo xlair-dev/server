@@ -19,7 +19,7 @@ pub fn convert_music(model: MusicModel) -> Result<Music, MusicRepositoryError> {
     let genre = convert_genre(model.genre)?;
     let registration_date = model.registration_date.with_timezone(&Utc);
 
-    Ok(Music::new(
+    let mut music = Music::new(
         model.id.to_string(),
         model.title,
         model.artist,
@@ -29,7 +29,18 @@ pub fn convert_music(model: MusicModel) -> Result<Music, MusicRepositoryError> {
         model.music_key,
         registration_date,
         model.is_test,
-    ))
+    );
+    music.set_jacket_updated_at(
+        model
+            .jacket_updated_at
+            .map(|value| value.with_timezone(&Utc)),
+    );
+    music.set_music_updated_at(
+        model
+            .music_updated_at
+            .map(|value| value.with_timezone(&Utc)),
+    );
+    Ok(music)
 }
 
 pub fn convert_sheets(models: Vec<SheetModel>) -> Result<Vec<Sheet>, MusicRepositoryError> {
@@ -44,14 +55,20 @@ fn convert_sheet(model: SheetModel) -> Result<Sheet, MusicRepositoryError> {
     let difficulty = convert_difficulty(model.difficulty);
     let level = convert_level(model.level)?;
 
-    Ok(Sheet::new(
+    let mut sheet = Sheet::new(
         model.id.to_string(),
         model.music_id.to_string(),
         difficulty,
         level,
         model.notes_designer,
         model.chart_key,
-    ))
+    );
+    sheet.set_chart_updated_at(
+        model
+            .chart_updated_at
+            .map(|value| value.with_timezone(&Utc)),
+    );
+    Ok(sheet)
 }
 
 fn convert_bpm(bpm: Decimal) -> Result<f32, MusicRepositoryError> {

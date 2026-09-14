@@ -19,6 +19,10 @@ pub struct Music {
     jacket_key: Option<String>,
     #[getset(get = "pub")]
     music_key: Option<String>,
+    #[getset(get = "pub", set = "pub")]
+    jacket_updated_at: Option<DateTime<Utc>>,
+    #[getset(get = "pub", set = "pub")]
+    music_updated_at: Option<DateTime<Utc>>,
     #[getset(get = "pub")]
     registration_date: DateTime<Utc>,
     #[getset(get = "pub")]
@@ -46,6 +50,8 @@ impl Music {
             genre,
             jacket_key,
             music_key,
+            jacket_updated_at: None,
+            music_updated_at: None,
             registration_date,
             is_test,
         }
