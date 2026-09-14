@@ -30,8 +30,11 @@ impl R2AssetStorage {
             .credentials_provider(credentials)
             .load()
             .await;
+        let config = aws_sdk_s3::config::Builder::from(&config)
+            .force_path_style(true)
+            .build();
         Self {
-            client: Client::new(&config),
+            client: Client::from_conf(config),
             bucket,
         }
     }
