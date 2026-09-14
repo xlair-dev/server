@@ -1,6 +1,6 @@
 use getset::{Getters, Setters};
 
-use super::{difficulty::Difficulty, level::Level};
+use super::{asset::Asset, difficulty::Difficulty, level::Level};
 
 #[derive(Debug, Getters, Setters)]
 pub struct Sheet {
@@ -15,7 +15,7 @@ pub struct Sheet {
     #[getset(get = "pub")]
     notes_designer: String,
     #[getset(get = "pub")]
-    chart_key: Option<String>,
+    chart: Option<Asset>,
 }
 
 impl Sheet {
@@ -25,7 +25,7 @@ impl Sheet {
         difficulty: Difficulty,
         level: Level,
         notes_designer: String,
-        chart_key: Option<String>,
+        chart: Option<Asset>,
     ) -> Self {
         Self {
             id,
@@ -33,7 +33,7 @@ impl Sheet {
             difficulty,
             level,
             notes_designer,
-            chart_key,
+            chart,
         }
     }
 }

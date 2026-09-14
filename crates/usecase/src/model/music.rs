@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
-use domain::entity::{difficulty::Difficulty, genre::Genre, music::Music, sheet::Sheet};
+use domain::entity::{
+    asset::Asset, difficulty::Difficulty, genre::Genre, music::Music, sheet::Sheet,
+};
 
 #[derive(Debug)]
 pub struct MusicDataInput {
@@ -7,8 +9,6 @@ pub struct MusicDataInput {
     pub artist: String,
     pub bpm: f32,
     pub genre: Genre,
-    pub jacket_key: Option<String>,
-    pub music_key: Option<String>,
     pub registration_date: DateTime<Utc>,
     pub is_test: bool,
 }
@@ -47,10 +47,25 @@ pub struct MusicDto {
     pub artist: String,
     pub bpm: f32,
     pub genre: Genre,
-    pub jacket_key: Option<String>,
-    pub music_key: Option<String>,
+    pub jacket: Option<AssetDto>,
+    pub audio: Option<AssetDto>,
     pub registration_date: DateTime<Utc>,
     pub is_test: bool,
+}
+
+#[derive(Debug)]
+pub struct AssetDto {
+    pub key: String,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl From<Asset> for AssetDto {
+    fn from(value: Asset) -> Self {
+        Self {
+            key: value.key().to_owned(),
+            updated_at: value.updated_at(),
+        }
+    }
 }
 
 impl MusicDto {
@@ -61,8 +76,8 @@ impl MusicDto {
         artist: String,
         bpm: f32,
         genre: Genre,
-        jacket_key: Option<String>,
-        music_key: Option<String>,
+        jacket: Option<AssetDto>,
+        audio: Option<AssetDto>,
         registration_date: DateTime<Utc>,
         is_test: bool,
     ) -> Self {
@@ -72,8 +87,8 @@ impl MusicDto {
             artist,
             bpm,
             genre,
-            jacket_key,
-            music_key,
+            jacket,
+            audio,
             registration_date,
             is_test,
         }
@@ -88,8 +103,8 @@ impl From<Music> for MusicDto {
             value.artist().to_owned(),
             *value.bpm(),
             *value.genre(),
-            value.jacket_key().clone(),
-            value.music_key().clone(),
+            value.jacket().clone().map(Into::into),
+            value.audio().clone().map(Into::into),
             value.registration_date().to_owned(),
             *value.is_test(),
         )
@@ -103,7 +118,7 @@ pub struct SheetDto {
     pub difficulty: Difficulty,
     pub level_value: f64,
     pub notes_designer: String,
-    pub chart_key: Option<String>,
+    pub chart: Option<AssetDto>,
 }
 
 impl SheetDto {
@@ -113,7 +128,7 @@ impl SheetDto {
         difficulty: Difficulty,
         level_value: f64,
         notes_designer: String,
-        chart_key: Option<String>,
+        chart: Option<AssetDto>,
     ) -> Self {
         Self {
             id,
@@ -121,7 +136,7 @@ impl SheetDto {
             difficulty,
             level_value,
             notes_designer,
-            chart_key,
+            chart,
         }
     }
 }
@@ -134,7 +149,7 @@ impl From<Sheet> for SheetDto {
             *value.difficulty(),
             value.level().value(),
             value.notes_designer().to_owned(),
-            value.chart_key().clone(),
+            value.chart().clone().map(Into::into),
         )
     }
 }

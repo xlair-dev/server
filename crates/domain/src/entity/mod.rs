@@ -1,3 +1,4 @@
+pub mod asset;
 pub mod clear_type;
 pub mod difficulty;
 pub mod genre;

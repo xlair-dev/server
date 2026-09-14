@@ -13,7 +13,9 @@ pub struct Model {
     pub bpm: Decimal,
     pub genre: i32,
     pub jacket_key: Option<String>,
-    pub music_key: Option<String>,
+    pub audio_key: Option<String>,
+    pub jacket_updated_at: Option<DateTimeWithTimeZone>,
+    pub audio_updated_at: Option<DateTimeWithTimeZone>,
     pub registration_date: DateTimeWithTimeZone,
     pub is_test: bool,
 }

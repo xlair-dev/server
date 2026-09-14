@@ -16,7 +16,11 @@ pub async fn handle_get_jacket(
     Path((music_id, file_name)): Path<(String, String)>,
 ) -> AppResult<Response<Body>> {
     let music = state.usecases.music.find_by_id(music_id).await?;
-    let key = music.music.jacket_key.ok_or_else(AppError::not_found)?;
+    let key = music
+        .music
+        .jacket
+        .map(|asset| asset.key)
+        .ok_or_else(AppError::not_found)?;
     stream_asset(&state, &key, &file_name, "image/png", true).await
 }
 
@@ -26,7 +30,11 @@ pub async fn handle_get_audio(
     Path((music_id, file_name)): Path<(String, String)>,
 ) -> AppResult<Response<Body>> {
     let music = state.usecases.music.find_by_id(music_id).await?;
-    let key = music.music.music_key.ok_or_else(AppError::not_found)?;
+    let key = music
+        .music
+        .audio
+        .map(|asset| asset.key)
+        .ok_or_else(AppError::not_found)?;
     stream_asset(&state, &key, &file_name, "audio/wav", false).await
 }
 

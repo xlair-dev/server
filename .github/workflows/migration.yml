@@ -1,0 +1,67 @@
+name: Database Migration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - crates/migration/**
+      - rust-toolchain.toml
+      - .github/workflows/migration.yml
+  pull_request:
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - crates/migration/**
+      - rust-toolchain.toml
+      - .github/workflows/migration.yml
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  migration:
+    name: database migration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: xlair
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d xlair"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo directories
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-migration-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-migration-
+
+      - name: Fetch dependencies
+        run: cargo fetch --locked
+
+      - name: Run migrations
+        run: cargo run -p migration --locked -- up
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/xlair

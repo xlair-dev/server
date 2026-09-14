@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use getset::{Getters, Setters};
 
-use super::genre::Genre;
+use super::{asset::Asset, genre::Genre};
 
 #[derive(Debug, Getters, Setters)]
 pub struct Music {
@@ -16,9 +16,9 @@ pub struct Music {
     #[getset(get = "pub")]
     genre: Genre,
     #[getset(get = "pub")]
-    jacket_key: Option<String>,
+    jacket: Option<Asset>,
     #[getset(get = "pub")]
-    music_key: Option<String>,
+    audio: Option<Asset>,
     #[getset(get = "pub")]
     registration_date: DateTime<Utc>,
     #[getset(get = "pub")]
@@ -33,8 +33,8 @@ impl Music {
         artist: String,
         bpm: f32,
         genre: Genre,
-        jacket_key: Option<String>,
-        music_key: Option<String>,
+        jacket: Option<Asset>,
+        audio: Option<Asset>,
         registration_date: DateTime<Utc>,
         is_test: bool,
     ) -> Self {
@@ -44,8 +44,8 @@ impl Music {
             artist,
             bpm,
             genre,
-            jacket_key,
-            music_key,
+            jacket,
+            audio,
             registration_date,
             is_test,
         }
