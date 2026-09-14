@@ -11,6 +11,13 @@ impl MigrationTrait for Migration {
                 Table::alter()
                     .table(Musics::Table)
                     .rename_column(Musics::Jacket, Musics::JacketKey)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Musics::Table)
                     .add_column(ColumnDef::new(Musics::MusicKey).string().null())
                     .to_owned(),
             )
