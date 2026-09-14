@@ -48,7 +48,7 @@ pub async fn handle_get_chart(
     stream_asset(&state, &key, &file_name, "text/plain; charset=utf-8", false).await
 }
 
-async fn stream_asset(
+pub(crate) async fn stream_asset(
     state: &crate::state::State,
     key: &str,
     file_name: &str,

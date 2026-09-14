@@ -11,6 +11,31 @@ use crate::{error::AppError, model::sync::SyncItemResponse};
 
 type AppResult<T> = Result<T, AppError>;
 
+#[instrument(skip(state), fields(music_id = %music_id))]
+pub async fn get_audio(
+    State(state): State<crate::state::State>,
+    Path((music_id, file_name)): Path<(String, String)>,
+) -> AppResult<axum::http::Response<axum::body::Body>> {
+    let music = state.usecases.music.find_by_id(music_id).await?;
+    let key = music
+        .music
+        .audio
+        .map(|asset| asset.key)
+        .ok_or_else(AppError::not_found)?;
+    crate::route::asset::stream_asset(&state, &key, &file_name, "audio/wav", false).await
+}
+
+#[instrument(skip(state), fields(sheet_id = %sheet_id))]
+pub async fn get_chart(
+    State(state): State<crate::state::State>,
+    Path((sheet_id, file_name)): Path<(String, String)>,
+) -> AppResult<axum::http::Response<axum::body::Body>> {
+    let sheet = state.usecases.music.find_by_sheet_id(sheet_id).await?;
+    let key = sheet.ok_or_else(AppError::not_found)?;
+    crate::route::asset::stream_asset(&state, &key, &file_name, "text/plain; charset=utf-8", false)
+        .await
+}
+
 #[instrument(skip(state, headers, body), fields(music_id = %music_id))]
 pub async fn upload_jacket(
     State(state): State<crate::state::State>,

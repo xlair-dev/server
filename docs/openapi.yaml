@@ -422,6 +422,25 @@ paths:
         "403": { description: Forbidden - The authenticated user is not an administrator }
         "404": { description: Not found - Music not found }
         "500": { description: Internal server error }
+  /admin/musics/{musicId}/audio/{fileName}:
+    get:
+      tags: [admin]
+      summary: 楽曲の音源を取得
+      security:
+        - userAuth: []
+      parameters:
+        - $ref: "#/components/parameters/musicId"
+        - $ref: "#/components/parameters/assetFileName"
+      responses:
+        "200":
+          description: WAV 音源
+          content:
+            audio/wav:
+              schema: { type: string, format: binary }
+        "401": { description: Unauthorized - Invalid access token }
+        "403": { description: Forbidden - The authenticated user is not an administrator }
+        "404": { description: Not found - Music or audio not found }
+        "500": { description: Internal server error }
   /admin/sheets/{sheetId}/chart:
     post:
       tags: [admin]
@@ -470,6 +489,28 @@ paths:
         "401": { description: Unauthorized - Invalid access token }
         "403": { description: Forbidden - The authenticated user is not an administrator }
         "404": { description: Not found - Sheet not found }
+        "500": { description: Internal server error }
+  /admin/sheets/{sheetId}/chart/{fileName}:
+    get:
+      tags: [admin]
+      summary: 譜面ファイルを取得
+      security:
+        - userAuth: []
+      parameters:
+        - name: sheetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/assetFileName"
+      responses:
+        "200":
+          description: SUS 譜面ファイル
+          content:
+            text/plain:
+              schema: { type: string, format: binary }
+        "401": { description: Unauthorized - Invalid access token }
+        "403": { description: Forbidden - The authenticated user is not an administrator }
+        "404": { description: Not found - Sheet or chart not found }
         "500": { description: Internal server error }
   /musics/{musicId}/jacket/{fileName}:
     get:
