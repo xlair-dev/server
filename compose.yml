@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
     container_name: xlair-dev-db
     restart: always
     env_file:
@@ -14,7 +14,7 @@ services:
       retries: 5
 
   storage:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: xlair-dev-storage
     command: server /data --console-address ":9001"
     environment:
@@ -32,7 +32,7 @@ services:
       retries: 5
 
   storage-init:
-    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     container_name: xlair-dev-storage-init
     depends_on:
       storage:
@@ -49,7 +49,7 @@ services:
     restart: "no"
 
   migrator:
-    image: rust:1.90
+    image: rust:1.98@sha256:bf5a9aa29062a6cb03c49bd59a46eb55e3cc770caf598a221a7866e500be3082
     container_name: xlair-dev-migrator
     working_dir: /workspace
     entrypoint: ["cargo", "run", "-p", "migration", "--"]
