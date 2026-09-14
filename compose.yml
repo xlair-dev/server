@@ -49,7 +49,7 @@ services:
     restart: "no"
 
   migrator:
-    image: rust:1.90@sha256:e227f20ec42af3ea9a3c9c1dd1b2012aa15f12279b5e9d5fb890ca1c2bb5726c
+    image: rust:1.98@sha256:bf5a9aa29062a6cb03c49bd59a46eb55e3cc770caf598a221a7866e500be3082
     container_name: xlair-dev-migrator
     working_dir: /workspace
     entrypoint: ["cargo", "run", "-p", "migration", "--"]
