@@ -22,7 +22,7 @@ getset = "0.1.4"
 hex = "0.4.3"
 image = { version = "0.25.8", default-features = false, features = ["jpeg", "png", "webp"] }
 infrastructure = { path = "crates/infrastructure" }
-jsonwebtoken = { version = "10.0.0", features = ["rust_crypto"] }
+jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
 mockall = "0.15.0"
 presentation = { path = "crates/presentation" }
 reqwest = { version = "0.13.0", default-features = false, features = ["json", "rustls"] }
