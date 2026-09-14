@@ -361,7 +361,7 @@ fn build_music(
                 .find(|existing_sheet| existing_sheet.id() == &id)
                 .and_then(|sheet| sheet.chart().clone())
         });
-        let sheet = Sheet::with_chart(
+        let sheet = Sheet::new(
             id.clone(),
             music_id.clone(),
             difficulty,
@@ -374,7 +374,7 @@ fn build_music(
     if seen != [true; 3] {
         return invalid_sheet();
     }
-    let music = Music::with_assets(
+    let music = Music::new(
         music_id,
         input.title,
         input.artist,

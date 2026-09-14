@@ -25,23 +25,6 @@ impl Sheet {
         difficulty: Difficulty,
         level: Level,
         notes_designer: String,
-    ) -> Self {
-        Self {
-            id,
-            music_id,
-            difficulty,
-            level,
-            notes_designer,
-            chart: None,
-        }
-    }
-
-    pub fn with_chart(
-        id: String,
-        music_id: String,
-        difficulty: Difficulty,
-        level: Level,
-        notes_designer: String,
         chart: Option<Asset>,
     ) -> Self {
         Self {

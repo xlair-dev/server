@@ -156,7 +156,7 @@ fn parse_uuid(value: &str) -> Result<Uuid, MusicRepositoryError> {
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, Utc};
-    use domain::entity::{difficulty::Difficulty, genre::Genre, level::Level};
+    use domain::entity::{asset::Asset, difficulty::Difficulty, genre::Genre, level::Level};
     use sea_orm::ActiveValue;
 
     use super::*;
@@ -168,6 +168,8 @@ mod tests {
             "Artist".to_owned(),
             135.5,
             Genre::ORIGINAL,
+            None,
+            None,
             Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
             false,
         )
@@ -180,6 +182,7 @@ mod tests {
             Difficulty::Master,
             Level::new(14, 7).unwrap(),
             "Designer".to_owned(),
+            None,
         )
     }
 
@@ -201,5 +204,32 @@ mod tests {
         assert!(matches!(music_model.id, ActiveValue::Unchanged(_)));
         assert!(matches!(sheet_model.id, ActiveValue::Unchanged(_)));
         assert!(matches!(sheet_model.music_id, ActiveValue::Unchanged(_)));
+    }
+
+    #[test]
+    fn asset_fields_are_written_together() {
+        let updated_at = Utc.with_ymd_and_hms(2025, 10, 2, 12, 0, 0).unwrap();
+        let music = Music::new(
+            "00000000-0000-0000-0000-000000000001".to_owned(),
+            "Song".to_owned(),
+            "Artist".to_owned(),
+            135.5,
+            Genre::ORIGINAL,
+            Some(Asset::new("jacket.png".to_owned(), updated_at)),
+            Some(Asset::new("audio.wav".to_owned(), updated_at)),
+            Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
+            false,
+        );
+
+        let model = music_active_model_for_insert(&music).unwrap();
+
+        assert!(matches!(model.jacket_key, ActiveValue::Set(Some(ref key)) if key == "jacket.png"));
+        assert!(
+            matches!(model.jacket_updated_at, ActiveValue::Set(Some(value)) if value.with_timezone(&Utc) == updated_at)
+        );
+        assert!(matches!(model.audio_key, ActiveValue::Set(Some(ref key)) if key == "audio.wav"));
+        assert!(
+            matches!(model.audio_updated_at, ActiveValue::Set(Some(value)) if value.with_timezone(&Utc) == updated_at)
+        );
     }
 }

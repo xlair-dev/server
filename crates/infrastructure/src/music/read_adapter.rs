@@ -24,7 +24,7 @@ pub fn convert_music(model: MusicModel) -> Result<Music, MusicRepositoryError> {
 
     let jacket = asset(model.jacket_key, model.jacket_updated_at)?;
     let audio = asset(model.audio_key, model.audio_updated_at)?;
-    Ok(Music::with_assets(
+    Ok(Music::new(
         model.id.to_string(),
         model.title,
         model.artist,
@@ -50,7 +50,7 @@ fn convert_sheet(model: SheetModel) -> Result<Sheet, MusicRepositoryError> {
     let level = convert_level(model.level)?;
 
     let chart = asset(model.chart_key, model.chart_updated_at)?;
-    Ok(Sheet::with_chart(
+    Ok(Sheet::new(
         model.id.to_string(),
         model.music_id.to_string(),
         difficulty,
@@ -124,5 +124,41 @@ fn convert_difficulty(value: DbDifficulty) -> Difficulty {
         DbDifficulty::Basic => Difficulty::Basic,
         DbDifficulty::Advanced => Difficulty::Advanced,
         DbDifficulty::Master => Difficulty::Master,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::{FixedOffset, TimeZone, Utc};
+
+    use super::*;
+
+    #[test]
+    fn asset_requires_key_and_updated_at_together() {
+        let updated_at = Utc
+            .with_ymd_and_hms(2025, 10, 1, 12, 0, 0)
+            .unwrap()
+            .with_timezone(&FixedOffset::east_opt(0).unwrap());
+
+        assert!(asset(Some("jacket.png".to_owned()), None).is_err());
+        assert!(asset(None, Some(updated_at)).is_err());
+    }
+
+    #[test]
+    fn asset_converts_database_values() {
+        let updated_at = Utc
+            .with_ymd_and_hms(2025, 10, 1, 12, 0, 0)
+            .unwrap()
+            .with_timezone(&FixedOffset::east_opt(9 * 60 * 60).unwrap());
+
+        let converted = asset(Some("jacket.png".to_owned()), Some(updated_at))
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(converted.key(), "jacket.png");
+        assert_eq!(
+            converted.updated_at(),
+            Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap()
+        );
     }
 }

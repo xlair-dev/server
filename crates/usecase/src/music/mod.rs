@@ -81,6 +81,8 @@ mod tests {
                 "Artist".to_owned(),
                 135.5,
                 Genre::ORIGINAL,
+                None,
+                None,
                 Utc::now(),
                 false,
             );
@@ -90,6 +92,7 @@ mod tests {
                 Difficulty::Basic,
                 Level::new(12, 3).expect("level"),
                 "Designer".to_owned(),
+                None,
             );
             Box::pin(async move { Ok(vec![MusicWithSheets::new(music, vec![sheet])]) })
         });
@@ -121,6 +124,8 @@ mod tests {
                     "Artist".to_owned(),
                     135.5,
                     Genre::ORIGINAL,
+                    None,
+                    None,
                     Utc::now(),
                     false,
                 );

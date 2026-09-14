@@ -33,29 +33,6 @@ impl Music {
         artist: String,
         bpm: f32,
         genre: Genre,
-        registration_date: DateTime<Utc>,
-        is_test: bool,
-    ) -> Self {
-        Self {
-            id,
-            title,
-            artist,
-            bpm,
-            genre,
-            jacket: None,
-            audio: None,
-            registration_date,
-            is_test,
-        }
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub fn with_assets(
-        id: String,
-        title: String,
-        artist: String,
-        bpm: f32,
-        genre: Genre,
         jacket: Option<Asset>,
         audio: Option<Asset>,
         registration_date: DateTime<Utc>,

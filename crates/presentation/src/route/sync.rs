@@ -51,7 +51,7 @@ mod tests {
         let mut music_repo = MockMusicRepository::new();
         music_repo.expect_list_with_sheets().returning(|| {
             let updated_at = Utc.with_ymd_and_hms(2025, 10, 2, 12, 0, 0).unwrap();
-            let music = Music::with_assets(
+            let music = Music::new(
                 "music-1".to_owned(),
                 "Song".to_owned(),
                 "Artist".to_owned(),
@@ -62,7 +62,7 @@ mod tests {
                 Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
                 false,
             );
-            let sheet = Sheet::with_chart(
+            let sheet = Sheet::new(
                 "sheet-1".to_owned(),
                 "music-1".to_owned(),
                 Difficulty::Master,
