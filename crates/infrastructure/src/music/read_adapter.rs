@@ -3,7 +3,10 @@ use std::convert::TryFrom;
 use anyhow::{Error as AnyError, anyhow};
 use chrono::Utc;
 use domain::{
-    entity::{difficulty::Difficulty, genre::Genre, level::Level, music::Music, sheet::Sheet},
+    entity::{
+        asset::Asset, difficulty::Difficulty, genre::Genre, level::Level, music::Music,
+        sheet::Sheet,
+    },
     repository::music::MusicRepositoryError,
 };
 use sea_orm::prelude::Decimal;
@@ -19,28 +22,19 @@ pub fn convert_music(model: MusicModel) -> Result<Music, MusicRepositoryError> {
     let genre = convert_genre(model.genre)?;
     let registration_date = model.registration_date.with_timezone(&Utc);
 
-    let mut music = Music::new(
+    let jacket = asset(model.jacket_key, model.jacket_updated_at)?;
+    let audio = asset(model.audio_key, model.audio_updated_at)?;
+    Ok(Music::with_assets(
         model.id.to_string(),
         model.title,
         model.artist,
         bpm,
         genre,
-        model.jacket_key,
-        model.music_key,
+        jacket,
+        audio,
         registration_date,
         model.is_test,
-    );
-    music.set_jacket_updated_at(
-        model
-            .jacket_updated_at
-            .map(|value| value.with_timezone(&Utc)),
-    );
-    music.set_music_updated_at(
-        model
-            .music_updated_at
-            .map(|value| value.with_timezone(&Utc)),
-    );
-    Ok(music)
+    ))
 }
 
 pub fn convert_sheets(models: Vec<SheetModel>) -> Result<Vec<Sheet>, MusicRepositoryError> {
@@ -55,20 +49,28 @@ fn convert_sheet(model: SheetModel) -> Result<Sheet, MusicRepositoryError> {
     let difficulty = convert_difficulty(model.difficulty);
     let level = convert_level(model.level)?;
 
-    let mut sheet = Sheet::new(
+    let chart = asset(model.chart_key, model.chart_updated_at)?;
+    Ok(Sheet::with_chart(
         model.id.to_string(),
         model.music_id.to_string(),
         difficulty,
         level,
         model.notes_designer,
-        model.chart_key,
-    );
-    sheet.set_chart_updated_at(
-        model
-            .chart_updated_at
-            .map(|value| value.with_timezone(&Utc)),
-    );
-    Ok(sheet)
+        chart,
+    ))
+}
+
+fn asset(
+    key: Option<String>,
+    updated_at: Option<sea_orm::prelude::DateTimeWithTimeZone>,
+) -> Result<Option<Asset>, MusicRepositoryError> {
+    match (key, updated_at) {
+        (Some(key), Some(updated_at)) => Ok(Some(Asset::new(key, updated_at.with_timezone(&Utc)))),
+        (None, None) => Ok(None),
+        _ => Err(MusicRepositoryError::InternalError(AnyError::msg(
+            "asset key and updated_at must be present together",
+        ))),
+    }
 }
 
 fn convert_bpm(bpm: Decimal) -> Result<f32, MusicRepositoryError> {

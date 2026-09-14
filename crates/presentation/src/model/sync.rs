@@ -1,6 +1,6 @@
 use domain::entity::difficulty::Difficulty;
 use serde::Serialize;
-use usecase::model::music::{MusicDto, MusicWithSheetsDto, SheetDto};
+use usecase::model::music::{AssetDto, MusicDto, MusicWithSheetsDto, SheetDto};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,16 +19,31 @@ impl From<MusicWithSheetsDto> for SyncItemResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AssetResponse {
+    pub url: String,
+    pub updated_at: String,
+}
+
+fn asset_response(
+    asset: Option<AssetDto>,
+    url: impl FnOnce(&str) -> String,
+) -> Option<AssetResponse> {
+    asset.map(|asset| AssetResponse {
+        url: url(&asset.key),
+        updated_at: asset.updated_at.to_rfc3339(),
+    })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MusicResponse {
     pub id: String,
     pub title: String,
     pub artist: String,
     pub bpm: f32,
     pub genre: String,
-    pub jacket: Option<String>,
-    pub music: Option<String>,
-    pub jacket_updated_at: Option<String>,
-    pub music_updated_at: Option<String>,
+    pub jacket: Option<AssetResponse>,
+    pub audio: Option<AssetResponse>,
     pub registration_date: String,
     pub is_test: bool,
 }
@@ -42,15 +57,12 @@ impl From<MusicDto> for MusicResponse {
             artist: value.artist,
             bpm: value.bpm,
             genre: value.genre.to_string(),
-            jacket: value
-                .jacket_key
-                .clone()
-                .map(|key| format!("/musics/{}/jacket/{}", id, asset_name(&key))),
-            music: value
-                .music_key
-                .map(|key| format!("/musics/{}/audio/{}", id, asset_name(&key))),
-            jacket_updated_at: value.jacket_updated_at.map(|value| value.to_rfc3339()),
-            music_updated_at: value.music_updated_at.map(|value| value.to_rfc3339()),
+            jacket: asset_response(value.jacket, |key| {
+                format!("/musics/{id}/jacket/{}", asset_name(key))
+            }),
+            audio: asset_response(value.audio, |key| {
+                format!("/musics/{id}/audio/{}", asset_name(key))
+            }),
             registration_date: value.registration_date.to_rfc3339(),
             is_test: value.is_test,
         }
@@ -65,8 +77,7 @@ pub struct SheetResponse {
     pub difficulty: String,
     pub level: f64,
     pub notes_designer: String,
-    pub src: Option<String>,
-    pub chart_updated_at: Option<String>,
+    pub chart: Option<AssetResponse>,
 }
 
 impl From<SheetDto> for SheetResponse {
@@ -78,10 +89,9 @@ impl From<SheetDto> for SheetResponse {
             difficulty: difficulty_to_string(value.difficulty).to_owned(),
             level: value.level_value,
             notes_designer: value.notes_designer,
-            src: value
-                .chart_key
-                .map(|key| format!("/sheets/{}/chart/{}", id, asset_name(&key))),
-            chart_updated_at: value.chart_updated_at.map(|value| value.to_rfc3339()),
+            chart: asset_response(value.chart, |key| {
+                format!("/sheets/{id}/chart/{}", asset_name(key))
+            }),
         }
     }
 }

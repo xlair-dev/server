@@ -38,14 +38,14 @@ pub fn music_active_model_for_jacket_key(
     })
 }
 
-pub fn music_active_model_for_music_key(
+pub fn music_active_model_for_audio_key(
     music_id: &str,
-    music_key: Option<String>,
+    audio_key: Option<String>,
 ) -> Result<MusicActiveModel, MusicRepositoryError> {
     Ok(MusicActiveModel {
         id: ActiveValue::Unchanged(parse_uuid(music_id)?),
-        music_updated_at: ActiveValue::Set(music_key.as_ref().map(|_| Utc::now().into())),
-        music_key: ActiveValue::Set(music_key),
+        audio_updated_at: ActiveValue::Set(audio_key.as_ref().map(|_| Utc::now().into())),
+        audio_key: ActiveValue::Set(audio_key),
         ..Default::default()
     })
 }
@@ -76,10 +76,20 @@ fn music_active_model(
             domain::entity::genre::Genre::EXTERNAL => 1,
             domain::entity::genre::Genre::OTHER => 2,
         }),
-        jacket_key: ActiveValue::Set(music.jacket_key().clone()),
-        music_key: ActiveValue::Set(music.music_key().clone()),
-        jacket_updated_at: ActiveValue::Set(music.jacket_updated_at().map(Into::into)),
-        music_updated_at: ActiveValue::Set(music.music_updated_at().map(Into::into)),
+        jacket_key: ActiveValue::Set(music.jacket().as_ref().map(|asset| asset.key().to_owned())),
+        audio_key: ActiveValue::Set(music.audio().as_ref().map(|asset| asset.key().to_owned())),
+        jacket_updated_at: ActiveValue::Set(
+            music
+                .jacket()
+                .as_ref()
+                .map(|asset| asset.updated_at().into()),
+        ),
+        audio_updated_at: ActiveValue::Set(
+            music
+                .audio()
+                .as_ref()
+                .map(|asset| asset.updated_at().into()),
+        ),
         registration_date: ActiveValue::Set((*music.registration_date()).into()),
         is_test: ActiveValue::Set(*music.is_test()),
     })
@@ -122,8 +132,13 @@ fn sheet_active_model(
         difficulty: ActiveValue::Set(difficulty),
         level: ActiveValue::Set((level.0 * 10 + level.1) as i32),
         notes_designer: ActiveValue::Set(sheet.notes_designer().to_owned()),
-        chart_key: ActiveValue::Set(sheet.chart_key().clone()),
-        chart_updated_at: ActiveValue::Set(sheet.chart_updated_at().map(Into::into)),
+        chart_key: ActiveValue::Set(sheet.chart().as_ref().map(|asset| asset.key().to_owned())),
+        chart_updated_at: ActiveValue::Set(
+            sheet
+                .chart()
+                .as_ref()
+                .map(|asset| asset.updated_at().into()),
+        ),
     })
 }
 
@@ -153,8 +168,6 @@ mod tests {
             "Artist".to_owned(),
             135.5,
             Genre::ORIGINAL,
-            Some("jacket.png".to_owned()),
-            Some("song.wav".to_owned()),
             Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
             false,
         )
@@ -167,7 +180,6 @@ mod tests {
             Difficulty::Master,
             Level::new(14, 7).unwrap(),
             "Designer".to_owned(),
-            None,
         )
     }
 

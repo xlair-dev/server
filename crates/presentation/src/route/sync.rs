@@ -21,7 +21,10 @@ mod tests {
     use axum::{Router, body, http::Request};
     use chrono::{TimeZone, Utc};
     use domain::{
-        entity::{difficulty::Difficulty, genre::Genre, level::Level, music::Music, sheet::Sheet},
+        entity::{
+            asset::Asset, difficulty::Difficulty, genre::Genre, level::Level, music::Music,
+            sheet::Sheet,
+        },
         repository::{
             MockRepositories,
             music::{MockMusicRepository, MusicWithSheets},
@@ -47,24 +50,25 @@ mod tests {
     async fn handle_get_returns_music() {
         let mut music_repo = MockMusicRepository::new();
         music_repo.expect_list_with_sheets().returning(|| {
-            let music = Music::new(
+            let updated_at = Utc.with_ymd_and_hms(2025, 10, 2, 12, 0, 0).unwrap();
+            let music = Music::with_assets(
                 "music-1".to_owned(),
                 "Song".to_owned(),
                 "Artist".to_owned(),
                 140.0,
                 Genre::ORIGINAL,
-                Some("jackets/song.png".to_owned()),
-                Some("musics/song.wav".to_owned()),
+                Some(Asset::new("jackets/music-1.png".to_owned(), updated_at)),
+                Some(Asset::new("audio/music-1.wav".to_owned(), updated_at)),
                 Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
                 false,
             );
-            let sheet = Sheet::new(
+            let sheet = Sheet::with_chart(
                 "sheet-1".to_owned(),
                 "music-1".to_owned(),
                 Difficulty::Master,
                 Level::new(13, 7).expect("level"),
                 "Designer".to_owned(),
-                None,
+                Some(Asset::new("charts/sheet-1.sus".to_owned(), updated_at)),
             );
             Box::pin(async move { Ok(vec![MusicWithSheets::new(music, vec![sheet])]) })
         });
@@ -83,8 +87,24 @@ mod tests {
         let first = &json[0];
         assert_eq!(first["music"]["id"], "music-1");
         assert_eq!(first["music"]["bpm"], 140.0);
+        assert_eq!(
+            first["music"]["jacket"]["url"],
+            "/musics/music-1/jacket/music-1.png"
+        );
+        assert_eq!(
+            first["music"]["jacket"]["updatedAt"],
+            "2025-10-02T12:00:00+00:00"
+        );
+        assert_eq!(
+            first["music"]["audio"]["url"],
+            "/musics/music-1/audio/music-1.wav"
+        );
         assert_eq!(first["sheets"].as_array().unwrap().len(), 1);
         assert_eq!(first["sheets"][0]["difficulty"], "master");
         assert_eq!(first["sheets"][0]["level"], 13.7);
+        assert_eq!(
+            first["sheets"][0]["chart"]["url"],
+            "/sheets/sheet-1/chart/sheet-1.sus"
+        );
     }
 }

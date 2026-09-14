@@ -4,8 +4,8 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, QueryFilter, T
 use tracing::error;
 
 use super::write_adapter::{
-    music_active_model_for_insert, music_active_model_for_jacket_key,
-    music_active_model_for_music_key, music_active_model_for_update,
+    music_active_model_for_audio_key, music_active_model_for_insert,
+    music_active_model_for_jacket_key, music_active_model_for_update,
     sheet_active_model_for_chart_key, sheet_active_model_for_insert, sheet_active_model_for_update,
 };
 use crate::entities;
@@ -96,12 +96,12 @@ pub async fn update_jacket_key(
     super::read::find_with_sheets(db, music_id).await
 }
 
-pub async fn update_music_key(
+pub async fn update_audio_key(
     db: &DbConn,
     music_id: &str,
-    music_key: Option<String>,
+    audio_key: Option<String>,
 ) -> Result<MusicWithSheets, MusicRepositoryError> {
-    music_active_model_for_music_key(music_id, music_key)?
+    music_active_model_for_audio_key(music_id, audio_key)?
         .update(db)
         .await
         .map_err(internal)?;

@@ -78,10 +78,10 @@ pub trait MusicRepository: Send + Sync {
         jacket_key: Option<String>,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 
-    fn update_music_key(
+    fn update_audio_key(
         &self,
         music_id: &str,
-        music_key: Option<String>,
+        audio_key: Option<String>,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 
     fn update_chart_key(

@@ -81,12 +81,12 @@ impl MusicRepository for MusicRepositoryImpl {
         write::update_jacket_key(self.db.as_ref(), music_id, jacket_key).await
     }
 
-    async fn update_music_key(
+    async fn update_audio_key(
         &self,
         music_id: &str,
-        music_key: Option<String>,
+        audio_key: Option<String>,
     ) -> Result<MusicWithSheets, MusicRepositoryError> {
-        write::update_music_key(self.db.as_ref(), music_id, music_key).await
+        write::update_audio_key(self.db.as_ref(), music_id, audio_key).await
     }
 
     async fn update_chart_key(

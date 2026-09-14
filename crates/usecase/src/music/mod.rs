@@ -81,8 +81,6 @@ mod tests {
                 "Artist".to_owned(),
                 135.5,
                 Genre::ORIGINAL,
-                Some("jacket.png".to_owned()),
-                Some("song.wav".to_owned()),
                 Utc::now(),
                 false,
             );
@@ -92,7 +90,6 @@ mod tests {
                 Difficulty::Basic,
                 Level::new(12, 3).expect("level"),
                 "Designer".to_owned(),
-                None,
             );
             Box::pin(async move { Ok(vec![MusicWithSheets::new(music, vec![sheet])]) })
         });
@@ -124,8 +121,6 @@ mod tests {
                     "Artist".to_owned(),
                     135.5,
                     Genre::ORIGINAL,
-                    Some("jacket.png".to_owned()),
-                    Some("song.wav".to_owned()),
                     Utc::now(),
                     false,
                 );
@@ -154,8 +149,6 @@ mod tests {
                 artist: "Artist".to_owned(),
                 bpm: 135.5,
                 genre: Genre::ORIGINAL,
-                jacket_key: Some("jacket.png".to_owned()),
-                music_key: Some("song.wav".to_owned()),
                 registration_date: Utc.with_ymd_and_hms(2025, 10, 1, 12, 0, 0).unwrap(),
                 is_test: false,
             },

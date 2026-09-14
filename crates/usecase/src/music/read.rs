@@ -49,7 +49,8 @@ impl<R: Repositories> MusicUsecase<R> {
             .music()
             .find_sheet(&sheet_id)
             .await?
-            .chart_key()
-            .clone())
+            .chart()
+            .as_ref()
+            .map(|asset| asset.key().to_owned()))
     }
 }

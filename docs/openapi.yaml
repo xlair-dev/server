@@ -974,6 +974,20 @@ components:
         - clearType
         - playCount
         - updatedAt
+    asset:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri-reference
+          description: アセットを取得する URL
+        updatedAt:
+          type: string
+          format: date-time
+          description: アセットの最終更新日時
+      required:
+        - url
+        - updatedAt
     musicData:
       type: object
       properties:
@@ -994,14 +1008,6 @@ components:
             - EXTERNAL
             - OTHER
           description: ジャンル
-        jacket:
-          type: string
-          nullable: true
-          description: ジャケット画像を取得する URL
-        music:
-          type: string
-          nullable: true
-          description: 音源を取得する URL
         registrationDate:
           type: string
           format: date-time
@@ -1024,16 +1030,16 @@ components:
             id:
               type: string
               description: 楽曲のID
-            jacketUpdatedAt:
-              type: string
-              format: date-time
+            jacket:
+              allOf:
+                - $ref: "#/components/schemas/asset"
               nullable: true
-              description: ジャケットの最終アップロード日時
-            musicUpdatedAt:
-              type: string
-              format: date-time
+              description: ジャケット画像
+            audio:
+              allOf:
+                - $ref: "#/components/schemas/asset"
               nullable: true
-              description: 音源の最終アップロード日時
+              description: 音源
           required:
             - id
     sheetData:
@@ -1052,10 +1058,6 @@ components:
         notesDesigner:
           type: string
           description: 譜面のノーツデザイナー
-        src:
-          type: string
-          nullable: true
-          description: 譜面ファイルを取得する URL
       required:
         - difficulty
         - level
@@ -1071,11 +1073,11 @@ components:
             musicId:
               type: string
               description: 楽曲のID
-            chartUpdatedAt:
-              type: string
-              format: date-time
+            chart:
+              allOf:
+                - $ref: "#/components/schemas/asset"
               nullable: true
-              description: 譜面ファイルの最終アップロード日時
+              description: 譜面ファイル
           required:
             - id
             - musicId
