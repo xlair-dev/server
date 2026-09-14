@@ -5,6 +5,7 @@ use axum::{
 };
 use tokio_util::io::ReaderStream;
 use tracing::instrument;
+use usecase::asset::AssetRange;
 
 use crate::error::AppError;
 
@@ -75,15 +76,17 @@ pub async fn handle_get_chart(
     .await
 }
 
-pub(crate) fn range(headers: &axum::http::HeaderMap) -> AppResult<Option<&str>> {
-    headers
-        .get(axum::http::header::RANGE)
-        .map(|value| {
-            value
-                .to_str()
-                .map_err(|_| AppError::bad_request("range header is invalid"))
-        })
-        .transpose()
+pub(crate) fn range(headers: &axum::http::HeaderMap) -> AppResult<Option<AssetRange>> {
+    let Some(value) = headers.get(axum::http::header::RANGE) else {
+        return Ok(None);
+    };
+    let value = value
+        .to_str()
+        .map_err(|_| AppError::bad_request("range header is invalid"))?;
+    value
+        .parse::<AssetRange>()
+        .map(Some)
+        .map_err(|_| AppError::bad_request("range header is invalid"))
 }
 
 pub(crate) async fn stream_asset(
@@ -92,7 +95,7 @@ pub(crate) async fn stream_asset(
     file_name: &str,
     content_type: &str,
     cacheable: bool,
-    range: Option<&str>,
+    range: Option<AssetRange>,
 ) -> AppResult<Response<Body>> {
     if key.rsplit('/').next() != Some(file_name) {
         return Err(AppError::not_found());
@@ -103,13 +106,22 @@ pub(crate) async fn stream_asset(
             "Asset storage is not configured".to_owned(),
         )
     })?;
-    let download = storage.download(key, range).await.map_err(|error| {
-        tracing::error!(error = ?error, asset_key = %key, "Asset download failed");
-        AppError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error".to_owned(),
-        )
-    })?;
+    let download = storage
+        .download(key, range)
+        .await
+        .map_err(|error| match error {
+            usecase::asset::AssetDownloadError::RangeNotSatisfiable => AppError::new(
+                StatusCode::RANGE_NOT_SATISFIABLE,
+                "Asset range is not satisfiable".to_owned(),
+            ),
+            usecase::asset::AssetDownloadError::Storage(error) => {
+                tracing::error!(error = ?error, asset_key = %key, "Asset download failed");
+                AppError::new(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal server error".to_owned(),
+                )
+            }
+        })?;
     let mut response = Response::new(Body::from_stream(ReaderStream::new(download.reader)));
     response.headers_mut().insert(
         header::CONTENT_TYPE,
@@ -125,7 +137,11 @@ pub(crate) async fn stream_asset(
     if let Some(content_range) = download.content_range {
         response.headers_mut().insert(
             header::CONTENT_RANGE,
-            HeaderValue::from_str(&content_range).map_err(|_| {
+            HeaderValue::from_str(&format!(
+                "bytes {}-{}/{}",
+                content_range.start, content_range.end, content_range.total
+            ))
+            .map_err(|_| {
                 AppError::new(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal server error".to_owned(),
@@ -143,4 +159,34 @@ pub(crate) async fn stream_asset(
         }),
     );
     Ok(response)
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::http::{HeaderMap, HeaderValue, header};
+    use usecase::asset::AssetRange;
+
+    use super::range;
+
+    #[test]
+    fn parses_range_header() {
+        let mut headers = HeaderMap::new();
+        headers.insert(header::RANGE, HeaderValue::from_static("bytes=10-20"));
+
+        assert_eq!(
+            range(&headers).unwrap(),
+            Some(AssetRange::FromTo { start: 10, end: 20 })
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_range_header() {
+        let mut headers = HeaderMap::new();
+        headers.insert(header::RANGE, HeaderValue::from_static("bytes=20-10"));
+
+        assert_eq!(
+            range(&headers).unwrap_err().status_code,
+            axum::http::StatusCode::BAD_REQUEST
+        );
+    }
 }

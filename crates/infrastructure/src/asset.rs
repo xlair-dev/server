@@ -2,7 +2,10 @@ use std::{future::Future, pin::Pin};
 
 use aws_sdk_s3::{Client, primitives::ByteStream};
 use sha2::{Digest, Sha256};
-use usecase::asset::{AssetDownload, AssetKind, AssetStorage, AssetUpload};
+use usecase::asset::{
+    AssetContentRange, AssetDownload, AssetDownloadError, AssetKind, AssetRange, AssetStorage,
+    AssetUpload,
+};
 
 #[derive(Clone)]
 pub struct R2AssetStorage {
@@ -90,19 +93,37 @@ impl AssetStorage for R2AssetStorage {
     fn download<'a>(
         &'a self,
         key: &'a str,
-        range: Option<&'a str>,
-    ) -> Pin<Box<dyn Future<Output = anyhow::Result<AssetDownload>> + Send + 'a>> {
+        range: Option<AssetRange>,
+    ) -> Pin<Box<dyn Future<Output = Result<AssetDownload, AssetDownloadError>> + Send + 'a>> {
         Box::pin(async move {
             let mut request = self.client.get_object().bucket(&self.bucket).key(key);
             if let Some(range) = range {
-                request = request.range(range);
+                request = request.range(range.to_s3_header());
             }
-            let object = request.send().await?;
+            let object = request.send().await.map_err(|error| {
+                if error
+                    .raw_response()
+                    .is_some_and(|response| response.status().as_u16() == 416)
+                {
+                    AssetDownloadError::RangeNotSatisfiable
+                } else {
+                    AssetDownloadError::Storage(anyhow::Error::new(error))
+                }
+            })?;
             let content_length = object
                 .content_length()
-                .ok_or_else(|| anyhow::anyhow!("asset content length is missing"))?
-                .try_into()?;
-            let content_range = object.content_range().map(ToOwned::to_owned);
+                .ok_or_else(|| {
+                    AssetDownloadError::Storage(anyhow::anyhow!("asset content length is missing"))
+                })?
+                .try_into()
+                .map_err(|error| AssetDownloadError::Storage(anyhow::Error::new(error)))?;
+            let content_range = object
+                .content_range()
+                .map(str::parse::<AssetContentRange>)
+                .transpose()
+                .map_err(|_| {
+                    AssetDownloadError::Storage(anyhow::anyhow!("asset content range is invalid"))
+                })?;
             Ok(AssetDownload {
                 reader: Box::pin(object.body.into_async_read()),
                 content_length,
