@@ -437,6 +437,11 @@ paths:
           content:
             audio/wav:
               schema: { type: string, format: binary }
+        "206":
+          description: WAV 音源の一部
+          content:
+            audio/wav:
+              schema: { type: string, format: binary }
         "401": { description: Unauthorized - Invalid access token }
         "403": { description: Forbidden - The authenticated user is not an administrator }
         "404": { description: Not found - Music or audio not found }
@@ -538,6 +543,11 @@ paths:
       responses:
         "200":
           description: WAV 音源
+          content:
+            audio/wav:
+              schema: { type: string, format: binary }
+        "206":
+          description: WAV 音源の一部
           content:
             audio/wav:
               schema: { type: string, format: binary }

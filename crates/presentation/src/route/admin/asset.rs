@@ -15,6 +15,7 @@ type AppResult<T> = Result<T, AppError>;
 pub async fn get_audio(
     State(state): State<crate::state::State>,
     Path((music_id, file_name)): Path<(String, String)>,
+    headers: HeaderMap,
 ) -> AppResult<axum::http::Response<axum::body::Body>> {
     let music = state.usecases.music.find_by_id(music_id).await?;
     let key = music
@@ -22,18 +23,34 @@ pub async fn get_audio(
         .audio
         .map(|asset| asset.key)
         .ok_or_else(AppError::not_found)?;
-    crate::route::asset::stream_asset(&state, &key, &file_name, "audio/wav", false).await
+    crate::route::asset::stream_asset(
+        &state,
+        &key,
+        &file_name,
+        "audio/wav",
+        false,
+        crate::route::asset::range(&headers)?,
+    )
+    .await
 }
 
 #[instrument(skip(state), fields(sheet_id = %sheet_id))]
 pub async fn get_chart(
     State(state): State<crate::state::State>,
     Path((sheet_id, file_name)): Path<(String, String)>,
+    headers: HeaderMap,
 ) -> AppResult<axum::http::Response<axum::body::Body>> {
     let sheet = state.usecases.music.find_by_sheet_id(sheet_id).await?;
     let key = sheet.ok_or_else(AppError::not_found)?;
-    crate::route::asset::stream_asset(&state, &key, &file_name, "text/plain; charset=utf-8", false)
-        .await
+    crate::route::asset::stream_asset(
+        &state,
+        &key,
+        &file_name,
+        "text/plain; charset=utf-8",
+        false,
+        crate::route::asset::range(&headers)?,
+    )
+    .await
 }
 
 #[instrument(skip(state, headers, body), fields(music_id = %music_id))]

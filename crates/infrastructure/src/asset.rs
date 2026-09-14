@@ -90,17 +90,23 @@ impl AssetStorage for R2AssetStorage {
     fn download<'a>(
         &'a self,
         key: &'a str,
+        range: Option<&'a str>,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<AssetDownload>> + Send + 'a>> {
         Box::pin(async move {
-            let object = self
-                .client
-                .get_object()
-                .bucket(&self.bucket)
-                .key(key)
-                .send()
-                .await?;
+            let mut request = self.client.get_object().bucket(&self.bucket).key(key);
+            if let Some(range) = range {
+                request = request.range(range);
+            }
+            let object = request.send().await?;
+            let content_length = object
+                .content_length()
+                .ok_or_else(|| anyhow::anyhow!("asset content length is missing"))?
+                .try_into()?;
+            let content_range = object.content_range().map(ToOwned::to_owned);
             Ok(AssetDownload {
                 reader: Box::pin(object.body.into_async_read()),
+                content_length,
+                content_range,
             })
         })
     }

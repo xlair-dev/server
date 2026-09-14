@@ -115,6 +115,8 @@ impl AssetUpload {
 
 pub struct AssetDownload {
     pub reader: Pin<Box<dyn AsyncRead + Send>>,
+    pub content_length: u64,
+    pub content_range: Option<String>,
 }
 
 pub trait AssetStorage: Send + Sync {
@@ -133,6 +135,7 @@ pub trait AssetStorage: Send + Sync {
     fn download<'a>(
         &'a self,
         key: &'a str,
+        range: Option<&'a str>,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<AssetDownload>> + Send + 'a>>;
 }
 
