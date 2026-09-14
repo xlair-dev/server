@@ -10,6 +10,10 @@ on:
       - crates/migration/**
       - rust-toolchain.toml
       - .github/workflows/migration.yml
+      - .github/workflows/**
+      - Dockerfile.prod
+      - compose.yml
+      - compose.prod.yml
   pull_request:
     paths:
       - Cargo.lock
@@ -17,6 +21,10 @@ on:
       - crates/migration/**
       - rust-toolchain.toml
       - .github/workflows/migration.yml
+      - .github/workflows/**
+      - Dockerfile.prod
+      - compose.yml
+      - compose.prod.yml
 
 env:
   CARGO_TERM_COLOR: always
@@ -42,13 +50,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
 
       - name: Cache cargo directories
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/registry
