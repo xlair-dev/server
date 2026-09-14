@@ -431,12 +431,19 @@ paths:
       parameters:
         - $ref: "#/components/parameters/musicId"
         - $ref: "#/components/parameters/assetFileName"
+        - $ref: "#/components/parameters/assetRange"
       responses:
         "200":
           description: WAV 音源
           content:
             audio/wav:
               schema: { type: string, format: binary }
+        "206":
+          description: WAV 音源の一部
+          content:
+            audio/wav:
+              schema: { type: string, format: binary }
+        "416": { description: Requested range is not satisfiable }
         "401": { description: Unauthorized - Invalid access token }
         "403": { description: Forbidden - The authenticated user is not an administrator }
         "404": { description: Not found - Music or audio not found }
@@ -502,12 +509,19 @@ paths:
           required: true
           schema: { type: string, format: uuid }
         - $ref: "#/components/parameters/assetFileName"
+        - $ref: "#/components/parameters/assetRange"
       responses:
         "200":
           description: SUS 譜面ファイル
           content:
             text/plain:
               schema: { type: string, format: binary }
+        "206":
+          description: SUS 譜面ファイルの一部
+          content:
+            text/plain:
+              schema: { type: string, format: binary }
+        "416": { description: Requested range is not satisfiable }
         "401": { description: Unauthorized - Invalid access token }
         "403": { description: Forbidden - The authenticated user is not an administrator }
         "404": { description: Not found - Sheet or chart not found }
@@ -519,12 +533,19 @@ paths:
       parameters:
         - $ref: "#/components/parameters/musicId"
         - $ref: "#/components/parameters/assetFileName"
+        - $ref: "#/components/parameters/assetRange"
       responses:
         "200":
           description: ジャケット画像
           content:
             image/png:
               schema: { type: string, format: binary }
+        "206":
+          description: ジャケット画像の一部
+          content:
+            image/png:
+              schema: { type: string, format: binary }
+        "416": { description: Requested range is not satisfiable }
         "404": { description: Not found - Jacket not found }
   /musics/{musicId}/audio/{fileName}:
     get:
@@ -535,12 +556,19 @@ paths:
       parameters:
         - $ref: "#/components/parameters/musicId"
         - $ref: "#/components/parameters/assetFileName"
+        - $ref: "#/components/parameters/assetRange"
       responses:
         "200":
           description: WAV 音源
           content:
             audio/wav:
               schema: { type: string, format: binary }
+        "206":
+          description: WAV 音源の一部
+          content:
+            audio/wav:
+              schema: { type: string, format: binary }
+        "416": { description: Requested range is not satisfiable }
         "401": { description: Unauthorized - Invalid access token }
         "404": { description: Not found - Audio not found }
   /sheets/{sheetId}/chart/{fileName}:
@@ -555,12 +583,19 @@ paths:
           required: true
           schema: { type: string, format: uuid }
         - $ref: "#/components/parameters/assetFileName"
+        - $ref: "#/components/parameters/assetRange"
       responses:
         "200":
           description: SUS 譜面ファイル
           content:
             text/plain:
               schema: { type: string, format: binary }
+        "206":
+          description: SUS 譜面ファイルの一部
+          content:
+            text/plain:
+              schema: { type: string, format: binary }
+        "416": { description: Requested range is not satisfiable }
         "401": { description: Unauthorized - Invalid access token }
         "404": { description: Not found - Chart not found }
   /users/{userId}/credits/increment:
@@ -857,6 +892,13 @@ components:
       required: true
       description: content hash を含むファイル名
       schema: { type: string }
+    assetRange:
+      name: Range
+      in: header
+      required: false
+      description: 取得する単一のバイト範囲
+      schema:
+        type: string
   securitySchemes:
     userAuth:
       type: http

@@ -128,7 +128,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin().parse::<HeaderValue>().unwrap())
         .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
-        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
+        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE, header::RANGE]);
 
     Router::new()
         .merge(private_routes)
