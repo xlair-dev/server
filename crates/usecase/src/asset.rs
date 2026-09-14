@@ -60,7 +60,10 @@ pub struct AssetUpload {
 
 impl AssetUpload {
     pub fn jacket(content_type: &str, bytes: Vec<u8>) -> Result<Self, AssetUploadError> {
-        if !matches!(content_type, "image/jpeg" | "image/png" | "image/webp") {
+        if !matches!(
+            content_type,
+            "image/jpeg" | "image/jpg" | "image/png" | "image/webp"
+        ) {
             return Err(AssetUploadError::UnsupportedContentType);
         }
         if bytes.len() > MAX_JACKET_SIZE {
@@ -255,7 +258,23 @@ mod range_tests {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
+    use image::{DynamicImage, ImageBuffer, ImageFormat, Rgb};
+
     use super::*;
+
+    #[test]
+    fn accepts_jpg_content_type() {
+        let image = ImageBuffer::from_pixel(1, 1, Rgb([255, 0, 0]));
+        let mut bytes = Cursor::new(Vec::new());
+        DynamicImage::ImageRgb8(image)
+            .write_to(&mut bytes, ImageFormat::Jpeg)
+            .expect("encode JPEG");
+
+        let upload = AssetUpload::jacket("image/jpg", bytes.into_inner()).expect("JPEG upload");
+        assert_eq!(&upload.bytes[..8], b"\x89PNG\r\n\x1a\n");
+    }
 
     #[test]
     fn accepts_wav_header() {
