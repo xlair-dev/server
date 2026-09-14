@@ -73,6 +73,11 @@ impl MusicRepository for MusicRepositoryImpl {
     }
 
     #[instrument(skip(self), fields(music_id = %music_id))]
+    async fn delete(&self, music_id: &str) -> Result<(), MusicRepositoryError> {
+        write::delete(self.db.as_ref(), music_id).await
+    }
+
+    #[instrument(skip(self), fields(music_id = %music_id))]
     async fn update_jacket_key(
         &self,
         music_id: &str,

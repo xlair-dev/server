@@ -299,6 +299,33 @@ paths:
           description: Not found - Music not found
         "500":
           description: Internal server error
+    delete:
+      tags:
+        - admin
+      summary: 楽曲と譜面を削除
+      security:
+        - userAuth: []
+      parameters:
+        - name: musicId
+          in: path
+          description: 楽曲のID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: 楽曲と譜面を削除しました
+        "400":
+          description: Bad request - Invalid music ID
+        "401":
+          description: Unauthorized - Invalid access token
+        "403":
+          description: Forbidden - The authenticated user is not an administrator
+        "404":
+          description: Not found - Music not found
+        "500":
+          description: Internal server error
   /admin/musics/{musicId}/jacket:
     post:
       tags:

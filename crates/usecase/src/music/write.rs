@@ -19,6 +19,36 @@ use crate::{
 };
 
 impl<R: Repositories> MusicUsecase<R> {
+    pub async fn delete(
+        &self,
+        storage: &dyn AssetStorage,
+        music_id: String,
+    ) -> Result<(), MusicUsecaseError> {
+        validate_music_id(&music_id)?;
+        let music = self
+            .repositories
+            .music()
+            .find_with_sheets(&music_id)
+            .await?;
+        let asset_keys = std::iter::once(music.music.jacket())
+            .chain(std::iter::once(music.music.audio()))
+            .flatten()
+            .map(|asset| asset.key().to_owned())
+            .chain(
+                music
+                    .sheets
+                    .iter()
+                    .filter_map(|sheet| sheet.chart().as_ref())
+                    .map(|asset| asset.key().to_owned()),
+            )
+            .collect::<Vec<_>>();
+        self.repositories.music().delete(&music_id).await?;
+        for key in asset_keys {
+            delete_existing(storage, &key).await;
+        }
+        Ok(())
+    }
+
     pub async fn upload_jacket(
         &self,
         storage: &dyn AssetStorage,
