@@ -11,6 +11,10 @@ on:
       - rust-toolchain.toml
       - rustfmt.toml
       - .github/workflows/build.yml
+      - .github/workflows/**
+      - Dockerfile.prod
+      - compose.yml
+      - compose.prod.yml
   pull_request:
     paths:
       - Cargo.lock
@@ -19,6 +23,10 @@ on:
       - rust-toolchain.toml
       - rustfmt.toml
       - .github/workflows/build.yml
+      - .github/workflows/**
+      - Dockerfile.prod
+      - compose.yml
+      - compose.prod.yml
 
 env:
   CARGO_TERM_COLOR: always
