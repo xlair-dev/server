@@ -321,6 +321,10 @@ paths:
             schema:
               type: string
               format: binary
+          image/jpg:
+            schema:
+              type: string
+              format: binary
           image/png:
             schema:
               type: string
