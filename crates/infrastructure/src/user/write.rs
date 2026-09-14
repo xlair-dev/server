@@ -7,7 +7,7 @@ use domain::{
     repository::user::UserRepositoryError,
 };
 use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, DbConn, EntityTrait, QueryFilter,
+    ActiveModelTrait, ActiveValue, ColumnTrait, DbConn, EntityTrait, ExprTrait, QueryFilter,
     sea_query::{Expr, OnConflict},
 };
 use tracing::{debug, error, info};
