@@ -10,6 +10,10 @@ on:
       - crates/migration/**
       - rust-toolchain.toml
       - .github/workflows/migration.yml
+      - .github/workflows/**
+      - Dockerfile.prod
+      - compose.yml
+      - compose.prod.yml
   pull_request:
     paths:
       - Cargo.lock
@@ -17,6 +21,10 @@ on:
       - crates/migration/**
       - rust-toolchain.toml
       - .github/workflows/migration.yml
+      - .github/workflows/**
+      - Dockerfile.prod
+      - compose.yml
+      - compose.prod.yml
 
 env:
   CARGO_TERM_COLOR: always
@@ -27,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
         env:
           POSTGRES_DB: xlair
           POSTGRES_USER: postgres
@@ -42,13 +50,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
 
       - name: Cache cargo directories
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/registry
