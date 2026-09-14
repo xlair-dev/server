@@ -72,6 +72,11 @@ pub trait MusicRepository: Send + Sync {
         music: MusicWithSheets,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 
+    fn delete(
+        &self,
+        music_id: &str,
+    ) -> impl Future<Output = Result<(), MusicRepositoryError>> + Send;
+
     fn update_jacket_key(
         &self,
         music_id: &str,

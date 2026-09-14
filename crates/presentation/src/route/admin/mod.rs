@@ -98,6 +98,32 @@ pub async fn handle_update_music(
     Ok(Json(SyncItemResponse::from(music)))
 }
 
+#[instrument(skip(state), fields(music_id = %music_id))]
+pub async fn handle_delete_music(
+    State(state): State<crate::state::State>,
+    Path(music_id): Path<String>,
+) -> AppResult<StatusCode> {
+    if uuid::Uuid::parse_str(&music_id).is_err() {
+        return Err(AppError::bad_request("music id is invalid"));
+    }
+    state
+        .usecases
+        .music
+        .delete(storage(&state)?, music_id.clone())
+        .await?;
+    info!(music_id = %music_id, "Admin music deleted");
+    Ok(StatusCode::NO_CONTENT)
+}
+
+fn storage(state: &crate::state::State) -> AppResult<&dyn usecase::asset::AssetStorage> {
+    state.asset_storage.as_deref().ok_or_else(|| {
+        AppError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Asset storage is not configured".to_owned(),
+        )
+    })
+}
+
 fn encode_cursor(cursor: MusicListCursor) -> Result<String, AppError> {
     let payload = CursorPayload {
         registration_date: cursor.registration_date.to_rfc3339(),

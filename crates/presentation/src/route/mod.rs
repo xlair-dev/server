@@ -52,7 +52,9 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         )
         .route(
             "/musics/{musicId}",
-            get(admin::handle_get_music).post(admin::handle_update_music),
+            get(admin::handle_get_music)
+                .post(admin::handle_update_music)
+                .delete(admin::handle_delete_music),
         )
         .route(
             "/musics/{musicId}/jacket",

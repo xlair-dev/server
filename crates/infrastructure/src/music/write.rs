@@ -84,6 +84,19 @@ pub async fn update_with_sheets(
     Ok(music)
 }
 
+pub async fn delete(db: &DbConn, music_id: &str) -> Result<(), MusicRepositoryError> {
+    let id = uuid::Uuid::parse_str(music_id)
+        .map_err(|error| MusicRepositoryError::InternalError(AnyError::from(error)))?;
+    let result = entities::musics::Entity::delete_by_id(id)
+        .exec(db)
+        .await
+        .map_err(internal)?;
+    if result.rows_affected == 0 {
+        return Err(MusicRepositoryError::NotFound(music_id.to_owned()));
+    }
+    Ok(())
+}
+
 pub async fn update_jacket_key(
     db: &DbConn,
     music_id: &str,
