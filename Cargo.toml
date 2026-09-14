@@ -13,7 +13,7 @@ anyhow = "1.0.95"
 aws-config = "1.12.0"
 aws-sdk-s3 = "1.146.1"
 axum = { version = "0.8.4", features = ["multipart"] }
-base64 = "0.22.1"
+base64 = "0.23.0"
 bigdecimal = "0.4"
 chrono = { version = "0.4.39", features = ["serde", "clock"] }
 domain = { path = "crates/domain" }
