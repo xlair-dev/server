@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - renovate.json
       - Cargo.lock
       - Cargo.toml
       - crates/**
@@ -17,6 +18,7 @@ on:
       - compose.prod.yml
   pull_request:
     paths:
+      - renovate.json
       - Cargo.lock
       - Cargo.toml
       - crates/**
