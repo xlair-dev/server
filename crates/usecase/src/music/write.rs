@@ -44,13 +44,7 @@ impl<R: Repositories> MusicUsecase<R> {
         {
             Ok(updated) => updated,
             Err(error) => {
-                if let Err(cleanup_error) = storage.delete(&jacket_url).await {
-                    warn!(
-                        error = %cleanup_error,
-                        jacket_url = %jacket_url,
-                        "Failed to clean up jacket after music update failure"
-                    );
-                }
+                delete_uploaded(storage, &jacket_url).await;
                 return Err(error.into());
             }
         };
@@ -78,18 +72,15 @@ impl<R: Repositories> MusicUsecase<R> {
             .music()
             .find_with_sheets(&music_id)
             .await?;
-        if let Some(jacket_url) = music.music.jacket_key() {
-            storage
-                .delete(jacket_url)
-                .await
-                .map_err(MusicUsecaseError::AssetStorage)?;
-            return self
+        if let Some(jacket_key) = music.music.jacket_key().clone() {
+            let updated = self
                 .repositories
                 .music()
                 .update_jacket_key(&music_id, None)
                 .await
-                .map(Into::into)
-                .map_err(Into::into);
+                .map_err(MusicUsecaseError::from)?;
+            delete_existing(storage, &jacket_key).await;
+            return Ok(updated.into());
         }
         Ok(music.into())
     }
@@ -171,7 +162,7 @@ impl<R: Repositories> MusicUsecase<R> {
         {
             Ok(updated) => updated,
             Err(error) => {
-                let _ = storage.delete(&key).await;
+                delete_uploaded(storage, &key).await;
                 return Err(error.into());
             }
         };
@@ -199,7 +190,7 @@ impl<R: Repositories> MusicUsecase<R> {
         {
             Ok(updated) => updated,
             Err(error) => {
-                let _ = storage.delete(&key).await;
+                delete_uploaded(storage, &key).await;
                 return Err(error.into());
             }
         };
@@ -219,17 +210,14 @@ impl<R: Repositories> MusicUsecase<R> {
             .find_with_sheets(&music_id)
             .await?;
         if let Some(key) = music.music.music_key().clone() {
-            storage
-                .delete(&key)
-                .await
-                .map_err(MusicUsecaseError::AssetStorage)?;
-            return self
+            let updated = self
                 .repositories
                 .music()
                 .update_music_key(&music_id, None)
                 .await
-                .map(Into::into)
-                .map_err(Into::into);
+                .map_err(MusicUsecaseError::from)?;
+            delete_existing(storage, &key).await;
+            return Ok(updated.into());
         }
         Ok(music.into())
     }
@@ -241,17 +229,14 @@ impl<R: Repositories> MusicUsecase<R> {
     ) -> Result<MusicWithSheetsDto, MusicUsecaseError> {
         let sheet = self.repositories.music().find_sheet(&sheet_id).await?;
         if let Some(key) = sheet.chart_key().clone() {
-            storage
-                .delete(&key)
-                .await
-                .map_err(MusicUsecaseError::AssetStorage)?;
-            return self
+            let updated = self
                 .repositories
                 .music()
                 .update_chart_key(&sheet_id, None)
                 .await
-                .map(Into::into)
-                .map_err(Into::into);
+                .map_err(MusicUsecaseError::from)?;
+            delete_existing(storage, &key).await;
+            return Ok(updated.into());
         }
         Ok(self
             .repositories
@@ -268,6 +253,18 @@ async fn delete_previous(storage: &dyn AssetStorage, previous_key: Option<String
         && let Err(error) = storage.delete(&previous_key).await
     {
         tracing::warn!(error = ?error, asset_key = %previous_key, "Failed to clean up previous asset");
+    }
+}
+
+async fn delete_uploaded(storage: &dyn AssetStorage, key: &str) {
+    if let Err(error) = storage.delete(key).await {
+        warn!(error = %error, asset_key = %key, "Failed to clean up uploaded asset");
+    }
+}
+
+async fn delete_existing(storage: &dyn AssetStorage, key: &str) {
+    if let Err(error) = storage.delete(key).await {
+        warn!(error = %error, asset_key = %key, "Failed to delete existing asset");
     }
 }
 

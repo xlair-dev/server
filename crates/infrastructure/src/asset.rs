@@ -96,11 +96,7 @@ impl AssetStorage for R2AssetStorage {
                 .key(key)
                 .send()
                 .await?;
-            let content_type = object
-                .content_type
-                .unwrap_or_else(|| "application/octet-stream".to_owned());
             Ok(AssetDownload {
-                content_type,
                 reader: Box::pin(object.body.into_async_read()),
             })
         })

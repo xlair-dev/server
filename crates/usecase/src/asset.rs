@@ -114,7 +114,6 @@ impl AssetUpload {
 }
 
 pub struct AssetDownload {
-    pub content_type: String,
     pub reader: Pin<Box<dyn AsyncRead + Send>>,
 }
 
@@ -135,4 +134,38 @@ pub trait AssetStorage: Send + Sync {
         &'a self,
         key: &'a str,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<AssetDownload>> + Send + 'a>>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accepts_wav_header() {
+        let mut bytes = b"RIFF".to_vec();
+        bytes.extend_from_slice(&[0; 4]);
+        bytes.extend_from_slice(b"WAVE");
+
+        assert_eq!(
+            AssetUpload::audio("audio/wav", bytes).unwrap().bytes.len(),
+            12
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_wav_header() {
+        assert!(matches!(
+            AssetUpload::audio("audio/wav", b"invalid".to_vec()),
+            Err(AssetUploadError::InvalidData)
+        ));
+    }
+
+    #[test]
+    fn requires_sus_chart_extension() {
+        assert!(AssetUpload::chart("chart.SUS", Vec::new()).is_ok());
+        assert!(matches!(
+            AssetUpload::chart("chart.txt", Vec::new()),
+            Err(AssetUploadError::InvalidFileName)
+        ));
+    }
 }

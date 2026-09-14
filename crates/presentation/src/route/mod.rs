@@ -56,15 +56,15 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
         )
         .route(
             "/musics/{musicId}/jacket",
-            post(admin::handle_upload_jacket).delete(admin::handle_delete_jacket),
+            post(admin::asset::upload_jacket).delete(admin::asset::delete_jacket),
         )
         .route(
             "/musics/{musicId}/audio",
-            post(admin::handle_upload_audio).delete(admin::handle_delete_audio),
+            post(admin::asset::upload_audio).delete(admin::asset::delete_audio),
         )
         .route(
             "/sheets/{sheetId}/chart",
-            post(admin::handle_upload_chart).delete(admin::handle_delete_chart),
+            post(admin::asset::upload_chart).delete(admin::asset::delete_chart),
         )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
     let admin_routes = admin_routes.layer(DefaultBodyLimit::max(31 * 1024 * 1024));
