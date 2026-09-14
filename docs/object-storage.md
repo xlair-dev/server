@@ -1,6 +1,6 @@
-# R2 の設定
+# Object Storage の設定
 
-server は Cloudflare R2 に楽曲のアセットを保存する。R2 バケットは非公開で運用し、server の API 経由で配信する。
+server は Cloudflare R2 に楽曲のアセットを保存する。R2 バケットは非公開で運用し、読み書きともに server の API 経由で行う。R2 の公開アクセスやカスタムドメインは設定しない。
 
 オブジェクトは次の形式で保存する。
 
@@ -27,7 +27,3 @@ Cloudflare Dashboard の R2 Overview から API Tokens を開き、次の設定�
 - Apply to specific buckets only: `assets`
 
 作成後に表示される Access Key ID と Secret Access Key を `.env` に設定する。Secret Access Key は作成後に再表示できない。
-
-## nginx
-
-アップロード API は nginx の `client_max_body_size` を `35m` 以上に設定する。
