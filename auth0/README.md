@@ -96,7 +96,7 @@ update:triggers
 
 現在はローカル開発用の callback URL、logout URL、web origin を設定しています。dashboard の公開 URL が決まり次第、同じ設定へ追加します。
 
-初回の CI 実行で共有 M2M Application が作成されます。作成後に Auth0 で Client Secret を確認し、秘密情報として筐体へ配布します。Application を事前に手動作成する必要はありません。Client Secret の再発行時は全筐体へ新しい値を再配置します。
+初回の CI 実行で筐体用の `XLAIR Device` と web 用の `XLAIR Web` が作成されます。作成後に Auth0 でそれぞれの Client Secret を確認し、筐体または web の実行環境へ秘密情報として配布します。Application を事前に手動作成する必要はありません。Client Secret の再発行時は該当する実行環境へ新しい値を再配置します。
 
 GitHub OAuth App（`XLAIR Login`）は事前に作成し、client ID と client secret を GitHub Actions secrets に登録します。Auth0 の GitHub Connection は CI で作成されます。
 
@@ -129,6 +129,8 @@ GitHub App は GitHub の設定対象であり、Auth0 Deploy CLI の管理対�
 XLAIR API では、筐体の主体を識別する permission として `device` を使用します。
 
 - `device`: 筐体
+
+web サーバーも `XLAIR Web` の client-credentials grant で `device` permission を持つアクセストークンを取得し、`/sync` を呼び出す。Client Secret は web の実行時環境変数だけに設定し、ブラウザへ公開しない。
 
 GitHub の `xlair-dev` membership を確認した Dashboard の user token は、API が Dashboard Application の `azp` によって `Admin` principal に変換します。`device` permission は M2M Application に client grant で付与します。endpoint やフィールド単位の認可は XLAIR 側で扱います。
 

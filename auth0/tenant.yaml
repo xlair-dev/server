@@ -45,6 +45,11 @@ clients:
     oidc_conformant: true
     grant_types:
       - client_credentials
+  - name: XLAIR Web
+    app_type: non_interactive
+    oidc_conformant: true
+    grant_types:
+      - client_credentials
 
 # Keep the dashboard limited to the GitHub connection. The existing default
 # database connection is managed explicitly so AUTH0_ALLOW_DELETE=false does
@@ -82,6 +87,10 @@ actions:
 
 clientGrants:
   - client_id: XLAIR Device
+    audience: https://api.xlair.dev
+    scope:
+      - device
+  - client_id: XLAIR Web
     audience: https://api.xlair.dev
     scope:
       - device
