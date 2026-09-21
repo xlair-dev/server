@@ -28,7 +28,7 @@ impl<R: Repositories> StatisticsUsecase<R> {
 
     pub async fn summary(&self) -> Result<GlobalStatisticsDto, StatisticsUsecaseError> {
         let total_users = self.repositories.user().count_all().await?;
-        let total_credits = self.repositories.user().sum_credits().await?;
+        let total_credits = self.repositories.record().sum_play_counts().await?;
         let total_score = self.repositories.record().sum_scores().await?;
 
         Ok(GlobalStatisticsDto::new(

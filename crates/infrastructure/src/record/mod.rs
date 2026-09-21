@@ -13,7 +13,8 @@ use domain::{
 };
 use read::{
     public_high_scores_by_sheet, public_total_score_ranking, records_by_user,
-    records_by_user_and_sheet_ids, records_with_metadata_by_user, sum_scores as query_sum_scores,
+    records_by_user_and_sheet_ids, records_with_metadata_by_user,
+    sum_play_counts as query_sum_play_counts, sum_scores as query_sum_scores,
 };
 use sea_orm::DbConn;
 use tracing::{debug, info, instrument};
@@ -88,6 +89,11 @@ impl RecordRepository for RecordRepositoryImpl {
     #[instrument(skip(self))]
     async fn sum_scores(&self) -> Result<u64, RecordRepositoryError> {
         query_sum_scores(self.db.as_ref()).await
+    }
+
+    #[instrument(skip(self))]
+    async fn sum_play_counts(&self) -> Result<u64, RecordRepositoryError> {
+        query_sum_play_counts(self.db.as_ref()).await
     }
 
     #[instrument(skip(self), fields(sheet_id = %sheet_id, limit))]
