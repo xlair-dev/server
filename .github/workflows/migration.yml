@@ -9,7 +9,7 @@ on:
       - auth0/**
       - Cargo.lock
       - Cargo.toml
-      - crates/migration/**
+      - crates/**
       - rust-toolchain.toml
       - .github/workflows/migration.yml
       - .github/workflows/**
@@ -22,7 +22,7 @@ on:
       - auth0/**
       - Cargo.lock
       - Cargo.toml
-      - crates/migration/**
+      - crates/**
       - rust-toolchain.toml
       - .github/workflows/migration.yml
       - .github/workflows/**
