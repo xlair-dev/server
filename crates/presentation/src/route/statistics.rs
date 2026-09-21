@@ -48,11 +48,10 @@ mod tests {
         user_repo
             .expect_count_all()
             .returning(|| Box::pin(async { Ok(7) }));
-        user_repo
-            .expect_sum_credits()
-            .returning(|| Box::pin(async { Ok(1234) }));
-
         let mut record_repo = MockRecordRepository::new();
+        record_repo
+            .expect_sum_play_counts()
+            .returning(|| Box::pin(async { Ok(1234) }));
         record_repo
             .expect_sum_scores()
             .returning(|| Box::pin(async { Ok(987_654) }));

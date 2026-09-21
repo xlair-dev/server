@@ -112,6 +112,11 @@ pub trait RecordRepository: Send + Sync {
     /// zero when no records are present to keep the aggregation stable for dashboards.
     fn sum_scores(&self) -> impl Future<Output = Result<u64, RecordRepositoryError>> + Send;
 
+    /// Returns the sum of persisted play counts across the entire catalog.
+    /// The public `totalCredits` statistic is backed by this value for compatibility with the
+    /// existing API contract and dashboard clients.
+    fn sum_play_counts(&self) -> impl Future<Output = Result<u64, RecordRepositoryError>> + Send;
+
     /// Retrieves the highest scores for the supplied sheet. Persistence adapters must filter out
     /// non-public users in this query because visibility flags are enforced by the users table.
     fn find_public_high_scores_by_sheet(

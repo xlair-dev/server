@@ -227,6 +227,47 @@ pub async fn sum_scores(db: &DbConn) -> Result<u64, RecordRepositoryError> {
     Ok(sum)
 }
 
+/// Aggregates persisted play counts across all records. Casts SUM(...) to NUMERIC to
+/// stabilize Postgres' return type regardless of column width.
+pub async fn sum_play_counts(db: &DbConn) -> Result<u64, RecordRepositoryError> {
+    debug!("Summing record play counts via SeaORM");
+    let sum = entities::records::Entity::find()
+        .select_only()
+        .column_as(
+            Expr::col(entities::records::Column::PlayCount)
+                .sum()
+                .cast_as(Alias::new("numeric")),
+            "sum",
+        )
+        .into_tuple::<Option<Decimal>>()
+        .one(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to sum record play counts");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?
+        .flatten()
+        .unwrap_or(Decimal::ZERO);
+
+    if sum.is_sign_negative() {
+        let err = AnyError::msg("Database returned negative record play count sum");
+        error!("Record play count sum returned negative value");
+        return Err(RecordRepositoryError::InternalError(err));
+    }
+
+    let sum = sum.to_u64().ok_or_else(|| {
+        let err = AnyError::msg("Record play count sum cannot fit in u64");
+        error!("Record play count sum overflowed u64 conversion");
+        err
+    })?;
+
+    info!(
+        total_play_counts = sum,
+        "Record play counts summed successfully"
+    );
+    Ok(sum)
+}
+
 pub async fn public_high_scores_by_sheet(
     db: &DbConn,
     sheet_id: &str,
@@ -407,6 +448,26 @@ mod tests {
             .into_connection();
 
         let result = sum_scores(&db).await.unwrap();
+        assert_eq!(result, 0);
+    }
+
+    #[tokio::test]
+    async fn sum_play_counts_handles_numeric_rows() {
+        let db = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![decimal_row("sum", Some(172))]])
+            .into_connection();
+
+        let result = sum_play_counts(&db).await.unwrap();
+        assert_eq!(result, 172);
+    }
+
+    #[tokio::test]
+    async fn sum_play_counts_defaults_to_zero() {
+        let db = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![decimal_row("sum", None)]])
+            .into_connection();
+
+        let result = sum_play_counts(&db).await.unwrap();
         assert_eq!(result, 0);
     }
 
