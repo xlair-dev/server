@@ -192,7 +192,7 @@ fn map_jacket_error(error: AssetUploadError) -> AppError {
 fn map_audio_error(error: AssetUploadError) -> AppError {
     match error {
         AssetUploadError::UnsupportedContentType => AppError::bad_request("audio must be WAV"),
-        AssetUploadError::TooLarge => AppError::bad_request("audio exceeds 30 MiB"),
+        AssetUploadError::TooLarge => AppError::bad_request("audio exceeds 60 MiB"),
         AssetUploadError::InvalidData => AppError::bad_request("audio is invalid"),
         AssetUploadError::InvalidFileName => AppError::bad_request("audio file name is invalid"),
     }

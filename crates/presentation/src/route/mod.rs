@@ -6,6 +6,7 @@ use axum::{
     routing::{get, patch, post},
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use usecase::asset::MAX_AUDIO_SIZE;
 
 use crate::{
     auth::{Authenticator, AuthorizationPolicy, PrincipalKind},
@@ -77,7 +78,7 @@ pub fn create_app(state: State, authenticator: Option<Authenticator>) -> Router 
             get(admin::asset::get_chart),
         )
         .route("/db/synchronize", post(admin::handle_db_synchronization));
-    let admin_routes = admin_routes.layer(DefaultBodyLimit::max(31 * 1024 * 1024));
+    let admin_routes = admin_routes.layer(DefaultBodyLimit::max(MAX_AUDIO_SIZE));
 
     let private_routes = Router::new()
         .nest("/users", users)
