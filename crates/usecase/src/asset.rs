@@ -4,7 +4,7 @@ use image::{ImageFormat, ImageReader, Limits};
 use thiserror::Error;
 use tokio::io::AsyncRead;
 
-pub const MAX_JACKET_SIZE: usize = 5 * 1024 * 1024;
+pub const MAX_JACKET_SIZE: usize = 20 * 1024 * 1024;
 pub const MAX_AUDIO_SIZE: usize = 30 * 1024 * 1024;
 pub const MAX_CHART_SIZE: usize = 5 * 1024 * 1024;
 
@@ -274,6 +274,16 @@ mod tests {
 
         let upload = AssetUpload::jacket("image/jpg", bytes.into_inner()).expect("JPEG upload");
         assert_eq!(&upload.bytes[..8], b"\x89PNG\r\n\x1a\n");
+    }
+
+    #[test]
+    fn rejects_jacket_over_size_limit() {
+        let bytes = vec![0; MAX_JACKET_SIZE + 1];
+
+        assert!(matches!(
+            AssetUpload::jacket("image/png", bytes),
+            Err(AssetUploadError::TooLarge)
+        ));
     }
 
     #[test]
