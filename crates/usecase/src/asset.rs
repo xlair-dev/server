@@ -4,8 +4,8 @@ use image::{ImageFormat, ImageReader, Limits};
 use thiserror::Error;
 use tokio::io::AsyncRead;
 
-pub const MAX_JACKET_SIZE: usize = 5 * 1024 * 1024;
-pub const MAX_AUDIO_SIZE: usize = 30 * 1024 * 1024;
+pub const MAX_JACKET_SIZE: usize = 20 * 1024 * 1024;
+pub const MAX_AUDIO_SIZE: usize = 60 * 1024 * 1024;
 pub const MAX_CHART_SIZE: usize = 5 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -277,6 +277,16 @@ mod tests {
     }
 
     #[test]
+    fn rejects_jacket_over_size_limit() {
+        let bytes = vec![0; MAX_JACKET_SIZE + 1];
+
+        assert!(matches!(
+            AssetUpload::jacket("image/png", bytes),
+            Err(AssetUploadError::TooLarge)
+        ));
+    }
+
+    #[test]
     fn accepts_wav_header() {
         let mut bytes = b"RIFF".to_vec();
         bytes.extend_from_slice(&[0; 4]);
@@ -286,6 +296,18 @@ mod tests {
             AssetUpload::audio("audio/wav", bytes).unwrap().bytes.len(),
             12
         );
+    }
+
+    #[test]
+    fn rejects_audio_over_size_limit() {
+        let mut bytes = vec![0; MAX_AUDIO_SIZE + 1];
+        bytes[..4].copy_from_slice(b"RIFF");
+        bytes[8..12].copy_from_slice(b"WAVE");
+
+        assert!(matches!(
+            AssetUpload::audio("audio/wav", bytes),
+            Err(AssetUploadError::TooLarge)
+        ));
     }
 
     #[test]
