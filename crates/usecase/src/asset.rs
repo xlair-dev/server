@@ -6,7 +6,7 @@ use tokio::io::AsyncRead;
 
 pub const MAX_JACKET_SIZE: usize = 20 * 1024 * 1024;
 pub const MAX_AUDIO_SIZE: usize = 60 * 1024 * 1024;
-pub const MAX_CHART_SIZE: usize = 5 * 1024 * 1024;
+pub const MAX_CHART_SIZE: usize = 20 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum AssetKind {

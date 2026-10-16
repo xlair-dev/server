@@ -183,7 +183,7 @@ fn map_audio_error(error: AssetUploadError) -> AppError {
 
 fn map_chart_error(error: AssetUploadError) -> AppError {
     match error {
-        AssetUploadError::TooLarge => AppError::bad_request("chart exceeds 5 MiB"),
+        AssetUploadError::TooLarge => AppError::bad_request("chart exceeds 20 MiB"),
         AssetUploadError::UnsupportedContentType | AssetUploadError::InvalidData => {
             AppError::bad_request("chart is invalid")
         }
