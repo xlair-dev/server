@@ -49,8 +49,6 @@ pub enum AssetUploadError {
     TooLarge,
     #[error("uploaded object is invalid")]
     InvalidData,
-    #[error("asset file name must end with .sus")]
-    InvalidFileName,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -105,10 +103,7 @@ impl AssetUpload {
         Ok(Self { bytes })
     }
 
-    pub fn chart(file_name: &str, bytes: Vec<u8>) -> Result<Self, AssetUploadError> {
-        if !file_name.to_ascii_lowercase().ends_with(".sus") {
-            return Err(AssetUploadError::InvalidFileName);
-        }
+    pub fn chart(bytes: Vec<u8>) -> Result<Self, AssetUploadError> {
         if bytes.len() > MAX_CHART_SIZE {
             return Err(AssetUploadError::TooLarge);
         }
@@ -297,11 +292,17 @@ mod tests {
     }
 
     #[test]
-    fn requires_sus_chart_extension() {
-        assert!(AssetUpload::chart("chart.SUS", Vec::new()).is_ok());
+    fn accepts_chart_bytes() {
+        let bytes = b"chart content".to_vec();
+        assert_eq!(AssetUpload::chart(bytes.clone()).unwrap().bytes, bytes);
+    }
+
+    #[test]
+    fn enforces_chart_size_limit() {
+        assert!(AssetUpload::chart(vec![0; MAX_CHART_SIZE]).is_ok());
         assert!(matches!(
-            AssetUpload::chart("chart.txt", Vec::new()),
-            Err(AssetUploadError::InvalidFileName)
+            AssetUpload::chart(vec![0; MAX_CHART_SIZE + 1]),
+            Err(AssetUploadError::TooLarge)
         ));
     }
 }

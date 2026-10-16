@@ -117,15 +117,13 @@ pub async fn delete_audio(
     Ok(Json(SyncItemResponse::from(music)))
 }
 
-#[instrument(skip(state, headers, body), fields(sheet_id = %sheet_id))]
+#[instrument(skip(state, body), fields(sheet_id = %sheet_id))]
 pub async fn upload_chart(
     State(state): State<crate::state::State>,
     Path(sheet_id): Path<String>,
-    headers: HeaderMap,
     body: Bytes,
 ) -> AppResult<Json<SyncItemResponse>> {
-    let chart =
-        AssetUpload::chart(chart_file_name(&headers)?, body.to_vec()).map_err(map_chart_error)?;
+    let chart = AssetUpload::chart(body.to_vec()).map_err(map_chart_error)?;
     let music = state
         .usecases
         .music
@@ -165,19 +163,6 @@ fn content_type<'a>(headers: &'a HeaderMap, asset: &str) -> AppResult<&'a str> {
         .ok_or_else(|| AppError::bad_request(format!("{asset} content type is required")))
 }
 
-fn chart_file_name(headers: &HeaderMap) -> AppResult<&str> {
-    let value = headers
-        .get(header::CONTENT_DISPOSITION)
-        .and_then(|value| value.to_str().ok())
-        .ok_or_else(|| AppError::bad_request("chart file name is required"))?;
-    value
-        .split(';')
-        .find_map(|part| part.trim().strip_prefix("filename="))
-        .map(|file_name| file_name.trim_matches('"'))
-        .filter(|file_name| !file_name.contains('/') && !file_name.contains('\\'))
-        .ok_or_else(|| AppError::bad_request("chart file name is invalid"))
-}
-
 fn map_jacket_error(error: AssetUploadError) -> AppError {
     match error {
         AssetUploadError::UnsupportedContentType => {
@@ -185,7 +170,6 @@ fn map_jacket_error(error: AssetUploadError) -> AppError {
         }
         AssetUploadError::TooLarge => AppError::bad_request("jacket exceeds 5 MiB"),
         AssetUploadError::InvalidData => AppError::bad_request("jacket image is invalid"),
-        AssetUploadError::InvalidFileName => AppError::bad_request("jacket file name is invalid"),
     }
 }
 
@@ -194,16 +178,12 @@ fn map_audio_error(error: AssetUploadError) -> AppError {
         AssetUploadError::UnsupportedContentType => AppError::bad_request("audio must be WAV"),
         AssetUploadError::TooLarge => AppError::bad_request("audio exceeds 30 MiB"),
         AssetUploadError::InvalidData => AppError::bad_request("audio is invalid"),
-        AssetUploadError::InvalidFileName => AppError::bad_request("audio file name is invalid"),
     }
 }
 
 fn map_chart_error(error: AssetUploadError) -> AppError {
     match error {
         AssetUploadError::TooLarge => AppError::bad_request("chart exceeds 5 MiB"),
-        AssetUploadError::InvalidFileName => {
-            AppError::bad_request("chart file name must end with .sus")
-        }
         AssetUploadError::UnsupportedContentType | AssetUploadError::InvalidData => {
             AppError::bad_request("chart is invalid")
         }
