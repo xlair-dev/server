@@ -1,11 +1,12 @@
 use axum::{
     Json,
     body::Bytes,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode, header},
 };
+use serde::Deserialize;
 use tracing::{info, instrument};
-use usecase::asset::{AssetUpload, AssetUploadError};
+use usecase::asset::{AssetUpload, AssetUploadError, ChartFormat};
 
 use crate::{error::AppError, model::sync::SyncItemResponse};
 
@@ -117,13 +118,18 @@ pub async fn delete_audio(
     Ok(Json(SyncItemResponse::from(music)))
 }
 
-#[instrument(skip(state, body), fields(sheet_id = %sheet_id))]
+#[instrument(skip(state, query, body), fields(sheet_id = %sheet_id))]
 pub async fn upload_chart(
     State(state): State<crate::state::State>,
     Path(sheet_id): Path<String>,
+    Query(query): Query<ChartUploadQuery>,
     body: Bytes,
 ) -> AppResult<Json<SyncItemResponse>> {
-    let chart = AssetUpload::chart(body.to_vec()).map_err(map_chart_error)?;
+    let format = query
+        .format
+        .parse::<ChartFormat>()
+        .map_err(|_| AppError::bad_request("chart format must be ugc or sus"))?;
+    let chart = AssetUpload::chart(format, body.to_vec()).map_err(map_chart_error)?;
     let music = state
         .usecases
         .music
@@ -131,6 +137,11 @@ pub async fn upload_chart(
         .await?;
     info!(sheet_id = %sheet_id, "Admin sheet chart uploaded");
     Ok(Json(SyncItemResponse::from(music)))
+}
+
+#[derive(Deserialize)]
+pub struct ChartUploadQuery {
+    format: String,
 }
 
 #[instrument(skip(state), fields(sheet_id = %sheet_id))]

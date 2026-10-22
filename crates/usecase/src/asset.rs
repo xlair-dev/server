@@ -9,6 +9,33 @@ pub const MAX_AUDIO_SIZE: usize = 60 * 1024 * 1024;
 pub const MAX_CHART_SIZE: usize = 20 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum ChartFormat {
+    Ugc,
+    Sus,
+}
+
+impl ChartFormat {
+    pub fn extension(self) -> &'static str {
+        match self {
+            Self::Ugc => "ugc",
+            Self::Sus => "sus",
+        }
+    }
+}
+
+impl FromStr for ChartFormat {
+    type Err = ();
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value {
+            "ugc" => Ok(Self::Ugc),
+            "sus" => Ok(Self::Sus),
+            _ => Err(()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum AssetKind {
     Jacket,
     Audio,
@@ -21,14 +48,6 @@ impl AssetKind {
             Self::Jacket => "jackets",
             Self::Audio => "musics",
             Self::Chart => "sheets",
-        }
-    }
-
-    pub fn extension(self) -> &'static str {
-        match self {
-            Self::Jacket => "png",
-            Self::Audio => "wav",
-            Self::Chart => "sus",
         }
     }
 
@@ -54,9 +73,14 @@ pub enum AssetUploadError {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AssetUpload {
     pub bytes: Vec<u8>,
+    extension: &'static str,
 }
 
 impl AssetUpload {
+    pub fn extension(&self) -> &'static str {
+        self.extension
+    }
+
     pub fn jacket(content_type: &str, bytes: Vec<u8>) -> Result<Self, AssetUploadError> {
         if !matches!(
             content_type,
@@ -87,6 +111,7 @@ impl AssetUpload {
         }
         Ok(Self {
             bytes: normalized.into_inner(),
+            extension: "png",
         })
     }
 
@@ -100,14 +125,20 @@ impl AssetUpload {
         if bytes.len() < 12 || &bytes[..4] != b"RIFF" || &bytes[8..12] != b"WAVE" {
             return Err(AssetUploadError::InvalidData);
         }
-        Ok(Self { bytes })
+        Ok(Self {
+            bytes,
+            extension: "wav",
+        })
     }
 
-    pub fn chart(bytes: Vec<u8>) -> Result<Self, AssetUploadError> {
+    pub fn chart(format: ChartFormat, bytes: Vec<u8>) -> Result<Self, AssetUploadError> {
         if bytes.len() > MAX_CHART_SIZE {
             return Err(AssetUploadError::TooLarge);
         }
-        Ok(Self { bytes })
+        Ok(Self {
+            bytes,
+            extension: format.extension(),
+        })
     }
 }
 
@@ -316,14 +347,19 @@ mod tests {
     #[test]
     fn accepts_chart_bytes() {
         let bytes = b"chart content".to_vec();
-        assert_eq!(AssetUpload::chart(bytes.clone()).unwrap().bytes, bytes);
+        assert_eq!(
+            AssetUpload::chart(super::ChartFormat::Sus, bytes.clone())
+                .unwrap()
+                .bytes,
+            bytes
+        );
     }
 
     #[test]
     fn enforces_chart_size_limit() {
-        assert!(AssetUpload::chart(vec![0; MAX_CHART_SIZE]).is_ok());
+        assert!(AssetUpload::chart(super::ChartFormat::Sus, vec![0; MAX_CHART_SIZE]).is_ok());
         assert!(matches!(
-            AssetUpload::chart(vec![0; MAX_CHART_SIZE + 1]),
+            AssetUpload::chart(super::ChartFormat::Sus, vec![0; MAX_CHART_SIZE + 1]),
             Err(AssetUploadError::TooLarge)
         ));
     }
