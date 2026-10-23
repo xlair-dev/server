@@ -24,14 +24,6 @@ impl AssetKind {
         }
     }
 
-    pub fn extension(self) -> &'static str {
-        match self {
-            Self::Jacket => "png",
-            Self::Audio => "wav",
-            Self::Chart => "sus",
-        }
-    }
-
     pub fn content_type(self) -> &'static str {
         match self {
             Self::Jacket => "image/png",
@@ -54,9 +46,14 @@ pub enum AssetUploadError {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AssetUpload {
     pub bytes: Vec<u8>,
+    extension: &'static str,
 }
 
 impl AssetUpload {
+    pub fn extension(&self) -> &'static str {
+        self.extension
+    }
+
     pub fn jacket(content_type: &str, bytes: Vec<u8>) -> Result<Self, AssetUploadError> {
         if !matches!(
             content_type,
@@ -87,6 +84,7 @@ impl AssetUpload {
         }
         Ok(Self {
             bytes: normalized.into_inner(),
+            extension: "png",
         })
     }
 
@@ -100,14 +98,22 @@ impl AssetUpload {
         if bytes.len() < 12 || &bytes[..4] != b"RIFF" || &bytes[8..12] != b"WAVE" {
             return Err(AssetUploadError::InvalidData);
         }
-        Ok(Self { bytes })
+        Ok(Self {
+            bytes,
+            extension: "wav",
+        })
     }
 
     pub fn chart(bytes: Vec<u8>) -> Result<Self, AssetUploadError> {
         if bytes.len() > MAX_CHART_SIZE {
             return Err(AssetUploadError::TooLarge);
         }
-        Ok(Self { bytes })
+        let format =
+            chart_converter::Format::detect(&bytes).ok_or(AssetUploadError::InvalidData)?;
+        Ok(Self {
+            bytes,
+            extension: format.extension(),
+        })
     }
 }
 
@@ -315,13 +321,17 @@ mod tests {
 
     #[test]
     fn accepts_chart_bytes() {
-        let bytes = b"chart content".to_vec();
-        assert_eq!(AssetUpload::chart(bytes.clone()).unwrap().bytes, bytes);
+        let bytes = b"#00002: 1\n".to_vec();
+        let upload = AssetUpload::chart(bytes.clone()).unwrap();
+        assert_eq!(upload.bytes, bytes);
+        assert_eq!(upload.extension(), "sus");
     }
 
     #[test]
     fn enforces_chart_size_limit() {
-        assert!(AssetUpload::chart(vec![0; MAX_CHART_SIZE]).is_ok());
+        let mut bytes = b"@ENDHEAD\n".to_vec();
+        bytes.resize(MAX_CHART_SIZE, b' ');
+        assert!(AssetUpload::chart(bytes).is_ok());
         assert!(matches!(
             AssetUpload::chart(vec![0; MAX_CHART_SIZE + 1]),
             Err(AssetUploadError::TooLarge)
