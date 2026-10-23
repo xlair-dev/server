@@ -1032,7 +1032,7 @@ dependencies = [
 [[package]]
 name = "c2s"
 version = "0.1.0"
-source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?branch=main#d18ab3314fb7d6a7c53a70857e0a9ddc18cbeb03"
 dependencies = [
  "chart",
  "thiserror",
@@ -1076,7 +1076,7 @@ dependencies = [
 [[package]]
 name = "chart"
 version = "0.1.0"
-source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?branch=main#d18ab3314fb7d6a7c53a70857e0a9ddc18cbeb03"
 dependencies = [
  "thiserror",
 ]
@@ -1084,7 +1084,7 @@ dependencies = [
 [[package]]
 name = "chart-converter"
 version = "0.1.0"
-source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?branch=main#d18ab3314fb7d6a7c53a70857e0a9ddc18cbeb03"
 dependencies = [
  "c2s",
  "chart",
@@ -4587,7 +4587,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "sus"
 version = "0.1.0"
-source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?branch=main#d18ab3314fb7d6a7c53a70857e0a9ddc18cbeb03"
 dependencies = [
  "chart",
  "thiserror",
@@ -4968,7 +4968,7 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 [[package]]
 name = "ugc"
 version = "0.1.0"
-source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?branch=main#d18ab3314fb7d6a7c53a70857e0a9ddc18cbeb03"
 dependencies = [
  "chart",
  "thiserror",
