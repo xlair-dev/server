@@ -42,14 +42,14 @@ impl R2AssetStorage {
         }
     }
 
-    fn key(kind: AssetKind, owner_id: &str, bytes: &[u8]) -> String {
-        let hash = Sha256::digest(bytes);
+    fn key(kind: AssetKind, owner_id: &str, asset: &AssetUpload) -> String {
+        let hash = Sha256::digest(&asset.bytes);
         format!(
             "{}/{}/{}.{}",
             kind.prefix(),
             owner_id,
             hex::encode(hash),
-            kind.extension()
+            asset.extension()
         )
     }
 }
@@ -62,7 +62,7 @@ impl AssetStorage for R2AssetStorage {
         asset: AssetUpload,
     ) -> Pin<Box<dyn Future<Output = anyhow::Result<String>> + Send + 'a>> {
         Box::pin(async move {
-            let key = Self::key(kind, owner_id, &asset.bytes);
+            let key = Self::key(kind, owner_id, &asset);
             self.client
                 .put_object()
                 .bucket(&self.bucket)

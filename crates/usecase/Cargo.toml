@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow.workspace = true
+chart-converter = { git = "https://github.com/xlair-dev/ChartConverter.git", rev = "1c95e38ca4bc391a1d3674c46d4aac6f71878c01" }
 chrono.workspace = true
 domain.workspace = true
 image.workspace = true

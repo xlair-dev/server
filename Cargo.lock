@@ -1030,6 +1030,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "c2s"
+version = "0.1.0"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+dependencies = [
+ "chart",
+ "thiserror",
+]
+
+[[package]]
 name = "cc"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1062,6 +1071,26 @@ dependencies = [
  "cfg-if",
  "cpufeatures 0.3.1",
  "rand_core 0.10.1",
+]
+
+[[package]]
+name = "chart"
+version = "0.1.0"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
+name = "chart-converter"
+version = "0.1.0"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+dependencies = [
+ "c2s",
+ "chart",
+ "sus",
+ "thiserror",
+ "ugc",
 ]
 
 [[package]]
@@ -4556,6 +4585,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
+name = "sus"
+version = "0.1.0"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+dependencies = [
+ "chart",
+ "thiserror",
+]
+
+[[package]]
 name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4928,6 +4966,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 
 [[package]]
+name = "ugc"
+version = "0.1.0"
+source = "git+https://github.com/xlair-dev/ChartConverter.git?rev=1c95e38ca4bc391a1d3674c46d4aac6f71878c01#1c95e38ca4bc391a1d3674c46d4aac6f71878c01"
+dependencies = [
+ "chart",
+ "thiserror",
+]
+
+[[package]]
 name = "unicode-bidi"
 version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4989,6 +5036,7 @@ name = "usecase"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chart-converter",
  "chrono",
  "domain",
  "image",

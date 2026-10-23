@@ -502,7 +502,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/musicWithSheets"
-        "400": { description: Bad request - Invalid SUS file name }
+        "400": { description: Bad request - Invalid chart file }
         "401": { description: Unauthorized - Invalid access token }
         "403": { description: Forbidden - The authenticated user is not an administrator }
         "404": { description: Not found - Sheet not found }
