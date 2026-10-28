@@ -199,6 +199,47 @@ pub async fn public_users_by_xp(db: &DbConn, limit: u64) -> Result<Vec<User>, Us
     Ok(result)
 }
 
+pub async fn public_rating_values(db: &DbConn) -> Result<Vec<u64>, UserRepositoryError> {
+    public_metric_values(
+        db,
+        Expr::col(entities::users::Column::Rating).cast_as(Alias::new("bigint")),
+        "rating",
+    )
+    .await
+}
+
+pub async fn public_xp_values(db: &DbConn) -> Result<Vec<u64>, UserRepositoryError> {
+    public_metric_values(db, Expr::col(entities::users::Column::Xp), "XP").await
+}
+
+async fn public_metric_values(
+    db: &DbConn,
+    column: Expr,
+    metric_name: &'static str,
+) -> Result<Vec<u64>, UserRepositoryError> {
+    let values = entities::users::Entity::find()
+        .select_only()
+        .column_as(column, "metric_value")
+        .filter(entities::users::Column::IsPublic.eq(true))
+        .into_tuple::<i64>()
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, metric_name, "Failed to fetch public metric values");
+            UserRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    values
+        .into_iter()
+        .map(|value| {
+            u64::try_from(value).map_err(|err| {
+                error!(error = %err, metric_name, "Invalid public metric value encountered");
+                UserRepositoryError::InternalError(AnyError::from(err))
+            })
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;

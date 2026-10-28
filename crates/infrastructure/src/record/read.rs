@@ -328,6 +328,39 @@ pub async fn public_high_scores_by_sheet(
     Ok(result)
 }
 
+pub async fn public_score_values_by_sheet(
+    db: &DbConn,
+    sheet_id: &str,
+) -> Result<Vec<u64>, RecordRepositoryError> {
+    let sheet_uuid = crate::record::adapter::parse_sheet_uuid(sheet_id)?;
+    let scores = entities::records::Entity::find()
+        .select_only()
+        .column(entities::records::Column::Score)
+        .join(
+            JoinType::InnerJoin,
+            entities::records::Relation::Users.def(),
+        )
+        .filter(entities::records::Column::SheetId.eq(sheet_uuid))
+        .filter(entities::users::Column::IsPublic.eq(true))
+        .into_tuple::<i32>()
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to fetch public sheet score values");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    scores
+        .into_iter()
+        .map(|score| {
+            u64::try_from(score).map_err(|err| {
+                error!(error = %err, "Invalid public sheet score encountered");
+                RecordRepositoryError::InternalError(AnyError::from(err))
+            })
+        })
+        .collect()
+}
+
 pub async fn public_total_score_ranking(
     db: &DbConn,
     limit: u64,
@@ -385,6 +418,47 @@ pub async fn public_total_score_ranking(
         "Total score ranking fetched successfully"
     );
     Ok(result)
+}
+
+pub async fn public_total_score_values(db: &DbConn) -> Result<Vec<u64>, RecordRepositoryError> {
+    let totals = entities::records::Entity::find()
+        .select_only()
+        .column_as(
+            Expr::col(entities::records::Column::Score)
+                .sum()
+                .cast_as(Alias::new("numeric")),
+            "total_score",
+        )
+        .join(
+            JoinType::InnerJoin,
+            entities::records::Relation::Users.def(),
+        )
+        .filter(entities::users::Column::IsPublic.eq(true))
+        .group_by(entities::users::Column::Id)
+        .into_tuple::<Option<Decimal>>()
+        .all(db)
+        .await
+        .map_err(|err| {
+            error!(error = %err, "Failed to fetch public total score values");
+            RecordRepositoryError::InternalError(AnyError::from(err))
+        })?;
+
+    totals
+        .into_iter()
+        .map(|total| {
+            let total = total.unwrap_or(Decimal::ZERO);
+            if total.is_sign_negative() {
+                let err = AnyError::msg("Negative total score encountered in distribution query");
+                error!("Total score distribution query returned a negative value");
+                return Err(RecordRepositoryError::InternalError(err));
+            }
+            total.to_u64().ok_or_else(|| {
+                let err = AnyError::msg("Total score distribution value cannot fit in u64");
+                error!("Total score distribution conversion failed");
+                RecordRepositoryError::InternalError(err)
+            })
+        })
+        .collect()
 }
 
 #[cfg(test)]

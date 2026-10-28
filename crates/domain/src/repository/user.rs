@@ -72,4 +72,14 @@ pub trait UserRepository: Send + Sync {
         &self,
         limit: u64,
     ) -> impl Future<Output = Result<Vec<User>, UserRepositoryError>> + Send;
+
+    /// Returns rating values for all public users, without exposing user identifiers to callers.
+    fn find_public_rating_values(
+        &self,
+    ) -> impl Future<Output = Result<Vec<u64>, UserRepositoryError>> + Send;
+
+    /// Returns XP values for all public users, without exposing user identifiers to callers.
+    fn find_public_xp_values(
+        &self,
+    ) -> impl Future<Output = Result<Vec<u64>, UserRepositoryError>> + Send;
 }
