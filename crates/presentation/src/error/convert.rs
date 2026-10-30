@@ -49,6 +49,7 @@ impl From<RecordRepositoryError> for AppError {
 impl From<UserUsecaseError> for AppError {
     fn from(error: UserUsecaseError) -> Self {
         match error {
+            UserUsecaseError::InvalidPlayOption(message) => AppError::bad_request(message),
             UserUsecaseError::UserRepositoryError(repo_error) => repo_error.into(),
             UserUsecaseError::NotFoundByCard { card } => AppError {
                 status_code: axum::http::StatusCode::NOT_FOUND,

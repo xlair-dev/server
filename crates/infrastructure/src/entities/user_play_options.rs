@@ -6,7 +6,10 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub user_id: Uuid,
     pub note_speed: f64,
-    pub judgment_offset: i32,
+    pub audio_judgment_timing: f64,
+    pub visual_judgment_timing: f64,
+    pub mirror: bool,
+    pub note_volume: i32,
     pub updated_at: DateTimeWithTimeZone,
 }
 

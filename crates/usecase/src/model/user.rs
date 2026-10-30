@@ -91,39 +91,44 @@ impl UserCreditsDto {
 pub struct UserPlayOptionDto {
     pub user_id: String,
     pub note_speed: f32,
-    pub judgment_offset: i32,
+    pub audio_judgment_timing: f32,
+    pub visual_judgment_timing: f32,
+    pub mirror: bool,
+    pub note_volume: u8,
     pub updated_at: DateTime<Utc>,
 }
 
 impl UserPlayOptionDto {
-    pub fn new(
-        user_id: String,
-        note_speed: f32,
-        judgment_offset: i32,
-        updated_at: DateTime<Utc>,
-    ) -> Self {
+    pub fn new(user_id: String, note_speed: f32, updated_at: DateTime<Utc>) -> Self {
         Self {
             user_id,
             note_speed,
-            judgment_offset,
+            audio_judgment_timing: 0.0,
+            visual_judgment_timing: 0.0,
+            mirror: false,
+            note_volume: 100,
             updated_at,
         }
     }
 
-    /// Defaults mirror cabinet firmware expectation: noteSpeed=1.0 and judgmentOffset=0.
+    /// The default note speed matches the cabinet firmware.
     pub fn with_defaults(user_id: String) -> Self {
-        Self::new(user_id, 1.0, 0, Utc::now())
+        UserPlayOption::new_with_defaults(user_id, Utc::now()).into()
     }
 }
 
 impl From<UserPlayOption> for UserPlayOptionDto {
     fn from(option: UserPlayOption) -> Self {
-        Self::new(
+        let mut dto = Self::new(
             option.user_id().to_owned(),
             *option.note_speed(),
-            *option.judgment_offset(),
             *option.updated_at(),
-        )
+        );
+        dto.audio_judgment_timing = *option.audio_judgment_timing();
+        dto.visual_judgment_timing = *option.visual_judgment_timing();
+        dto.mirror = *option.mirror();
+        dto.note_volume = *option.note_volume();
+        dto
     }
 }
 
@@ -155,16 +160,10 @@ impl UserUpdateDto {
 #[derive(Debug, Clone)]
 pub struct UserPlayOptionUpdateDto {
     pub note_speed: f32,
-    pub judgment_offset: i32,
-}
-
-impl UserPlayOptionUpdateDto {
-    pub fn new(note_speed: f32, judgment_offset: i32) -> Self {
-        Self {
-            note_speed,
-            judgment_offset,
-        }
-    }
+    pub audio_judgment_timing: f32,
+    pub visual_judgment_timing: f32,
+    pub mirror: bool,
+    pub note_volume: u8,
 }
 
 #[derive(Debug, Clone)]

@@ -183,14 +183,20 @@ impl From<UpdateUserRequest> for UserUpdateDto {
 #[serde(rename_all = "camelCase")]
 pub struct UserPlayOptionResponse {
     pub note_speed: f32,
-    pub judgment_offset: i32,
+    pub audio_judgment_timing: f32,
+    pub visual_judgment_timing: f32,
+    pub mirror: bool,
+    pub note_volume: u8,
 }
 
 impl From<UserPlayOptionDto> for UserPlayOptionResponse {
     fn from(option: UserPlayOptionDto) -> Self {
         Self {
             note_speed: option.note_speed,
-            judgment_offset: option.judgment_offset,
+            audio_judgment_timing: option.audio_judgment_timing,
+            visual_judgment_timing: option.visual_judgment_timing,
+            mirror: option.mirror,
+            note_volume: option.note_volume,
         }
     }
 }
@@ -199,11 +205,20 @@ impl From<UserPlayOptionDto> for UserPlayOptionResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserPlayOptionRequest {
     pub note_speed: f32,
-    pub judgment_offset: i32,
+    pub audio_judgment_timing: f32,
+    pub visual_judgment_timing: f32,
+    pub mirror: bool,
+    pub note_volume: u8,
 }
 
 impl From<UserPlayOptionRequest> for UserPlayOptionUpdateDto {
     fn from(request: UserPlayOptionRequest) -> Self {
-        UserPlayOptionUpdateDto::new(request.note_speed, request.judgment_offset)
+        UserPlayOptionUpdateDto {
+            note_speed: request.note_speed,
+            audio_judgment_timing: request.audio_judgment_timing,
+            visual_judgment_timing: request.visual_judgment_timing,
+            mirror: request.mirror,
+            note_volume: request.note_volume,
+        }
     }
 }

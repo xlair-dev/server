@@ -84,7 +84,10 @@ pub async fn save_play_option(
             OnConflict::column(entities::user_play_options::Column::UserId)
                 .update_columns([
                     entities::user_play_options::Column::NoteSpeed,
-                    entities::user_play_options::Column::JudgmentOffset,
+                    entities::user_play_options::Column::AudioJudgmentTiming,
+                    entities::user_play_options::Column::VisualJudgmentTiming,
+                    entities::user_play_options::Column::Mirror,
+                    entities::user_play_options::Column::NoteVolume,
                     entities::user_play_options::Column::UpdatedAt,
                 ])
                 .to_owned(),

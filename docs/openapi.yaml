@@ -1022,13 +1022,43 @@ components:
         noteSpeed:
           type: number
           format: float
-          description: ノーツの流れる速度
-        judgmentOffset:
+          minimum: 1.0
+          maximum: 10.0
+          multipleOf: 0.1
+          default: 1.0
+          description: ノーツの流れる速度。既存の設定値は、この範囲や刻みに合わない場合もある。
+        audioJudgmentTiming:
+          type: number
+          format: float
+          minimum: -10.0
+          maximum: 10.0
+          multipleOf: 0.1
+          default: 0.0
+          description: 判定タイミング（音）
+        visualJudgmentTiming:
+          type: number
+          format: float
+          minimum: -10.0
+          maximum: 10.0
+          multipleOf: 0.1
+          default: 0.0
+          description: 判定タイミング（描画）
+        mirror:
+          type: boolean
+          default: false
+          description: ミラー
+        noteVolume:
           type: integer
-          description: 判定タイミングの調整値 (ミリ秒)
+          minimum: 0
+          maximum: 100
+          default: 100
+          description: ノーツ音量
       required:
         - noteSpeed
-        - judgmentOffset
+        - audioJudgmentTiming
+        - visualJudgmentTiming
+        - mirror
+        - noteVolume
     recordRequest:
       type: object
       properties:
