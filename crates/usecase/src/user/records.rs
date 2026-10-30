@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use chrono::Utc;
 use domain::{
@@ -36,6 +36,8 @@ impl<R: Repositories> UserUsecase<R> {
         }
     }
 
+    /// Submission filtering relies on record metadata loaded after persistence and on the
+    /// database foreign keys linking records to sheets and sheets to music.
     #[instrument(skip(self, submissions), fields(user_id = %user_id, count = submissions.len()))]
     pub async fn submit_records(
         &self,
@@ -77,12 +79,12 @@ impl<R: Repositories> UserUsecase<R> {
             .map(|record| (record.sheet_id().to_owned(), record))
             .collect();
 
-        let mut xp_delta: u32 = 0;
+        let mut submitted_scores = Vec::with_capacity(submissions.len());
         let mut responses = Vec::with_capacity(submissions.len());
 
         for submission in submissions {
             let sheet_id = submission.sheet_id.clone();
-            xp_delta = xp_delta.saturating_add(experience::xp_for_score(submission.score));
+            submitted_scores.push((sheet_id.clone(), submission.score));
             let submitted_at = Utc::now();
 
             match record_map.remove(&sheet_id) {
@@ -140,6 +142,18 @@ impl<R: Repositories> UserUsecase<R> {
             Err(err) => return Err(UserUsecaseError::RecordRepositoryError(err)),
         };
 
+        let test_sheet_ids: HashSet<&str> = metadata
+            .iter()
+            .filter(|entry| entry.is_test)
+            .map(|entry| entry.record.sheet_id().as_str())
+            .collect();
+        let xp_delta = submitted_scores
+            .iter()
+            .filter(|(sheet_id, _)| !test_sheet_ids.contains(sheet_id.as_str()))
+            .fold(0_u32, |total, (_, score)| {
+                total.saturating_add(experience::xp_for_score(*score))
+            });
+        responses.retain(|record| !test_sheet_ids.contains(record.sheet_id.as_str()));
         let new_rating = rating::calculate_user_rating(&metadata);
 
         user.add_xp(xp_delta);
@@ -357,6 +371,90 @@ mod tests {
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].sheet_id, "sheet-1");
         assert_eq!(result[0].score, 1_000_000);
+    }
+
+    #[tokio::test]
+    async fn submit_test_music_preserves_statistics_record_without_personal_effects() {
+        let mut record_repo = MockRecordRepository::new();
+        record_repo
+            .expect_find_by_user_id_and_sheet_ids()
+            .withf(|user_id, sheet_ids| {
+                user_id == "user-123" && sheet_ids.len() == 1 && sheet_ids[0] == "sheet-1"
+            })
+            .returning(|_, _| Box::pin(async { Ok(Vec::new()) }));
+        record_repo
+            .expect_insert()
+            .withf(|record| record.user_id() == "user-123" && record.sheet_id() == "sheet-1")
+            .returning(|record| {
+                Box::pin(async move {
+                    Ok(Record::new(
+                        record.id().to_owned(),
+                        record.user_id().to_owned(),
+                        record.sheet_id().to_owned(),
+                        *record.score(),
+                        *record.clear_type(),
+                        *record.play_count(),
+                        sample_timestamp(),
+                    ))
+                })
+            });
+        record_repo
+            .expect_find_with_metadata_by_user_id()
+            .withf(|user_id| user_id == "user-123")
+            .returning(|_| {
+                Box::pin(async move {
+                    let level = Level::new(13, 7).expect("level should be valid");
+                    let record = Record::new(
+                        "record-1".to_owned(),
+                        "user-123".to_owned(),
+                        "sheet-1".to_owned(),
+                        1_000_000,
+                        ClearType::FullCombo,
+                        1,
+                        sample_timestamp(),
+                    );
+                    Ok(vec![RecordWithMetadata::new(record, level, true)])
+                })
+            });
+
+        let mut user_repo = MockUserRepository::new();
+        user_repo
+            .expect_find_by_id()
+            .withf(|user_id| user_id == "user-123")
+            .returning(|_| {
+                let user = User::new(
+                    "user-123".to_owned(),
+                    "CARD-123".to_owned(),
+                    "Alice".to_owned(),
+                    Rating::new(1200),
+                    0,
+                    0,
+                    false,
+                    false,
+                    sample_timestamp(),
+                );
+                Box::pin(async move { Ok(Some(user)) })
+            });
+        user_repo
+            .expect_save()
+            .withf(|user| user.id() == "user-123" && *user.xp() == 0 && user.rating().value() == 0)
+            .returning(|user| Box::pin(async move { Ok(user) }));
+
+        let repositories = MockRepositories {
+            user: user_repo,
+            record: record_repo,
+            music: MockMusicRepository::new(),
+        };
+        let usecase = UserUsecase::new(Arc::new(repositories));
+
+        let submission =
+            UserRecordSubmissionDto::new("sheet-1".to_owned(), 1_000_000, ClearType::FullCombo);
+        let result = usecase
+            .submit_records("user-123".to_owned(), vec![submission])
+            .await
+            .expect("should succeed");
+
+        assert!(result.is_empty());
     }
 
     #[tokio::test]

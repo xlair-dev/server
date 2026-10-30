@@ -49,6 +49,15 @@ pub async fn records_by_user(
     let uuid = ensure_user_exists(db, user_id).await?;
 
     let models = Records::find()
+        .join(
+            JoinType::InnerJoin,
+            entities::records::Relation::Sheets.def(),
+        )
+        .join(
+            JoinType::InnerJoin,
+            entities::sheets::Relation::Musics.def(),
+        )
+        .filter(entities::musics::Column::IsTest.eq(false))
         .filter(entities::records::Column::UserId.eq(uuid))
         .order_by_asc(entities::records::Column::UpdatedAt)
         .all(db)
@@ -290,6 +299,15 @@ pub async fn public_high_scores_by_sheet(
             entities::records::Relation::Users.def(),
         )
         .filter(entities::records::Column::SheetId.eq(sheet_uuid))
+        .join(
+            JoinType::InnerJoin,
+            entities::records::Relation::Sheets.def(),
+        )
+        .join(
+            JoinType::InnerJoin,
+            entities::sheets::Relation::Musics.def(),
+        )
+        .filter(entities::musics::Column::IsTest.eq(false))
         .filter(entities::users::Column::IsPublic.eq(true))
         .order_by_desc(entities::records::Column::Score)
         .order_by_asc(entities::records::Column::UpdatedAt)
@@ -347,6 +365,15 @@ pub async fn public_total_score_ranking(
             JoinType::InnerJoin,
             entities::records::Relation::Users.def(),
         )
+        .join(
+            JoinType::InnerJoin,
+            entities::records::Relation::Sheets.def(),
+        )
+        .join(
+            JoinType::InnerJoin,
+            entities::sheets::Relation::Musics.def(),
+        )
+        .filter(entities::musics::Column::IsTest.eq(false))
         .filter(entities::users::Column::IsPublic.eq(true))
         .group_by(entities::users::Column::Id)
         .group_by(entities::users::Column::DisplayName)
