@@ -1,6 +1,17 @@
+use std::collections::HashSet;
+
 use anyhow::Error as AnyError;
-use domain::repository::music::{MusicRepositoryError, MusicWithSheets};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, QueryFilter, TransactionTrait};
+use domain::{
+    repository::{
+        music::{MusicRepositoryError, MusicWithSheets},
+        record::RecordRepositoryError,
+    },
+    service::rating,
+};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DbConn, EntityTrait, QueryFilter, QuerySelect, TransactionTrait,
+    sea_query::Expr,
+};
 use tracing::error;
 
 use super::write_adapter::{
@@ -43,6 +54,11 @@ pub async fn update_with_sheets(
     let music_id = uuid::Uuid::parse_str(music.music.id())
         .map_err(|error| MusicRepositoryError::InternalError(AnyError::from(error)))?;
     let result = async {
+        let existing_music = entities::musics::Entity::find_by_id(music_id)
+            .one(&txn)
+            .await
+            .map_err(internal)?
+            .ok_or_else(|| MusicRepositoryError::NotFound(music.music.id().to_owned()))?;
         let existing = entities::sheets::Entity::find()
             .filter(entities::sheets::Column::MusicId.eq(music_id))
             .all(&txn)
@@ -63,6 +79,28 @@ pub async fn update_with_sheets(
                 "music must have exactly three existing sheets",
             )));
         }
+        let rating_inputs_changed = existing_music.is_test != *music.music.is_test()
+            || existing.iter().any(|existing_sheet| {
+                let existing_sheet_id = existing_sheet.id.to_string();
+                music.sheets.iter().any(|sheet| {
+                    sheet.id().as_str() == existing_sheet_id.as_str()
+                        && sheet.level().components().0 * 10 + sheet.level().components().1
+                            != existing_sheet.level as u32
+                })
+            });
+        let affected_user_ids = if rating_inputs_changed {
+            let user_ids = entities::records::Entity::find()
+                .select_only()
+                .column(entities::records::Column::UserId)
+                .filter(entities::records::Column::SheetId.is_in(existing_ids.iter().copied()))
+                .into_tuple::<uuid::Uuid>()
+                .all(&txn)
+                .await
+                .map_err(internal)?;
+            user_ids.into_iter().collect::<HashSet<_>>()
+        } else {
+            HashSet::new()
+        };
         music_active_model_for_update(&music.music)?
             .update(&txn)
             .await
@@ -70,6 +108,22 @@ pub async fn update_with_sheets(
         for sheet in &music.sheets {
             sheet_active_model_for_update(sheet)?
                 .update(&txn)
+                .await
+                .map_err(internal)?;
+        }
+        for user_id in affected_user_ids {
+            let records = crate::record::read::records_with_metadata(&txn, user_id)
+                .await
+                .map_err(|error: RecordRepositoryError| {
+                    MusicRepositoryError::InternalError(AnyError::new(error))
+                })?;
+            let new_rating = rating::calculate_user_rating(&records).value();
+            let rating = i32::try_from(new_rating)
+                .map_err(|error| MusicRepositoryError::InternalError(AnyError::from(error)))?;
+            entities::users::Entity::update_many()
+                .col_expr(entities::users::Column::Rating, Expr::value(rating))
+                .filter(entities::users::Column::Id.eq(user_id))
+                .exec(&txn)
                 .await
                 .map_err(internal)?;
         }

@@ -1,5 +1,5 @@
 mod adapter;
-mod read;
+pub(crate) mod read;
 mod write;
 
 use std::sync::Arc;
