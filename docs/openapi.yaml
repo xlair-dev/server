@@ -666,7 +666,7 @@ paths:
       tags:
         - app
       summary: ユーザーのプレイデータを取得
-      description: ゲーム開始時にユーザーのプレイデータを一括取得する
+      description: ゲーム開始時にユーザーのプレイデータを一括取得する。テスト用楽曲の記録は含まない。
       security:
         - deviceAuth: []
       parameters:
@@ -695,7 +695,7 @@ paths:
       tags:
         - app
       summary: ユーザーのプレイデータを送信
-      description: スコアの更新の有無に関わらず、ゲーム終了時にユーザーのプレイデータを送信する
+      description: スコアの更新の有無に関わらず、ゲーム終了時にユーザーのプレイデータを送信する。テスト用楽曲の記録は全体統計に含まれるが、レスポンスには含まれない。
       security:
         - deviceAuth: []
       parameters:
@@ -815,7 +815,7 @@ paths:
       tags:
         - web
       summary: 指定した譜面のハイスコアランキングを取得
-      description: 公開ユーザーを対象に、指定した譜面のハイスコア上位20件を取得する
+      description: 公開ユーザーを対象に、指定した譜面のハイスコア上位20件を取得する。テスト用楽曲は対象外。
       parameters:
         - name: sheetId
           in: path
@@ -839,7 +839,7 @@ paths:
       tags:
         - web
       summary: 全譜面のハイスコア合計ランキングを取得
-      description: 公開ユーザーを対象に、保有する全譜面のハイスコア合計上位20件を取得する
+      description: 公開ユーザーを対象に、保有する全譜面のハイスコア合計上位20件を取得する。テスト用楽曲は対象外。
       responses:
         "200":
           description: success
