@@ -38,18 +38,18 @@ impl<R: Repositories> UserUsecase<R> {
         user_id: String,
         update: UserPlayOptionUpdateDto,
     ) -> Result<UserPlayOptionDto, UserUsecaseError> {
-        fn valid_step(value: f32, min: f32, max: f32) -> bool {
+        fn valid_step(value: f32, min: f32, max: f32, steps_per_unit: f32) -> bool {
             value.is_finite()
                 && (min..=max).contains(&value)
-                && ((value * 10.0).round() - value * 10.0).abs() < 0.0001
+                && ((value * steps_per_unit).round() - value * steps_per_unit).abs() < 0.0001
         }
-        if !valid_step(update.note_speed, 1.0, 10.0) {
+        if !valid_step(update.note_speed, 0.25, 10.0, 4.0) {
             return Err(UserUsecaseError::InvalidPlayOption("noteSpeed"));
         }
-        if !valid_step(update.audio_judgment_timing, -10.0, 10.0) {
+        if !(-100..=100).contains(&update.audio_judgment_timing) {
             return Err(UserUsecaseError::InvalidPlayOption("audioJudgmentTiming"));
         }
-        if !valid_step(update.visual_judgment_timing, -10.0, 10.0) {
+        if !valid_step(update.visual_judgment_timing, -10.0, 10.0, 10.0) {
             return Err(UserUsecaseError::InvalidPlayOption("visualJudgmentTiming"));
         }
         if update.note_volume > 100 {
@@ -137,7 +137,7 @@ mod tests {
 
         assert_eq!(result.user_id, "user-123");
         assert!((result.note_speed - 1.5).abs() < f32::EPSILON);
-        assert_eq!(result.audio_judgment_timing, 0.0);
+        assert_eq!(result.audio_judgment_timing, 0);
     }
 
     #[tokio::test]
@@ -156,7 +156,7 @@ mod tests {
 
         assert_eq!(result.user_id, "user-123");
         assert!((result.note_speed - 1.0).abs() < f32::EPSILON);
-        assert_eq!(result.audio_judgment_timing, 0.0);
+        assert_eq!(result.audio_judgment_timing, 0);
     }
 
     #[tokio::test]
@@ -194,7 +194,7 @@ mod tests {
             .expect_save_play_option()
             .withf(|option| {
                 option.user_id() == "user-123"
-                    && (option.note_speed() - 1.2).abs() < f32::EPSILON
+                    && (option.note_speed() - 1.25).abs() < f32::EPSILON
                     && *option.note_volume() == 100
             })
             .returning(|option| Box::pin(async move { Ok(option) }));
@@ -202,8 +202,8 @@ mod tests {
         let usecase = build_usecase(user_repo);
 
         let update = UserPlayOptionUpdateDto {
-            note_speed: 1.2,
-            audio_judgment_timing: 0.0,
+            note_speed: 1.25,
+            audio_judgment_timing: 0,
             visual_judgment_timing: 0.0,
             mirror: false,
             note_volume: 100,
@@ -214,7 +214,7 @@ mod tests {
             .expect("should succeed");
 
         assert_eq!(result.user_id, "user-123");
-        assert!((result.note_speed - 1.2).abs() < f32::EPSILON);
+        assert!((result.note_speed - 1.25).abs() < f32::EPSILON);
         assert_eq!(result.note_volume, 100);
     }
 
@@ -228,36 +228,36 @@ mod tests {
         let usecase = UserUsecase::new(Arc::new(repositories));
         for update in [
             UserPlayOptionUpdateDto {
-                note_speed: 0.9,
-                audio_judgment_timing: 0.0,
+                note_speed: 0.0,
+                audio_judgment_timing: 0,
                 visual_judgment_timing: 0.0,
                 mirror: false,
                 note_volume: 100,
             },
             UserPlayOptionUpdateDto {
-                note_speed: 1.25,
-                audio_judgment_timing: 0.0,
-                visual_judgment_timing: 0.0,
-                mirror: false,
-                note_volume: 100,
-            },
-            UserPlayOptionUpdateDto {
-                note_speed: 1.0,
-                audio_judgment_timing: -10.1,
+                note_speed: 1.2,
+                audio_judgment_timing: 0,
                 visual_judgment_timing: 0.0,
                 mirror: false,
                 note_volume: 100,
             },
             UserPlayOptionUpdateDto {
                 note_speed: 1.0,
-                audio_judgment_timing: 0.0,
+                audio_judgment_timing: -101,
+                visual_judgment_timing: 0.0,
+                mirror: false,
+                note_volume: 100,
+            },
+            UserPlayOptionUpdateDto {
+                note_speed: 1.0,
+                audio_judgment_timing: 0,
                 visual_judgment_timing: 0.05,
                 mirror: false,
                 note_volume: 100,
             },
             UserPlayOptionUpdateDto {
                 note_speed: 1.0,
-                audio_judgment_timing: 0.0,
+                audio_judgment_timing: 0,
                 visual_judgment_timing: 0.0,
                 mirror: false,
                 note_volume: 101,
@@ -285,8 +285,8 @@ mod tests {
         let usecase = build_usecase(user_repo);
 
         let update = UserPlayOptionUpdateDto {
-            note_speed: 1.2,
-            audio_judgment_timing: 0.0,
+            note_speed: 1.25,
+            audio_judgment_timing: 0,
             visual_judgment_timing: 0.0,
             mirror: false,
             note_volume: 100,

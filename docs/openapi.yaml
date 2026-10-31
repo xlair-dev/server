@@ -1022,19 +1022,17 @@ components:
         noteSpeed:
           type: number
           format: float
-          minimum: 1.0
+          minimum: 0.25
           maximum: 10.0
-          multipleOf: 0.1
+          multipleOf: 0.25
           default: 1.0
           description: ノーツの流れる速度。既存の設定値は、この範囲や刻みに合わない場合もある。
         audioJudgmentTiming:
-          type: number
-          format: float
-          minimum: -10.0
-          maximum: 10.0
-          multipleOf: 0.1
-          default: 0.0
-          description: 判定タイミング（音）
+          type: integer
+          minimum: -100
+          maximum: 100
+          default: 0
+          description: 音声の再生位置を基準にした入力判定の補正値（ミリ秒）。旧 judgmentOffset の値を引き継ぐため、既存の設定値は範囲外の場合もある。
         visualJudgmentTiming:
           type: number
           format: float

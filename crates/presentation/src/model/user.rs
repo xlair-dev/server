@@ -183,7 +183,7 @@ impl From<UpdateUserRequest> for UserUpdateDto {
 #[serde(rename_all = "camelCase")]
 pub struct UserPlayOptionResponse {
     pub note_speed: f32,
-    pub audio_judgment_timing: f32,
+    pub audio_judgment_timing: i32,
     pub visual_judgment_timing: f32,
     pub mirror: bool,
     pub note_volume: u8,
@@ -205,7 +205,7 @@ impl From<UserPlayOptionDto> for UserPlayOptionResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UserPlayOptionRequest {
     pub note_speed: f32,
-    pub audio_judgment_timing: f32,
+    pub audio_judgment_timing: i32,
     pub visual_judgment_timing: f32,
     pub mirror: bool,
     pub note_volume: u8,

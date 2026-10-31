@@ -9,7 +9,7 @@ pub struct UserPlayOption {
     #[getset(get = "pub", set = "pub")]
     note_speed: f32,
     #[getset(get = "pub", set = "pub")]
-    audio_judgment_timing: f32,
+    audio_judgment_timing: i32,
     #[getset(get = "pub", set = "pub")]
     visual_judgment_timing: f32,
     #[getset(get = "pub", set = "pub")]
@@ -26,7 +26,7 @@ impl UserPlayOption {
         Self {
             user_id,
             note_speed,
-            audio_judgment_timing: 0.0,
+            audio_judgment_timing: 0,
             visual_judgment_timing: 0.0,
             mirror: false,
             note_volume: 100,
@@ -51,7 +51,7 @@ mod tests {
 
         assert_eq!(options.user_id(), "user-id");
         assert!((options.note_speed() - 1.0).abs() < f32::EPSILON);
-        assert_eq!(*options.audio_judgment_timing(), 0.0);
+        assert_eq!(*options.audio_judgment_timing(), 0);
         assert_eq!(*options.visual_judgment_timing(), 0.0);
         assert!(!*options.mirror());
         assert_eq!(*options.note_volume(), 100);

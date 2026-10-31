@@ -534,7 +534,7 @@ mod tests {
         let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert!((json["noteSpeed"].as_f64().unwrap() - 1.5).abs() < f64::EPSILON);
-        assert_eq!(json["audioJudgmentTiming"], 0.0);
+        assert_eq!(json["audioJudgmentTiming"], 0);
     }
 
     #[tokio::test]
@@ -564,9 +564,9 @@ mod tests {
             .expect_save_play_option()
             .withf(|option| {
                 option.user_id() == USER1.id
-                    && (option.note_speed() - 1.2).abs() < f32::EPSILON
+                    && (option.note_speed() - 1.25).abs() < f32::EPSILON
                     && *option.note_volume() == 80
-                    && (*option.audio_judgment_timing() - 1.2).abs() < f32::EPSILON
+                    && *option.audio_judgment_timing() == 12
                     && (*option.visual_judgment_timing() + 0.4).abs() < f32::EPSILON
                     && *option.mirror()
             })
@@ -575,8 +575,8 @@ mod tests {
         let router = test_router(user_repo, MockRecordRepository::new());
 
         let payload = json!({
-            "noteSpeed": 1.2,
-            "audioJudgmentTiming": 1.2,
+            "noteSpeed": 1.25,
+            "audioJudgmentTiming": 12,
             "visualJudgmentTiming": -0.4,
             "mirror": true,
             "noteVolume": 80
@@ -596,7 +596,7 @@ mod tests {
 
         let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        assert!((json["noteSpeed"].as_f64().unwrap() - 1.2).abs() < f64::EPSILON);
+        assert!((json["noteSpeed"].as_f64().unwrap() - 1.25).abs() < f64::EPSILON);
         assert_eq!(json["noteVolume"], 80);
         assert_eq!(json["mirror"], true);
     }

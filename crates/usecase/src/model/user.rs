@@ -91,7 +91,7 @@ impl UserCreditsDto {
 pub struct UserPlayOptionDto {
     pub user_id: String,
     pub note_speed: f32,
-    pub audio_judgment_timing: f32,
+    pub audio_judgment_timing: i32,
     pub visual_judgment_timing: f32,
     pub mirror: bool,
     pub note_volume: u8,
@@ -103,7 +103,7 @@ impl UserPlayOptionDto {
         Self {
             user_id,
             note_speed,
-            audio_judgment_timing: 0.0,
+            audio_judgment_timing: 0,
             visual_judgment_timing: 0.0,
             mirror: false,
             note_volume: 100,
@@ -160,7 +160,7 @@ impl UserUpdateDto {
 #[derive(Debug, Clone)]
 pub struct UserPlayOptionUpdateDto {
     pub note_speed: f32,
-    pub audio_judgment_timing: f32,
+    pub audio_judgment_timing: i32,
     pub visual_judgment_timing: f32,
     pub mirror: bool,
     pub note_volume: u8,

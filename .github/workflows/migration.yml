@@ -73,7 +73,94 @@ jobs:
       - name: Fetch dependencies
         run: cargo fetch --locked
 
-      - name: Run migrations
+      - name: Migrate existing schema
+        run: cargo run -p migration --locked -- up -n 10
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/xlair
+
+      - name: Insert existing play settings
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/xlair
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO users (id, card, display_name) VALUES
+            ('00000000-0000-0000-0000-000000000001', 'card-1', 'Player 1'),
+            ('00000000-0000-0000-0000-000000000002', 'card-2', 'Player 2'),
+            ('00000000-0000-0000-0000-000000000003', 'card-3', 'Player 3'),
+            ('00000000-0000-0000-0000-000000000004', 'card-4', 'Player 4'),
+            ('00000000-0000-0000-0000-000000000005', 'card-5', 'Player 5');
+          INSERT INTO user_play_options (user_id, note_speed, judgment_offset) VALUES
+            ('00000000-0000-0000-0000-000000000001', 1.25, -25),
+            ('00000000-0000-0000-0000-000000000002', 1.0, 0),
+            ('00000000-0000-0000-0000-000000000003', 10.0, 100),
+            ('00000000-0000-0000-0000-000000000004', 0.25, -100),
+            ('00000000-0000-0000-0000-000000000005', 1.2, 150);
+          SQL
+
+      - name: Migrate play settings
+        run: cargo run -p migration --locked -- up -n 1
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/xlair
+
+      - name: Check existing play settings
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/xlair
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF (SELECT COUNT(*) FROM user_play_options) <> 5 THEN
+              RAISE EXCEPTION 'Existing play settings were lost';
+            END IF;
+            IF (SELECT note_speed FROM user_play_options
+                WHERE user_id = '00000000-0000-0000-0000-000000000001') <> 1.25 THEN
+              RAISE EXCEPTION 'Existing note speed changed';
+            END IF;
+            IF EXISTS (
+              SELECT 1 FROM user_play_options WHERE audio_judgment_timing <> CASE user_id
+                WHEN '00000000-0000-0000-0000-000000000001'::uuid THEN -25
+                WHEN '00000000-0000-0000-0000-000000000002'::uuid THEN 0
+                WHEN '00000000-0000-0000-0000-000000000003'::uuid THEN 100
+                WHEN '00000000-0000-0000-0000-000000000004'::uuid THEN -100
+                WHEN '00000000-0000-0000-0000-000000000005'::uuid THEN 150
+              END
+            ) THEN
+              RAISE EXCEPTION 'Existing judgment offset changed';
+            END IF;
+            IF EXISTS (SELECT 1 FROM user_play_options
+                       WHERE visual_judgment_timing <> 0 OR mirror <> false OR note_volume <> 100) THEN
+              RAISE EXCEPTION 'Unexpected default play option';
+            END IF;
+          END $$;
+          SQL
+
+      - name: Roll back play settings
+        run: cargo run -p migration --locked -- down -n 1
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/xlair
+
+      - name: Check restored judgment offsets
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/xlair
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF EXISTS (
+              SELECT 1 FROM user_play_options WHERE judgment_offset <> CASE user_id
+                WHEN '00000000-0000-0000-0000-000000000001'::uuid THEN -25
+                WHEN '00000000-0000-0000-0000-000000000002'::uuid THEN 0
+                WHEN '00000000-0000-0000-0000-000000000003'::uuid THEN 100
+                WHEN '00000000-0000-0000-0000-000000000004'::uuid THEN -100
+                WHEN '00000000-0000-0000-0000-000000000005'::uuid THEN 150
+              END
+            ) THEN
+              RAISE EXCEPTION 'Judgment offset was not restored';
+            END IF;
+          END $$;
+          SQL
+
+      - name: Run remaining migrations
         run: cargo run -p migration --locked -- up
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/xlair

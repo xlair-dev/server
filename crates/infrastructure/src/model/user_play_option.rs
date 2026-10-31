@@ -12,7 +12,7 @@ impl From<UserPlayOption> for UserPlayOptionModel {
         Self {
             user_id,
             note_speed: f64::from(*option.note_speed()),
-            audio_judgment_timing: f64::from(*option.audio_judgment_timing()),
+            audio_judgment_timing: *option.audio_judgment_timing(),
             visual_judgment_timing: f64::from(*option.visual_judgment_timing()),
             mirror: *option.mirror(),
             note_volume: i32::from(*option.note_volume()),
@@ -29,7 +29,7 @@ impl std::convert::TryFrom<UserPlayOptionModel> for UserPlayOption {
         let note_speed = model.note_speed as f32;
 
         let mut option = Self::new(user_id, note_speed, model.updated_at.with_timezone(&Utc));
-        option.set_audio_judgment_timing(model.audio_judgment_timing as f32);
+        option.set_audio_judgment_timing(model.audio_judgment_timing);
         option.set_visual_judgment_timing(model.visual_judgment_timing as f32);
         option.set_mirror(model.mirror);
         option.set_note_volume(
@@ -51,7 +51,7 @@ impl From<UserPlayOption> for UserPlayOptionActiveModel {
         UserPlayOptionActiveModel {
             user_id,
             note_speed: ActiveValue::Set(f64::from(*option.note_speed())),
-            audio_judgment_timing: ActiveValue::Set(f64::from(*option.audio_judgment_timing())),
+            audio_judgment_timing: ActiveValue::Set(*option.audio_judgment_timing()),
             visual_judgment_timing: ActiveValue::Set(f64::from(*option.visual_judgment_timing())),
             mirror: ActiveValue::Set(*option.mirror()),
             note_volume: ActiveValue::Set(i32::from(*option.note_volume())),
