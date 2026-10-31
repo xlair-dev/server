@@ -1292,9 +1292,43 @@ components:
           description: ランキング上位20件
           items:
             $ref: "#/components/schemas/sheetScoreRankingEntry"
+        distribution:
+          $ref: "#/components/schemas/scoreDistribution"
       required:
         - sheetId
         - entries
+        - distribution
+    scoreDistribution:
+      type: object
+      description: 公開ユーザーの値を対象にした最大20区間の度数分布
+      properties:
+        bins:
+          type: array
+          description: 値の昇順に並ぶ区間。値がない場合は空配列
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/scoreDistributionBin"
+      required:
+        - bins
+    scoreDistributionBin:
+      type: object
+      properties:
+        rangeStart:
+          type: integer
+          minimum: 0
+          description: この区間に含む最小値
+        rangeEnd:
+          type: integer
+          minimum: 0
+          description: この区間に含む最大値
+        playerCount:
+          type: integer
+          minimum: 0
+          description: 区間内の公開プレイヤー数
+      required:
+        - rangeStart
+        - rangeEnd
+        - playerCount
     totalScoreRankingEntry:
       type: object
       properties:
@@ -1323,8 +1357,11 @@ components:
           description: ランキング上位20件
           items:
             $ref: "#/components/schemas/totalScoreRankingEntry"
+        distribution:
+          $ref: "#/components/schemas/scoreDistribution"
       required:
         - entries
+        - distribution
     ratingRankingEntry:
       type: object
       properties:
@@ -1353,8 +1390,11 @@ components:
           description: ランキング上位20件
           items:
             $ref: "#/components/schemas/ratingRankingEntry"
+        distribution:
+          $ref: "#/components/schemas/scoreDistribution"
       required:
         - entries
+        - distribution
     xpRankingEntry:
       type: object
       properties:
@@ -1383,5 +1423,8 @@ components:
           description: ランキング上位20件
           items:
             $ref: "#/components/schemas/xpRankingEntry"
+        distribution:
+          $ref: "#/components/schemas/scoreDistribution"
       required:
         - entries
+        - distribution
