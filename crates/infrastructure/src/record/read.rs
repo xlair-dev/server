@@ -12,8 +12,8 @@ use domain::{
     },
 };
 use sea_orm::{
-    ColumnTrait, DbConn, EntityTrait, ExprTrait, FromQueryResult, JoinType, QueryFilter,
-    QueryOrder, QuerySelect, RelationTrait,
+    ColumnTrait, ConnectionTrait, DbConn, EntityTrait, ExprTrait, FromQueryResult, JoinType,
+    QueryFilter, QueryOrder, QuerySelect, RelationTrait,
     prelude::{Decimal, Uuid},
     sea_query::{Alias, Expr},
 };
@@ -133,8 +133,8 @@ pub async fn ensure_user_exists(db: &DbConn, user_id: &str) -> Result<Uuid, Reco
 
 /// Loads records alongside sheet/music metadata. Relies on the `fk_records_sheet` and
 /// `fk_sheets_music` constraints to guarantee referential integrity across tables.
-async fn records_with_metadata(
-    db: &DbConn,
+pub(crate) async fn records_with_metadata<C: ConnectionTrait>(
+    db: &C,
     user_uuid: Uuid,
 ) -> Result<Vec<RecordWithMetadata>, RecordRepositoryError> {
     let records_and_sheets = entities::records::Entity::find()

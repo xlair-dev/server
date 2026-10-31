@@ -67,6 +67,8 @@ pub trait MusicRepository: Send + Sync {
         music: MusicWithSheets,
     ) -> impl Future<Output = Result<MusicWithSheets, MusicRepositoryError>> + Send;
 
+    /// Updates music and sheets atomically and recalculates ratings for users with records on
+    /// those sheets when the music test status or a sheet level changes.
     fn update_with_sheets(
         &self,
         music: MusicWithSheets,
