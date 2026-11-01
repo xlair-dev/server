@@ -11,8 +11,9 @@ use domain::{
 use read::{
     count_all as query_count_users, find_all as query_all_users, find_by_card as query_by_card,
     find_by_id as query_by_id, find_play_option as query_play_option,
+    public_rating_values as query_public_rating_values,
     public_users_by_rating as query_public_by_rating, public_users_by_xp as query_public_by_xp,
-    sum_credits as query_sum_credits,
+    public_xp_values as query_public_xp_values, sum_credits as query_sum_credits,
 };
 use sea_orm::DbConn;
 use tracing::{debug, info, instrument};
@@ -121,5 +122,15 @@ impl UserRepository for UserRepositoryImpl {
             "Public users by XP fetched successfully"
         );
         Ok(users)
+    }
+
+    #[instrument(skip(self))]
+    async fn find_public_rating_values(&self) -> Result<Vec<u64>, UserRepositoryError> {
+        query_public_rating_values(self.db.as_ref()).await
+    }
+
+    #[instrument(skip(self))]
+    async fn find_public_xp_values(&self) -> Result<Vec<u64>, UserRepositoryError> {
+        query_public_xp_values(self.db.as_ref()).await
     }
 }

@@ -123,6 +123,12 @@ mod tests {
                     )])
                 })
             });
+        record_repo
+            .expect_find_public_score_values_by_sheet()
+            .returning(|sheet_id| {
+                assert_eq!(sheet_id, "sheet-123");
+                Box::pin(async { Ok(vec![987_654]) })
+            });
 
         let router = build_router(MockUserRepository::new(), record_repo);
         let response = router
@@ -141,6 +147,7 @@ mod tests {
         assert_eq!(json["sheetId"], "sheet-123");
         assert_eq!(json["entries"][0]["userId"], "user-1");
         assert_eq!(json["entries"][0]["score"], 987_654);
+        assert_eq!(json["distribution"]["bins"][0]["playerCount"], 1);
     }
 
     #[tokio::test]
@@ -158,6 +165,9 @@ mod tests {
                     )])
                 })
             });
+        record_repo
+            .expect_find_public_total_score_values()
+            .returning(|| Box::pin(async { Ok(vec![1_234_567]) }));
 
         let router = build_router(MockUserRepository::new(), record_repo);
         let response = router
@@ -175,6 +185,7 @@ mod tests {
 
         assert_eq!(json["entries"][0]["userId"], "user-2");
         assert_eq!(json["entries"][0]["totalScore"], 1_234_567);
+        assert_eq!(json["distribution"]["bins"][0]["playerCount"], 1);
     }
 
     #[tokio::test]
@@ -186,6 +197,9 @@ mod tests {
                 assert_eq!(limit, 20);
                 Box::pin(async { Ok(vec![sample_user("user-3", "Carol", 1900, 50)]) })
             });
+        user_repo
+            .expect_find_public_rating_values()
+            .returning(|| Box::pin(async { Ok(vec![1900]) }));
 
         let router = build_router(user_repo, MockRecordRepository::new());
         let response = router
@@ -203,6 +217,7 @@ mod tests {
 
         assert_eq!(json["entries"][0]["userId"], "user-3");
         assert_eq!(json["entries"][0]["rating"], 1900);
+        assert_eq!(json["distribution"]["bins"][0]["playerCount"], 1);
     }
 
     #[tokio::test]
@@ -212,6 +227,9 @@ mod tests {
             assert_eq!(limit, 20);
             Box::pin(async { Ok(vec![sample_user("user-4", "Dave", 1800, 123)]) })
         });
+        user_repo
+            .expect_find_public_xp_values()
+            .returning(|| Box::pin(async { Ok(vec![123]) }));
 
         let router = build_router(user_repo, MockRecordRepository::new());
         let response = router
@@ -229,5 +247,6 @@ mod tests {
 
         assert_eq!(json["entries"][0]["userId"], "user-4");
         assert_eq!(json["entries"][0]["xp"], 123);
+        assert_eq!(json["distribution"]["bins"][0]["playerCount"], 1);
     }
 }

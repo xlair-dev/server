@@ -125,9 +125,20 @@ pub trait RecordRepository: Send + Sync {
         limit: u64,
     ) -> impl Future<Output = Result<Vec<SheetScoreRankingRow>, RecordRepositoryError>> + Send;
 
+    /// Returns the public best score for every player who has a record on the sheet.
+    fn find_public_score_values_by_sheet(
+        &self,
+        sheet_id: &str,
+    ) -> impl Future<Output = Result<Vec<u64>, RecordRepositoryError>> + Send;
+
     /// Aggregates total record scores per public user and returns the top rows in descending order.
     fn find_public_total_score_ranking(
         &self,
         limit: u64,
     ) -> impl Future<Output = Result<Vec<TotalScoreRankingRow>, RecordRepositoryError>> + Send;
+
+    /// Returns each public player's aggregate score, using the same record set as the total ranking.
+    fn find_public_total_score_values(
+        &self,
+    ) -> impl Future<Output = Result<Vec<u64>, RecordRepositoryError>> + Send;
 }

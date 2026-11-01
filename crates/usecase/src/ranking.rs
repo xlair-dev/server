@@ -8,8 +8,9 @@ use domain::repository::{
 use thiserror::Error;
 
 use crate::model::ranking::{
-    RatingRankingDto, RatingRankingEntryDto, SheetScoreRankingDto, SheetScoreRankingEntryDto,
-    TotalScoreRankingDto, TotalScoreRankingEntryDto, XpRankingDto, XpRankingEntryDto,
+    RatingRankingDto, RatingRankingEntryDto, ScoreDistributionDto, SheetScoreRankingDto,
+    SheetScoreRankingEntryDto, TotalScoreRankingDto, TotalScoreRankingEntryDto, XpRankingDto,
+    XpRankingEntryDto,
 };
 
 const DEFAULT_LIMIT: u64 = 20;
@@ -49,10 +50,16 @@ impl<R: Repositories> RankingUsecase<R> {
             .record()
             .find_public_high_scores_by_sheet(sheet_id, self.limit())
             .await?;
+        let values = self
+            .repositories
+            .record()
+            .find_public_score_values_by_sheet(sheet_id)
+            .await?;
 
         Ok(SheetScoreRankingDto::new(
             sheet_id.to_owned(),
             self.decorate_sheet_rows(rows),
+            ScoreDistributionDto::from_values(&values),
         ))
     }
 
@@ -62,7 +69,15 @@ impl<R: Repositories> RankingUsecase<R> {
             .record()
             .find_public_total_score_ranking(self.limit())
             .await?;
-        Ok(TotalScoreRankingDto::new(self.decorate_total_rows(rows)))
+        let values = self
+            .repositories
+            .record()
+            .find_public_total_score_values()
+            .await?;
+        Ok(TotalScoreRankingDto::new(
+            self.decorate_total_rows(rows),
+            ScoreDistributionDto::from_values(&values),
+        ))
     }
 
     pub async fn rating(&self) -> Result<RatingRankingDto, RankingUsecaseError> {
@@ -71,6 +86,7 @@ impl<R: Repositories> RankingUsecase<R> {
             .user()
             .find_public_top_by_rating(self.limit())
             .await?;
+        let values = self.repositories.user().find_public_rating_values().await?;
         Ok(RatingRankingDto::new(
             users
                 .into_iter()
@@ -84,6 +100,7 @@ impl<R: Repositories> RankingUsecase<R> {
                     )
                 })
                 .collect(),
+            ScoreDistributionDto::from_values(&values),
         ))
     }
 
@@ -93,6 +110,7 @@ impl<R: Repositories> RankingUsecase<R> {
             .user()
             .find_public_top_by_xp(self.limit())
             .await?;
+        let values = self.repositories.user().find_public_xp_values().await?;
         Ok(XpRankingDto::new(
             users
                 .into_iter()
@@ -106,6 +124,7 @@ impl<R: Repositories> RankingUsecase<R> {
                     )
                 })
                 .collect(),
+            ScoreDistributionDto::from_values(&values),
         ))
     }
 
