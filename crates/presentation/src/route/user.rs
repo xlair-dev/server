@@ -513,7 +513,6 @@ mod tests {
                 let option = UserPlayOption::new(
                     USER1.id.to_owned(),
                     1.5,
-                    -2,
                     timestamp(2025, 10, 21, 15, 0, 0),
                 );
                 Box::pin(async move { Ok(Some(option)) })
@@ -535,12 +534,15 @@ mod tests {
         let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert!((json["noteSpeed"].as_f64().unwrap() - 1.5).abs() < f64::EPSILON);
-        assert_eq!(json["judgmentOffset"], -2);
+        assert_eq!(json["audioJudgmentTiming"], 0);
     }
 
     #[tokio::test]
     async fn handle_post_play_option_persists_value() {
         let mut user_repo = domain::repository::user::MockUserRepository::new();
+        user_repo
+            .expect_find_play_option()
+            .returning(|_| Box::pin(async { Ok(None) }));
         user_repo
             .expect_find_by_id()
             .withf(|user_id| user_id == USER1.id)
@@ -563,7 +565,10 @@ mod tests {
             .withf(|option| {
                 option.user_id() == USER1.id
                     && (option.note_speed() - 1.25).abs() < f32::EPSILON
-                    && *option.judgment_offset() == 3
+                    && *option.note_volume() == 80
+                    && *option.audio_judgment_timing() == 12
+                    && (*option.visual_judgment_timing() + 0.4).abs() < f32::EPSILON
+                    && *option.mirror()
             })
             .returning(|option| Box::pin(async move { Ok(option) }));
 
@@ -571,7 +576,10 @@ mod tests {
 
         let payload = json!({
             "noteSpeed": 1.25,
-            "judgmentOffset": 3
+            "audioJudgmentTiming": 12,
+            "visualJudgmentTiming": -0.4,
+            "mirror": true,
+            "noteVolume": 80
         });
 
         let response = router
@@ -589,7 +597,8 @@ mod tests {
         let bytes = body::to_bytes(response.into_body(), 1024).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert!((json["noteSpeed"].as_f64().unwrap() - 1.25).abs() < f64::EPSILON);
-        assert_eq!(json["judgmentOffset"], 3);
+        assert_eq!(json["noteVolume"], 80);
+        assert_eq!(json["mirror"], true);
     }
 
     #[tokio::test]
