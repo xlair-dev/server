@@ -10,6 +10,7 @@ mod m20251007_000007_make_music_jacket_nullable;
 mod m20251007_000008_rename_difficulty_values;
 mod m20251007_000009_add_music_asset_keys;
 mod m20251007_000010_add_asset_updated_at;
+mod m20251007_000011_add_play_options;
 
 pub struct Migrator;
 
@@ -27,6 +28,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251007_000008_rename_difficulty_values::Migration),
             Box::new(m20251007_000009_add_music_asset_keys::Migration),
             Box::new(m20251007_000010_add_asset_updated_at::Migration),
+            Box::new(m20251007_000011_add_play_options::Migration),
         ]
     }
 }

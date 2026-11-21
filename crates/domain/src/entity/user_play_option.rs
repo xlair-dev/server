@@ -9,30 +9,34 @@ pub struct UserPlayOption {
     #[getset(get = "pub", set = "pub")]
     note_speed: f32,
     #[getset(get = "pub", set = "pub")]
-    judgment_offset: i32,
+    audio_judgment_timing: i32,
+    #[getset(get = "pub", set = "pub")]
+    visual_judgment_timing: f32,
+    #[getset(get = "pub", set = "pub")]
+    mirror: bool,
+    #[getset(get = "pub", set = "pub")]
+    note_volume: u8,
     #[getset(get = "pub", set = "pub")]
     updated_at: DateTime<Utc>,
 }
 
 impl UserPlayOption {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        user_id: String,
-        note_speed: f32,
-        judgment_offset: i32,
-        updated_at: DateTime<Utc>,
-    ) -> Self {
+    pub fn new(user_id: String, note_speed: f32, updated_at: DateTime<Utc>) -> Self {
         Self {
             user_id,
             note_speed,
-            judgment_offset,
+            audio_judgment_timing: 0,
+            visual_judgment_timing: 0.0,
+            mirror: false,
+            note_volume: 100,
             updated_at,
         }
     }
 
     /// Builds play options with platform defaults.
     pub fn new_with_defaults(user_id: String, updated_at: DateTime<Utc>) -> Self {
-        Self::new(user_id, 1.0, 0, updated_at)
+        Self::new(user_id, 1.0, updated_at)
     }
 }
 
@@ -47,7 +51,10 @@ mod tests {
 
         assert_eq!(options.user_id(), "user-id");
         assert!((options.note_speed() - 1.0).abs() < f32::EPSILON);
-        assert_eq!(*options.judgment_offset(), 0);
+        assert_eq!(*options.audio_judgment_timing(), 0);
+        assert_eq!(*options.visual_judgment_timing(), 0.0);
+        assert!(!*options.mirror());
+        assert_eq!(*options.note_volume(), 100);
         assert_eq!(*options.updated_at(), timestamp);
     }
 }

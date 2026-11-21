@@ -13,6 +13,8 @@ pub mod update;
 
 #[derive(Debug, Error)]
 pub enum UserUsecaseError {
+    #[error("Invalid play option: {0}")]
+    InvalidPlayOption(&'static str),
     #[error(transparent)]
     UserRepositoryError(#[from] UserRepositoryError),
     #[error("User not found for card: {card}")]
